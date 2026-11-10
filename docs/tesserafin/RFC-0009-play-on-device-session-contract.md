@@ -1,14 +1,14 @@
 # RFC-0009 — "Play on": device, capability and remote-session contract (P0)
 
-- **Status**: Proposed (draft, 2026-10-24; revised 2026-10-28) — not accepted; selects nothing until
+- **Status**: Proposed (draft, 2026-10-24; revised 2026-10-28, 2026-11-10) — not accepted; selects nothing until
   the maintainer rules. Accepting this document would accept a P0 framing only; it would not authorise
   any implementation.
-- **Date**: 2026-10-24 (revised 2026-10-28)
+- **Date**: 2026-10-24 (revised 2026-10-28, 2026-11-10)
 - **Author**: Tesserafin Project
 - **Repository**: `tesserafin-web`
-- **Issue**: [`tesserafin#141`](https://github.com/tesserafin-project/tesserafin/issues/141), P0
+- **Issue**: [`tesserafin#141`](https://github.com/tesserafin/tesserafin/issues/141), P0
   (contract and first-receiver selection) — the bounded preparation slot allowed by
-  [`tesserafin#129`](https://github.com/tesserafin-project/tesserafin/issues/129) while M3 proceeds
+  [`tesserafin#129`](https://github.com/tesserafin/tesserafin/issues/129) while M3 proceeds
 - **Depends on**: RFC-0006 (three contract layers, §3.2 semantic rows, §5.4 platform-owned
   responsibilities, §1.3 no WebView) and RFC-0008 §10.3 (no Tesserafin infrastructure in the media
   path). Neither is reopened.
@@ -22,7 +22,7 @@ The minimum shared meaning of **Play on…**, written before M3-D (playback) and
 adapters couple to one transport. It is a contract and a recommendation, nothing else:
 
 - **no runtime code** in any repository, no dependency, no permission, no new endpoint;
-- **no change to M3** ([`tesserafin#238`](https://github.com/tesserafin-project/tesserafin/issues/238)):
+- **no change to M3** ([`tesserafin#238`](https://github.com/tesserafin/tesserafin/issues/238)):
   M3 stays connection → authentication → browse/details → local playback, and gains no acceptance gate
   from this document;
 - **no receiver is claimed** — a selected topology is not a delivered one.
@@ -67,6 +67,21 @@ A receiver declares what it can do. The vocabulary follows the shape M2B already
 | Commands | `Play`, `Pause`, `Resume`, `Seek`, `Stop`, `SetVolume`, `SetAudioTrack`, `SetSubtitleTrack` | a controller shows only declared commands; an undeclared one is `Unsupported`, not hidden silently |
 | Queue / handoff | `Unsupported` for P1 | declared explicitly so a controller cannot assume it |
 
+The command names are contract vocabulary, not wire names. Today the server carries them on the
+inherited types below; P1 may keep that transport only once §10.2 is proven:
+
+| Contract command | Inherited server transport (`origin/master`) |
+| --- | --- |
+| `Play` | `PlayRequest` (`Sessions/{id}/Playing`) |
+| `Pause` / `Resume` | `PlaystateCommand.Pause` / `PlaystateCommand.Unpause` |
+| `Seek` | `PlaystateCommand.Seek` |
+| `Stop` | `PlaystateCommand.Stop` |
+| `SetVolume` | `GeneralCommandType.SetVolume` |
+| `SetAudioTrack` / `SetSubtitleTrack` | `GeneralCommandType.SetAudioStreamIndex` / `GeneralCommandType.SetSubtitleStreamIndex` |
+
+`PlaystateCommand.PlayPause`, `NextTrack`, `PreviousTrack`, `Rewind` and `FastForward` have no P1
+contract command. A receiver must not declare them, and a controller must not send them.
+
 A controller renders "this device cannot do that" from the declaration, never from a guess about the
 platform.
 
@@ -77,10 +92,13 @@ platform.
 2. **The receiver owns the job** — a target invariant. Remote playback runs under the receiver's own
    authenticated context: the receiver requests its own playback plan, and the job has one coherent
    (user, device) owner whose stop ends it. The controller never transfers its credential (§6).
-   This invariant gives a direction; it does **not** by itself settle
-   [`tesserafin#301`](https://github.com/tesserafin-project/tesserafin/issues/301). Where the
-   (user, device) pair of the owner comes from, and what happens when a playback capability arrives
-   with another user's token, remain explicit #301 decisions.
+   The ownership provenance is settled server-side by
+   [`tesserafin#301`](https://github.com/tesserafin/tesserafin/issues/301), landed in
+   [`tesserafin#377`](https://github.com/tesserafin/tesserafin/pull/377) (`c310916c72`,
+   `docs/playback-job-ownership.md`): one owner from one credential; a capability's device is its
+   session's; a capability presented beside another user's token or an API key is refused. Play on
+   adopts that rule unchanged. A receiver therefore owns its job only by requesting the plan under its
+   own credential, never by replaying a controller's capability.
 3. **Authorization is checked when a command is dispatched**, on every command, by the server, against
    the controller's authenticated user and the receiver session's user — not only when sessions are
    listed. For P1:
@@ -98,6 +116,10 @@ platform.
    typed error so the controller re-reads state instead of seeking to a position that no longer exists.
    The revision serialises commands only if checking it and admitting the command are **one atomic
    step** on the server; a check followed by a separate admission does not satisfy this rule.
+   **What advances the revision:** every admitted command, plus every receiver-side change that alters
+   what a command would mean — a new item, play/pause/stop, an admitted seek, or a change of audio or
+   subtitle stream. Position progress reports (`Sessions/Playing/Progress` ticks) and pings do **not**
+   advance it. Otherwise a controller could never issue a command against a playing receiver.
 5. **Concurrent controllers** are allowed; the atomic revision rule (§5.4) serialises them.
    **Takeover** (moving the session to another receiver) is handoff and is out of P1.
 6. **Stop and loss.**
@@ -107,6 +129,12 @@ platform.
    - Receiver loss ends the session once the server detects it. Detection and cleanup of the session
      and its job are **bounded** (a stated timeout), not instantaneous; until then controllers may see
      the last known state. Once ended, controllers observe it as ended, not as an error loop.
+     The bound P1 starts from is the one the server already has, as measured on `origin/master`:
+     a transcoding job of a lost client is killed after **~60 s** without a ping (measured 60.4 s in
+     #377). The play session is marked stopped by `SessionManager.CheckForIdlePlayback`: it runs every
+     5 min and stops sessions whose last check-in is older than 5 min, so worst case **~10 min**.
+     P1 must either accept that bound and show it to the controller, or name a shorter one and prove
+     it. It must not leave the bound unstated.
    - An unrelated user's session survives all of the above.
 
 ## 6. Credentials and the media path
@@ -170,8 +198,9 @@ as decided. Selecting it would attest no delivery and would start neither M4 nor
 
 Recorded so P1 is not scoped against assumptions:
 
-1. **#301 ownership decided and proven**: stopping the effective owner ends the job, and other users'
-   sessions are preserved.
+1. **#301 ownership decided and proven** — done by #377 (`c310916c72`): stopping the effective owner
+   ends the job, and other users' sessions are preserved. P1 re-proves it only for a receiver-owned
+   job started on a controller's request.
 2. **Dispatch-time command authorization** (§5.3) proven on a real server: a refused command has no
    effect, including after a rights change. The inherited `Sessions/{id}/Playing|Command|System`
    endpoints are not adopted as the contract until that proof exists.
@@ -202,12 +231,12 @@ Fire OS / Vega OS clients, Web as receiver, positive cross-user control (§5.3).
 1. Accept the controller / receiver / output-route split, one authoritative play session, no
    credential transfer from controller to receiver, and the direct receiver ↔ household-server media
    path (§§2, 5.1, 6). Adapters stay below the semantic boundary; no plugin framework is required.
-2. Accept "the receiver owns the job" as a target invariant (§5.2), leaving ownership provenance and
-   contradictory identities to an explicit #301 decision.
+2. Accept "the receiver owns the job" (§5.2), with ownership provenance taken unchanged from the
+   #301 rule landed in #377.
 3. Select the §8 topology for P1, or name another.
 4. Restrict P1 to same-user control with an explicit, effect-free refusal of cross-user commands
    (§5.3); defer positive cross-user control to a later decision.
-5. Keep the three P1 server prerequisites of §10.
+5. Keep the P1 server prerequisites of §10: §10.1 is met by #377, §10.2 and §10.3 remain open.
 
 Whatever is accepted, no #141 criterion is checked as implemented on the basis of this document, and
 M3 keeps its current vertical and criteria. Remote implementation needs a separate authorisation, the
