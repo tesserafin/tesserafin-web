@@ -35,6 +35,16 @@ import {
 import { PUBLISHED_FAMILIES } from 'apps/modern/features/details/utils/itemDetailsRecipe';
 import {
     GRID_CONTEXTS,
+    HEADER_BRAND_LABELS,
+    HEADER_BRAND_SHOWS,
+    HEADER_BRAND_SIZES,
+    HEADER_DENSITIES,
+    HEADER_NAV_STYLES,
+    HEADER_REST_MATERIALS,
+    HEADER_SCROLLED_MATERIALS,
+    HEADER_SEPARATORS,
+    HEADER_SHAPES,
+    PLATFORM_DEFAULT_HEADER,
     GRID_ITEM_SIZES,
     HOME_SECTIONS,
     HOME_SHELF_DENSITIES,
@@ -54,17 +64,18 @@ import {
     SECTION_TITLE_SIZES,
     SECTION_TITLE_SPACINGS,
     SECTION_TITLE_WEIGHTS,
-    WEB_RENDERER_CAPABILITIES,
     type HomeRecipe,
     type HomeSection,
     type ItemDetailsRecipe,
     type ItemDetailsSection,
     type GridPresentation,
+    type HeaderPresentation,
     type LibraryRecipe,
     type SectionTitlePresentation,
     type ThemeCapability,
     type ThemePresentation
 } from 'themes/platform';
+import { isBoundByWebRenderer } from 'themes/platform/resolvePresentation';
 
 export interface PresentationEditorProps {
     presentation: ThemePresentation;
@@ -88,7 +99,7 @@ export const PresentationEditor: FC<PresentationEditorProps> = ({
     onChange
 }) => {
     const supports = (capability: ThemeCapability) =>
-        WEB_RENDERER_CAPABILITIES.includes(capability);
+        isBoundByWebRenderer(capability);
 
     const setSurface = (key: string, value: string) =>
         onChange({
@@ -248,6 +259,13 @@ export const PresentationEditor: FC<PresentationEditorProps> = ({
                     drawer, and labels and position apply to the column. Tabs
                     are Home's and each library's.
                 </Alert>
+            </Section>
+
+            <Section title='Header'>
+                <HeaderEditor
+                    recipe={presentation.header}
+                    onChange={(header) => onChange({ ...presentation, header })}
+                />
             </Section>
 
             <Section title='Section titles'>
@@ -755,6 +773,76 @@ const ItemDetailsCompositionEditor: FC<ItemDetailsCompositionEditorProps> = ({
                 appears above.
             </Alert>
         </Stack>
+    );
+};
+
+const HEADER_FIELDS = [
+    [null, 'density', 'Header density', HEADER_DENSITIES],
+    [null, 'shape', 'Header shape', HEADER_SHAPES],
+    ['material', 'rest', 'Header material at rest', HEADER_REST_MATERIALS],
+    [
+        'material',
+        'scrolled',
+        'Header material when scrolled',
+        HEADER_SCROLLED_MATERIALS
+    ],
+    [null, 'separator', 'Header separator', HEADER_SEPARATORS],
+    ['brand', 'show', 'Brand', HEADER_BRAND_SHOWS],
+    ['brand', 'size', 'Brand size', HEADER_BRAND_SIZES],
+    ['brand', 'label', 'Brand name', HEADER_BRAND_LABELS],
+    ['nav', 'style', 'Destinations in the bar', ['auto', ...HEADER_NAV_STYLES]]
+] as const;
+
+/**
+ * THEME-B1's header recipe. Nested groups are spread one level down, never rebuilt, so editing
+ * `material.rest` keeps `material.scrolled`. "auto" for the destinations removes the key: the bar then
+ * derives it from the surface (glass: floating, otherwise plain), as it always has.
+ */
+const HeaderEditor: FC<{
+    recipe: HeaderPresentation | undefined;
+    onChange: (recipe: HeaderPresentation) => void;
+}> = ({ recipe, onChange }) => {
+    const defaults = PLATFORM_DEFAULT_HEADER;
+    const read = (group: string | null, key: string): string => {
+        const source = (group ? recipe?.[group as 'brand'] : recipe) as
+            | Record<string, string>
+            | undefined;
+        const fallback = (group
+            ? defaults[group as 'brand']
+            : defaults) as unknown as Record<string, string>;
+        if (group === 'nav') return source?.[key] ?? 'auto';
+        return source?.[key] ?? fallback[key];
+    };
+    const write = (group: string | null, key: string, value: string) => {
+        if (!group) return onChange({ ...recipe, [key]: value });
+        const nested: Record<string, string> = {
+            ...(recipe?.[group as 'brand'] as
+                | Record<string, string>
+                | undefined)
+        };
+        if (value === 'auto') delete nested[key];
+        else nested[key] = value;
+        onChange({ ...recipe, [group]: nested });
+    };
+    return (
+        <>
+            {HEADER_FIELDS.map(([group, key, label, options]) => (
+                <Choice
+                    key={label}
+                    label={label}
+                    value={read(group, key)}
+                    options={options}
+                    onChange={(value) => write(group, key, value)}
+                />
+            ))}
+            <Scope>
+                The application bar on signed-in pages of the modern layout. It
+                changes how the bar looks, never which actions, destinations or
+                menus it holds. A floating bar falls back to a normal one on a
+                narrow window. Sign-in, setup and the administration keep their
+                own bar.
+            </Scope>
+        </>
     );
 };
 

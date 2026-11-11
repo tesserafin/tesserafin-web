@@ -6,6 +6,8 @@ import { appRouter, PUBLIC_PATHS } from 'components/router/appRouter';
 import BaseToolbar from 'components/toolbar/AppToolbar';
 import ServerButton from 'components/toolbar/ServerButton';
 import globalize from 'lib/globalize';
+import { resolveHeader } from 'themes/platform/headerRecipe';
+import { usePresentation } from 'ui/presentation/PresentationContext';
 
 import RemotePlayButton from './RemotePlayButton';
 import SyncPlayButton from './SyncPlayButton';
@@ -33,6 +35,11 @@ const AppToolbar: FC<AppToolbarProps> = ({
     isViewNavInBar = true
 }) => {
     const location = useLocation();
+    const presentation = usePresentation();
+    const header = resolveHeader(
+        presentation.header,
+        presentation.surface.variant
+    );
 
     // The video osd does not show the standard toolbar
     if (location.pathname === '/video') return null;
@@ -64,12 +71,13 @@ const AppToolbar: FC<AppToolbarProps> = ({
         >
             {!isDrawerAvailable && (
                 <Stack direction='row' spacing={0.5}>
-                    <ServerButton />
+                    <ServerButton brand={header.brand} />
 
                     {!isPublicPath && isViewNavInBar && (
                         <nav
                             className='rf-app-topnav'
                             data-rf-slot='app-topnav'
+                            data-rf-nav-style={header.nav.style}
                             aria-label={globalize.translate('HeaderNavigation')}
                         >
                             <UserViewNav />

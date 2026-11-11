@@ -110,6 +110,7 @@
                 "navigation": { "$ref": "#/$defs/navigationVariant" },
                 "sectionTitle": { "$ref": "#/$defs/sectionTitleVariant" },
                 "grid": { "$ref": "#/$defs/gridVariant" },
+                "header": { "$ref": "#/$defs/headerVariant" },
                 "page": { "$ref": "#/$defs/pageRecipes" }
             }
         },
@@ -315,6 +316,7 @@
                 "presentation.navigation",
                 "presentation.sectionTitle",
                 "presentation.grid",
+                "presentation.header",
                 "presentation.page.home",
                 "presentation.page.library",
                 "presentation.page.itemDetails",
@@ -378,6 +380,47 @@
                 "align": { "enum": ["start", "center"] },
                 "case": { "enum": ["none", "uppercase"] },
                 "spacing": { "enum": ["normal", "loose"] }
+            }
+        },
+        "headerVariant": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "The application header (THEME-B1). How the bar looks, never which actions, destinations or menus it holds. Absent `nav.style` is derived from `surface.variant` (glass: floating, else plain).",
+            "properties": {
+                "density": { "enum": ["compact", "comfortable", "spacious"] },
+                "shape": { "enum": ["bar", "floating"] },
+                "material": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "rest": { "enum": ["transparent", "surface", "glass"] },
+                        "scrolled": { "enum": ["surface", "glass"] }
+                    }
+                },
+                "separator": { "enum": ["none", "hairline", "shadow"] },
+                "brand": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "show": { "enum": ["markAndName", "mark", "name"] },
+                        "size": { "enum": ["small", "medium", "large"] },
+                        "label": { "enum": ["server", "product"] }
+                    }
+                },
+                "nav": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "style": {
+                            "enum": [
+                                "plain",
+                                "underline",
+                                "segmented",
+                                "floating"
+                            ]
+                        }
+                    }
+                }
             }
         },
         "gridItemSize": { "enum": ["small", "medium", "large"] },

@@ -21,6 +21,7 @@ import {
     GRID_CONTEXTS,
     GRID_ITEM_SIZES,
     type GridPresentation,
+    type HeaderPresentation,
     PAGE_BACKDROPS,
     HOME_SECTIONS,
     HOME_SHELF_DENSITIES,
@@ -59,8 +60,7 @@ import {
     type SurfacePresentation,
     type ThemeCapability,
     type ThemeManifest,
-    type ThemePresentation,
-    WEB_RENDERER_CAPABILITIES
+    type ThemePresentation
 } from './contract';
 
 /**
@@ -73,6 +73,11 @@ export interface ResolvedPresentation {
     navigation: Required<NavigationPresentation>;
     sectionTitle: Required<SectionTitlePresentation>;
     grid: Required<GridPresentation>;
+    /**
+     * THEME-B1: the theme's header group as declared, or `{}`. Resolved by the header itself
+     * (`headerRecipe.ts#resolveHeader`), outside the start-up bundle.
+     */
+    header: HeaderPresentation;
     page: {
         home: {
             sections: readonly HomeSection[];
@@ -147,6 +152,8 @@ export const PLATFORM_DEFAULT_PRESENTATION: ResolvedPresentation = {
         episodes: 'medium',
         chapters: 'medium'
     },
+    // THEME-B1: resolved by the header itself; see `headerRecipe.ts`.
+    header: {},
     page: {
         home: {
             /*
@@ -215,6 +222,20 @@ export const PLATFORM_DEFAULT_PRESENTATION: ResolvedPresentation = {
     }
 };
 
+/**
+ * The Web renderer's capabilities, told by exception: everything in the closed vocabulary except
+ * the two it defines and does not bind (see `WEB_RENDERER_CAPABILITIES`). Equivalent to that list
+ * — `contract.parity.test.ts` holds them equal — and kept as a two-name set so the start-up bundle
+ * does not carry the thirteen-name list just to default a parameter (THEME-B1 paid for its bytes so).
+ */
+const UNBOUND_BY_WEB: ReadonlySet<ThemeCapability> = new Set([
+    'assets.roles',
+    'source.web.css'
+]);
+
+export const isBoundByWebRenderer = (capability: ThemeCapability) =>
+    !UNBOUND_BY_WEB.has(capability);
+
 export interface CapabilityFallback {
     capability: ThemeCapability;
     /** Why the platform default was used instead of the theme's value. */
@@ -242,7 +263,8 @@ type GroupKey =
     | 'mediaCard'
     | 'navigation'
     | 'sectionTitle'
-    | 'grid';
+    | 'grid'
+    | 'header';
 type PageKey = 'home' | 'library' | 'itemDetails';
 const groupCapability = (key: GroupKey) =>
     `presentation.${key}` as const satisfies ThemeCapability;
@@ -445,6 +467,9 @@ function sanitizeGroup(
     key: GroupKey,
     override: object | undefined
 ): object | undefined {
+    // THEME-B1: the header passes through as declared (an object, or nothing).
+    if (key === 'header')
+        return override && typeof override === 'object' ? override : undefined;
     const table = GROUP_ENUMS[key];
     if (!table) return override;
     const clean = pickEnums<object>(override, table);
@@ -460,11 +485,12 @@ function sanitizeGroup(
  */
 export function resolvePresentation(
     manifest: Pick<ThemeManifest, 'presentation' | 'capabilities'>,
-    rendererCapabilities: readonly ThemeCapability[] = WEB_RENDERER_CAPABILITIES
+    rendererCapabilities?: readonly ThemeCapability[]
 ): PresentationResolution {
     const supportedSet = new Set(rendererCapabilities);
-    const supports = (capability: ThemeCapability) =>
-        supportedSet.has(capability);
+    const supports = rendererCapabilities
+        ? (capability: ThemeCapability) => supportedSet.has(capability)
+        : isBoundByWebRenderer;
 
     const missingRequired = (manifest.capabilities?.required ?? []).filter(
         (capability) => !supports(capability)
@@ -503,6 +529,7 @@ export function resolvePresentation(
         navigation: group('navigation'),
         sectionTitle: group('sectionTitle'),
         grid: group('grid'),
+        header: group('header'),
         page: {
             home: merge(
                 defaults.page.home,
