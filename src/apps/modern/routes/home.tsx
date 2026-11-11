@@ -15,6 +15,8 @@ import {
     parseHomeTabIndex
 } from '../features/home/utils/tabParam';
 
+import '../features/home/components/HomeTabs.scss';
+
 const tabId = (index: number) => `home-tab-${index}`;
 const tabPanelId = (index: number) => `home-tabpanel-${index}`;
 
@@ -77,6 +79,7 @@ const Home = () => {
         >
             <div ref={returnRoot}>
                 <Tabs
+                    className='rf-home-tabs'
                     items={tabItems}
                     value={activeTab}
                     onChange={onTabChange}

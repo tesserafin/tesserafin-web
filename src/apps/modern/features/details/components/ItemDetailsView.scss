@@ -263,7 +263,7 @@
  * lower-specificity selector must not follow a higher-specificity one (`no-descending-specificity`).
  */
 .rf-item-details[data-rf-hero='minimal'] .rf-item-details__section-title {
-    font-size: var(--rf-typography-font-size-md, 1rem);
+    font-size: var(--rf-section-title-size, var(--rf-typography-font-size-md, 1rem));
 }
 
 /* The name block. */
@@ -701,9 +701,10 @@
     margin-top: var(--rf-spacing-xl, 32px);
 }
 
+/* A `sectionTitle` recipe that names a size or weight wins over the hero's: see `SectionTitle.scss`. */
 .rf-item-details[data-rf-hero='immersive'] .rf-item-details__section-title {
-    font-size: var(--rf-typography-font-size-xl, 1.5rem);
-    font-weight: var(--rf-typography-font-weight-bold, 700);
+    font-size: var(--rf-section-title-size, var(--rf-typography-font-size-xl, 1.5rem));
+    font-weight: var(--rf-section-title-weight, var(--rf-typography-font-weight-bold, 700));
 }
 
 /*

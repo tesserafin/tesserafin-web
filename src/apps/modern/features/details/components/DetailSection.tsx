@@ -1,5 +1,7 @@
 import React, { type FC, type ReactNode } from 'react';
 
+import { SectionTitle } from 'ui';
+
 import type {
     DetailSectionColumn,
     DetailSectionName
@@ -56,12 +58,12 @@ const DetailSection: FC<DetailSectionProps> = ({
         aria-label={heading && headingHidden ? heading : undefined}
     >
         {heading && !headingHidden ? (
-            <h2
+            <SectionTitle
                 className='rf-item-details__section-title'
                 data-detail-heading={name}
             >
                 {heading}
-            </h2>
+            </SectionTitle>
         ) : null}
         {children}
     </section>

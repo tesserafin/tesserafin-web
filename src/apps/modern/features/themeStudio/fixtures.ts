@@ -131,6 +131,20 @@ export const PREVIEW_DETAIL = {
         { label: 'Video', value: '4K HDR' },
         { label: 'Audio', value: 'E-AC-3 5.1' },
         { label: 'Subtitles', value: '3 tracks' }
+    ],
+    /*
+     * Names long enough to exercise the theme's `titleLines`, short enough to fit one line at the
+     * default: a recipe change has to be visible here, not only on a real catalogue.
+     */
+    cast: [
+        { id: 'cast-1', name: 'Ines Okonkwo-Lindqvist', role: 'Keeper' },
+        { id: 'cast-2', name: 'Tomas Ré', role: 'Cartographer' },
+        {
+            id: 'cast-3',
+            name: 'Margarethe Vandenbroucke',
+            role: 'Harbourmaster'
+        },
+        { id: 'cast-4', name: 'Ade Bello', role: 'Ferryman' }
     ]
 } as const;
 

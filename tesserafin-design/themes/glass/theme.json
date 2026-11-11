@@ -25,7 +25,12 @@
         "navigation": {
             "shell": "topbar",
             "labels": "always",
-            "position": "start"
+            "position": "start",
+            "tabs": "pills"
+        },
+        "sectionTitle": {
+            "size": "large",
+            "weight": "bold"
         },
         "page": {
             "home": {
@@ -73,6 +78,7 @@
             "presentation.surface",
             "presentation.mediaCard",
             "presentation.navigation",
+            "presentation.sectionTitle",
             "presentation.page.home",
             "presentation.page.library",
             "presentation.page.itemDetails"
@@ -86,6 +92,7 @@
                 "presentation.surface",
                 "presentation.mediaCard",
                 "presentation.navigation",
+                "presentation.sectionTitle",
                 "presentation.page.home",
                 "presentation.page.library",
                 "presentation.page.itemDetails"

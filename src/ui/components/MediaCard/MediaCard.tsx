@@ -45,8 +45,12 @@ export interface MediaCardProps {
     /** Renders the card as an `<a>` when set; takes precedence over `onClick`. */
     href?: string;
     onClick?: (event: MouseEvent<HTMLElement>) => void;
-    /** Lines the title may take before it is cut; 2 where the title is what tells results apart. */
-    titleLines?: 1 | 2;
+    /**
+     * Lines the title may take before it is cut; 2 where the title is what tells results apart.
+     * Omitted, the theme's `presentation.mediaCard.titleLines` applies (THEME-A1): a call site that
+     * states a value is making a statement about its own content, and keeps it.
+     */
+    titleLines?: 1 | 2 | 3;
     /** Unwatched children (a series' episodes); drawn instead of the watched mark when above 0. */
     unplayedCount?: number;
     /** Accessible name of the unwatched count; callers translate. */
@@ -77,7 +81,7 @@ export const MediaCard: FC<MediaCardProps> = ({
     playedLabel = 'Watched',
     href,
     onClick,
-    titleLines = 1,
+    titleLines,
     unplayedCount,
     unplayedLabel,
     selection,
@@ -93,10 +97,11 @@ export const MediaCard: FC<MediaCardProps> = ({
     // `presentation.mediaCard.imageAspect` is the DEFAULT a consuming route may read; it is not
     // applied here behind the caller's back.
     const presentation = usePresentation();
+    const titleLineCount = titleLines ?? presentation.mediaCard.titleLines;
     const classes = [
         'rf-media-card',
         `rf-media-card--${imageAspect}`,
-        titleLines === 2 && 'rf-media-card--title-2',
+        titleLineCount > 1 && `rf-media-card--title-${titleLineCount}`,
         className
     ]
         .filter(Boolean)

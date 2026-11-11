@@ -469,8 +469,12 @@ button.rf-media-card[data-rf-hover='zoom']:hover .rf-media-card__image {
     background: var(--rf-color-primary, #00a4dc);
 }
 
-/* Two-line title (search): an episode's number and enough of its name to tell it apart. */
-.rf-media-card--title-2 .rf-media-card__title {
+/*
+ * Two- or three-line title: a caller's choice (search: an episode's number and enough of its name
+ * to tell it apart) or the theme's `mediaCard.titleLines` default (THEME-A1).
+ */
+.rf-media-card--title-2 .rf-media-card__title,
+.rf-media-card--title-3 .rf-media-card__title {
     display: -webkit-box;
     white-space: normal;
     overflow-wrap: anywhere;
@@ -487,4 +491,10 @@ button.rf-media-card[data-rf-hover='zoom']:hover .rf-media-card__image {
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     text-shadow: 0 1px 2px color-mix(in srgb, var(--rf-color-background, #101010) 60%, transparent);
+}
+
+// Three lines wherever they were asked for — over the artwork too, where two is only the minimum.
+// After the overlay rule, at the same specificity, so it wins.
+.rf-media-card.rf-media-card--title-3 .rf-media-card__title {
+    -webkit-line-clamp: 3;
 }

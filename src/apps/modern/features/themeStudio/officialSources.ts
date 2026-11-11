@@ -11,8 +11,14 @@
  * Classic" means the real Classic and cannot drift from it.
  */
 
-import classicManifest from '../../../../../tesserafin-design/themes/classic/theme.json';
-import glassManifest from '../../../../../tesserafin-design/themes/glass/theme.json';
+/*
+ * `?document`: the whole manifest, as a module of its own. The start-up bundle imports the same
+ * files for three keys only, and webpack drops every other key from ITS copy only because no
+ * module in the same build reads them there (`themes/platform/manifests.ts`). The Studio needs the
+ * rest — name, author, licence, lineage — and gets it from this copy, in its own lazy chunk.
+ */
+import classicManifest from '../../../../../tesserafin-design/themes/classic/theme.json?document';
+import glassManifest from '../../../../../tesserafin-design/themes/glass/theme.json?document';
 import type { ThemeManifest } from 'themes/platform';
 import classicTokens from 'ui/tokens/official.classic';
 import glassTokens from 'ui/tokens/official.glass';

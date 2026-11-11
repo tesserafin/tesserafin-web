@@ -1,5 +1,9 @@
 import React, { type CSSProperties, type FC, type ReactNode } from 'react';
 
+import type { GridContext } from 'themes/platform/contract';
+
+import { usePresentation } from '../../presentation/PresentationContext';
+
 import './MediaGrid.scss';
 
 export interface MediaGridProps {
@@ -13,6 +17,12 @@ export interface MediaGridProps {
      * `LoadingState`'s `grid` variant skeleton); pass a wider value for `backdrop`/`square` grids.
      */
     minItemWidth?: string;
+    /**
+     * What the grid lists, in the theme's vocabulary (THEME-A1). The theme's
+     * `presentation.grid.<context>` size then scales the minimum column width — `minItemWidth` or
+     * the density default alike — within bounds. Omitted, the grid is drawn at its own size.
+     */
+    context?: GridContext;
     className?: string;
     id?: string;
     /** Accessible name for the grid region when no visible heading already labels it. */
@@ -32,11 +42,13 @@ export const MediaGrid: FC<MediaGridProps> = ({
     children,
     density = 'comfortable',
     minItemWidth,
+    context,
     className,
     id,
     'aria-label': ariaLabel,
     role = 'group'
 }) => {
+    const sizes = usePresentation().grid;
     const classes = ['rf-media-grid', `rf-media-grid--${density}`, className]
         .filter(Boolean)
         .join(' ');
@@ -56,6 +68,12 @@ export const MediaGrid: FC<MediaGridProps> = ({
             aria-label={ariaLabel}
             id={id}
             style={style}
+            // `medium` is the grid as it was: no attribute, no rule, byte-identical layout.
+            data-rf-grid-size={
+                context && sizes[context] !== 'medium'
+                    ? sizes[context]
+                    : undefined
+            }
         >
             {children}
         </div>

@@ -201,6 +201,7 @@ export const LibraryItemsGrid: FC<LibraryItemsGridProps> = ({
                 </MediaShelf>
             ) : (
                 <MediaGrid
+                    context='library'
                     density={density}
                     aria-label={label}
                     className={

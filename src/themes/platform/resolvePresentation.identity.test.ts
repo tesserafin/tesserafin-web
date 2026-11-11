@@ -26,7 +26,8 @@ describe('navigation, now that the shell reads it (THEME-IDENTITY-1)', () => {
         ).toEqual({
             shell: PLATFORM_DEFAULT_PRESENTATION.navigation.shell,
             labels: 'never',
-            position: PLATFORM_DEFAULT_PRESENTATION.navigation.position
+            position: PLATFORM_DEFAULT_PRESENTATION.navigation.position,
+            tabs: PLATFORM_DEFAULT_PRESENTATION.navigation.tabs
         });
     });
 

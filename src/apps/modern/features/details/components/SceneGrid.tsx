@@ -18,7 +18,7 @@ interface SceneGridProps {
  * carry chapters.
  */
 const SceneGrid: FC<SceneGridProps> = ({ item, chapters }) => (
-    <MediaGrid minItemWidth='260px'>
+    <MediaGrid context='chapters' minItemWidth='260px'>
         {chapters.map((chapter, index) => (
             <MediaCard
                 key={`${chapter.Name}-${index}`}

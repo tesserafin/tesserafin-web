@@ -9,6 +9,32 @@
     grid-template-columns: repeat(auto-fill, minmax(var(--rf-media-grid-min-item-width, 160px), 1fr));
 }
 
+/*
+ * A theme's item size for the grid's context (THEME-A1): a factor on whichever minimum applies — the
+ * density default, or a surface's own `--rf-media-grid-min-item-width` — so the user's compact
+ * toggle still narrows the cards under every size. `min(…, 100%)` keeps one card inside the
+ * container whatever the factor, and `large` waits for a 40em viewport (in `em`, so it follows
+ * zoom): on a phone it would leave a single poster per row. `medium` matches no rule: it is the
+ * grid as drawn before the key existed.
+ */
+.rf-media-grid[data-rf-grid-size='small'] {
+    --rf-media-grid-scale: 0.85;
+}
+
+@media (min-width: 40em) {
+    .rf-media-grid[data-rf-grid-size='large'] {
+        --rf-media-grid-scale: 1.25;
+    }
+}
+
+.rf-media-grid[data-rf-grid-size] {
+    grid-template-columns:
+        repeat(
+            auto-fill,
+            minmax(min(calc(var(--rf-media-grid-min-item-width, 160px) * var(--rf-media-grid-scale, 1)), 100%), 1fr)
+        );
+}
+
 .rf-media-grid--comfortable {
     gap: var(--rf-spacing-md, 16px);
 }
@@ -23,4 +49,12 @@
 .rf-media-grid--compact {
     gap: var(--rf-spacing-sm, 8px);
     grid-template-columns: repeat(auto-fill, minmax(var(--rf-media-grid-min-item-width, 120px), 1fr));
+}
+
+.rf-media-grid--compact[data-rf-grid-size] {
+    grid-template-columns:
+        repeat(
+            auto-fill,
+            minmax(min(calc(var(--rf-media-grid-min-item-width, 120px) * var(--rf-media-grid-scale, 1)), 100%), 1fr)
+        );
 }

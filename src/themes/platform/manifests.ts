@@ -18,9 +18,16 @@
  *
  * ## Bundle cost
  *
- * Both manifests are imported statically, ~3 KB of JSON before minification. They are read on the
- * app's main theme path, so a dynamic import would only move the cost to a chunk that is always
- * fetched anyway, while making the presentation arrive one tick after first paint.
+ * Both manifests are imported statically: they are read on the app's main theme path, so a dynamic
+ * import would only move the cost to a chunk that is always fetched anyway, while making the
+ * presentation arrive one tick after first paint.
+ *
+ * Only the three keys the renderer reads (and `id`, its lookup key) are taken from them, by static property access, and that
+ * is what lets webpack drop the rest of each document — description, author, licence,
+ * compatibility, modes, renderer declarations, lineage, ~1.3 KB — from the start-up bundle
+ * (THEME-A1 paid for its own vocabulary that way). It works only while nothing else in the build
+ * reads those keys from THIS module: the Theme Studio, which does, imports the files with a
+ * `?document` query, which makes its copy a separate module in its own chunk.
  */
 
 import classicManifest from '../../../tesserafin-design/themes/classic/theme.json';
@@ -30,9 +37,28 @@ import { getThemeEntry } from '../registry';
 
 import type { ThemeManifest } from './contract';
 
-const MANIFESTS: Readonly<Record<string, ThemeManifest>> = {
-    [(classicManifest as ThemeManifest).id]: classicManifest as ThemeManifest,
-    [(glassManifest as ThemeManifest).id]: glassManifest as ThemeManifest
+/** What the renderer reads of a manifest. Nothing else of it reaches the start-up bundle. */
+export type RuntimeManifest = Pick<
+    ThemeManifest,
+    'id' | 'presentation' | 'capabilities'
+>;
+
+// Spelled out key by key, never spread: a spread reads every key and would keep them all.
+const MANIFESTS: Readonly<Record<string, RuntimeManifest>> = {
+    [classicManifest.id]: {
+        id: classicManifest.id,
+        presentation:
+            classicManifest.presentation as ThemeManifest['presentation'],
+        capabilities:
+            classicManifest.capabilities as ThemeManifest['capabilities']
+    },
+    [glassManifest.id]: {
+        id: glassManifest.id,
+        presentation:
+            glassManifest.presentation as ThemeManifest['presentation'],
+        capabilities:
+            glassManifest.capabilities as ThemeManifest['capabilities']
+    }
 };
 
 /**
@@ -42,7 +68,7 @@ const MANIFESTS: Readonly<Record<string, ThemeManifest>> = {
  */
 export function getManifestForThemeId(
     themeId: string
-): ThemeManifest | undefined {
+): RuntimeManifest | undefined {
     const entry = getThemeEntry(themeId);
     // Same resolution as `useAppTheme`'s `data-rf-theme`: a `.light` entry renders its parent
     // theme's tokens, and must therefore also render its parent theme's presentation.

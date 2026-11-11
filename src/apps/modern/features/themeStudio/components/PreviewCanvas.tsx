@@ -5,7 +5,9 @@ import { MediaCard } from 'ui/components/MediaCard/MediaCard';
 import { MediaGrid } from 'ui/components/MediaGrid/MediaGrid';
 import { MediaShelf } from 'ui/components/MediaShelf/MediaShelf';
 import { Surface } from 'ui/components/Surface/Surface';
+import { SectionTitle } from 'ui/components/SectionTitle/SectionTitle';
 import { Tabs } from 'ui/components/Tabs/Tabs';
+import { PresentationProvider } from 'ui/presentation/PresentationContext';
 import {
     getProfileAttribute,
     resolveTokensForProfiles
@@ -109,6 +111,18 @@ export const PreviewCanvas: FC<PreviewCanvasProps> = ({
 
     // Built once, above the layout branch — the same construction the live route uses, and the
     // reason grid and shelf preview the same set of cards at the same aspect.
+    /*
+     * The primitives below read the presentation from context, like everywhere else in the app.
+     * Without this provider they read the APPLIED theme's — the preview then showed a draft's tokens
+     * with the live theme's cards, tabs and headings, and a recipe edit could look inert here while
+     * working after Apply. `value` is the provider's documented escape hatch for a nested,
+     * local presentation: it never repaints the document behind it.
+     */
+    const context = useMemo(
+        () => ({ presentation, fallbacks: [], activatable: true }),
+        [presentation]
+    );
+
     const libraryCards = PREVIEW_LIBRARY_ITEMS.map((item) => (
         <MediaCard
             key={item.id}
@@ -122,203 +136,228 @@ export const PreviewCanvas: FC<PreviewCanvasProps> = ({
     ));
 
     return (
-        <div
-            className={`rf-studio-preview rf-studio-preview--${profile}`}
-            style={{ ...style, maxWidth: PROFILE_WIDTH[profile] }}
-            data-rf-theme={draft.basedOn.id}
-            data-rf-mode={mode}
-            data-rf-profile={getProfileAttribute(activeProfiles)}
-            data-rf-reduced-motion={reducedMotion ? 'true' : undefined}
-            data-testid='theme-studio-preview'
-        >
-            <nav
-                className={`rf-studio-preview__nav rf-studio-preview__nav--${presentation.navigation.shell}`}
-                aria-label='Preview navigation'
+        <PresentationProvider value={context}>
+            <div
+                className={`rf-studio-preview rf-studio-preview--${profile}`}
+                style={{ ...style, maxWidth: PROFILE_WIDTH[profile] }}
+                data-rf-theme={draft.basedOn.id}
+                data-rf-mode={mode}
+                data-rf-profile={getProfileAttribute(activeProfiles)}
+                data-rf-reduced-motion={reducedMotion ? 'true' : undefined}
+                data-testid='theme-studio-preview'
             >
-                {PREVIEW_NAV_ITEMS.map((navItem, index) => (
-                    <span
-                        key={navItem.id}
-                        className='rf-studio-preview__nav-item'
-                        data-active={index === 0 ? 'true' : undefined}
-                    >
-                        {presentation.navigation.labels === 'never'
-                            ? navItem.label.charAt(0)
-                            : navItem.label}
-                    </span>
-                ))}
-            </nav>
+                <nav
+                    className={`rf-studio-preview__nav rf-studio-preview__nav--${presentation.navigation.shell}`}
+                    aria-label='Preview navigation'
+                >
+                    {PREVIEW_NAV_ITEMS.map((navItem, index) => (
+                        <span
+                            key={navItem.id}
+                            className='rf-studio-preview__nav-item'
+                            data-active={index === 0 ? 'true' : undefined}
+                        >
+                            {presentation.navigation.labels === 'never'
+                                ? navItem.label.charAt(0)
+                                : navItem.label}
+                        </span>
+                    ))}
+                </nav>
 
-            <div className='rf-studio-preview__body'>
-                {surface === 'home' && (
-                    <div data-testid='theme-studio-preview-home'>
-                        {homeSections.map((section) => {
-                            if (section === 'hero') {
+                <div className='rf-studio-preview__body'>
+                    {surface === 'home' && (
+                        <div data-testid='theme-studio-preview-home'>
+                            {homeSections.map((section) => {
+                                if (section === 'hero') {
+                                    return (
+                                        <div
+                                            key='hero'
+                                            className='rf-studio-preview__home-hero'
+                                            data-rf-preview-section='hero'
+                                        >
+                                            <span className='rf-studio-preview__title'>
+                                                {PREVIEW_HERO_ITEM.title}
+                                            </span>
+                                            <span className='rf-studio-preview__tagline'>
+                                                {PREVIEW_HERO_ITEM.subtitle}
+                                            </span>
+                                        </div>
+                                    );
+                                }
+
+                                const shelf = PREVIEW_HOME_SHELVES[section];
                                 return (
                                     <div
-                                        key='hero'
-                                        className='rf-studio-preview__home-hero'
-                                        data-rf-preview-section='hero'
+                                        key={section}
+                                        data-rf-preview-section={section}
                                     >
-                                        <span className='rf-studio-preview__title'>
-                                            {PREVIEW_HERO_ITEM.title}
-                                        </span>
-                                        <span className='rf-studio-preview__tagline'>
-                                            {PREVIEW_HERO_ITEM.subtitle}
-                                        </span>
+                                        <MediaShelf
+                                            title={shelf.title}
+                                            density={density}
+                                        >
+                                            {shelf.items.map((item) => (
+                                                <MediaCard
+                                                    key={item.id}
+                                                    title={item.title}
+                                                    subtitle={item.subtitle}
+                                                    imageAspect={
+                                                        presentation.mediaCard
+                                                            .imageAspect
+                                                    }
+                                                    progressPercent={
+                                                        presentation.mediaCard
+                                                            .progressStyle ===
+                                                        'bar'
+                                                            ? item.progressPercent
+                                                            : undefined
+                                                    }
+                                                    placeholderIcon={
+                                                        <span aria-hidden='true'>
+                                                            {item.title.charAt(
+                                                                0
+                                                            )}
+                                                        </span>
+                                                    }
+                                                />
+                                            ))}
+                                        </MediaShelf>
                                     </div>
                                 );
+                            })}
+                        </div>
+                    )}
+
+                    {surface === 'library' && (
+                        <div
+                            data-testid='theme-studio-preview-library'
+                            data-rf-library-layout={
+                                presentation.page.library.layout
                             }
-
-                            const shelf = PREVIEW_HOME_SHELVES[section];
-                            return (
-                                <div
-                                    key={section}
-                                    data-rf-preview-section={section}
-                                >
-                                    <MediaShelf
-                                        title={shelf.title}
-                                        density={density}
-                                    >
-                                        {shelf.items.map((item) => (
-                                            <MediaCard
-                                                key={item.id}
-                                                title={item.title}
-                                                subtitle={item.subtitle}
-                                                imageAspect={
-                                                    presentation.mediaCard
-                                                        .imageAspect
-                                                }
-                                                progressPercent={
-                                                    presentation.mediaCard
-                                                        .progressStyle === 'bar'
-                                                        ? item.progressPercent
-                                                        : undefined
-                                                }
-                                                placeholderIcon={
-                                                    <span aria-hidden='true'>
-                                                        {item.title.charAt(0)}
-                                                    </span>
-                                                }
-                                            />
-                                        ))}
-                                    </MediaShelf>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-
-                {surface === 'library' && (
-                    <div
-                        data-testid='theme-studio-preview-library'
-                        data-rf-library-layout={
-                            presentation.page.library.layout
-                        }
-                        data-rf-library-card-aspect={
-                            presentation.page.library.cardAspect
-                        }
-                        data-rf-library-filters={
-                            presentation.page.library.filters
-                        }
-                    >
-                        <Tabs
-                            items={[
-                                { id: 'browse', label: 'Browse' },
-                                { id: 'collections', label: 'Collections' },
-                                { id: 'genres', label: 'Genres' }
-                            ]}
-                            value={0}
-                            onChange={noop}
-                            variant={
-                                presentation.surface.variant === 'glass'
-                                    ? 'pills'
-                                    : 'underline'
+                            data-rf-library-card-aspect={
+                                presentation.page.library.cardAspect
                             }
-                            aria-label='Preview library sections'
-                        />
+                            data-rf-library-filters={
+                                presentation.page.library.filters
+                            }
+                        >
+                            <Tabs
+                                items={[
+                                    { id: 'browse', label: 'Browse' },
+                                    { id: 'collections', label: 'Collections' },
+                                    { id: 'genres', label: 'Genres' }
+                                ]}
+                                value={0}
+                                onChange={noop}
+                                aria-label='Preview library sections'
+                            />
 
-                        {/*
-                         * The filter placement, as a still life: the live route's controls behind a
-                         * single trigger, or laid out in the bar. Deliberately NOT a mounted
-                         * `FilterDrawer` — the preview is a picture, and an openable dialog inside
-                         * it would be a second, interactive copy of a control whose real behaviour
-                         * (focus, Escape, query invariance) is asserted on the route itself.
-                         */}
-                        <div className='rf-studio-preview__library-filters'>
-                            {presentation.page.library.filters === 'drawer' ? (
-                                <span className='rf-studio-preview__filter-chip'>
-                                    Filters
-                                </span>
-                            ) : (
-                                PREVIEW_LIBRARY_FILTERS.map((filter) => (
-                                    <span
-                                        key={filter}
-                                        className='rf-studio-preview__filter-chip'
-                                    >
-                                        {filter}
+                            {/*
+                             * The filter placement, as a still life: the live route's controls behind a
+                             * single trigger, or laid out in the bar. Deliberately NOT a mounted
+                             * `FilterDrawer` — the preview is a picture, and an openable dialog inside
+                             * it would be a second, interactive copy of a control whose real behaviour
+                             * (focus, Escape, query invariance) is asserted on the route itself.
+                             */}
+                            <div className='rf-studio-preview__library-filters'>
+                                {presentation.page.library.filters ===
+                                'drawer' ? (
+                                    <span className='rf-studio-preview__filter-chip'>
+                                        Filters
                                     </span>
-                                ))
+                                ) : (
+                                    PREVIEW_LIBRARY_FILTERS.map((filter) => (
+                                        <span
+                                            key={filter}
+                                            className='rf-studio-preview__filter-chip'
+                                        >
+                                            {filter}
+                                        </span>
+                                    ))
+                                )}
+                            </div>
+
+                            {presentation.page.library.layout === 'shelf' ? (
+                                <MediaShelf
+                                    title='Preview library items'
+                                    density={density}
+                                >
+                                    {libraryCards}
+                                </MediaShelf>
+                            ) : (
+                                <MediaGrid
+                                    context='library'
+                                    density={gridDensity}
+                                    aria-label='Preview library items'
+                                >
+                                    {libraryCards}
+                                </MediaGrid>
                             )}
                         </div>
+                    )}
 
-                        {presentation.page.library.layout === 'shelf' ? (
-                            <MediaShelf
-                                title='Preview library items'
-                                density={density}
+                    {surface === 'itemDetails' && (
+                        <div className='rf-studio-preview__detail'>
+                            <Surface
+                                variant={presentation.surface.variant}
+                                className='rf-studio-preview__hero'
                             >
-                                {libraryCards}
-                            </MediaShelf>
-                        ) : (
-                            <MediaGrid
-                                density={gridDensity}
-                                aria-label='Preview library items'
+                                <h2 className='rf-studio-preview__title'>
+                                    {PREVIEW_DETAIL.title}
+                                </h2>
+                                <p className='rf-studio-preview__tagline'>
+                                    {PREVIEW_DETAIL.tagline}
+                                </p>
+                                <p className='rf-studio-preview__overview'>
+                                    {PREVIEW_DETAIL.overview}
+                                </p>
+                            </Surface>
+                            <Surface
+                                variant={presentation.surface.variant}
+                                className='rf-studio-preview__facts'
                             >
-                                {libraryCards}
-                            </MediaGrid>
-                        )}
-                    </div>
-                )}
-
-                {surface === 'itemDetails' && (
-                    <div className='rf-studio-preview__detail'>
-                        <Surface
-                            variant={presentation.surface.variant}
-                            className='rf-studio-preview__hero'
-                        >
-                            <h2 className='rf-studio-preview__title'>
-                                {PREVIEW_DETAIL.title}
-                            </h2>
-                            <p className='rf-studio-preview__tagline'>
-                                {PREVIEW_DETAIL.tagline}
-                            </p>
-                            <p className='rf-studio-preview__overview'>
-                                {PREVIEW_DETAIL.overview}
-                            </p>
-                        </Surface>
-                        <Surface
-                            variant={presentation.surface.variant}
-                            className='rf-studio-preview__facts'
-                        >
-                            <dl
-                                data-rf-facts={
-                                    presentation.page.itemDetails.facts
-                                }
-                            >
-                                {PREVIEW_DETAIL.facts.map((fact) => (
-                                    <div
-                                        key={fact.label}
-                                        className='rf-studio-preview__fact'
-                                    >
-                                        <dt>{fact.label}</dt>
-                                        <dd>{fact.value}</dd>
-                                    </div>
-                                ))}
-                            </dl>
-                        </Surface>
-                    </div>
-                )}
+                                <dl
+                                    data-rf-facts={
+                                        presentation.page.itemDetails.facts
+                                    }
+                                >
+                                    {PREVIEW_DETAIL.facts.map((fact) => (
+                                        <div
+                                            key={fact.label}
+                                            className='rf-studio-preview__fact'
+                                        >
+                                            <dt>{fact.label}</dt>
+                                            <dd>{fact.value}</dd>
+                                        </div>
+                                    ))}
+                                </dl>
+                            </Surface>
+                            <section className='rf-studio-preview__detail-section'>
+                                <SectionTitle className='rf-studio-preview__section-title'>
+                                    Cast
+                                </SectionTitle>
+                                <MediaGrid
+                                    context='people'
+                                    aria-label='Preview cast'
+                                >
+                                    {PREVIEW_DETAIL.cast.map((person) => (
+                                        <MediaCard
+                                            key={person.id}
+                                            title={person.name}
+                                            subtitle={person.role}
+                                            imageAspect='poster'
+                                            placeholderIcon={
+                                                <span aria-hidden='true'>
+                                                    {person.name.charAt(0)}
+                                                </span>
+                                            }
+                                        />
+                                    ))}
+                                </MediaGrid>
+                            </section>
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
+        </PresentationProvider>
     );
 };
 

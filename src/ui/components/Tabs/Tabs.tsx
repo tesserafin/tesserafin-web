@@ -5,6 +5,8 @@ import React, {
     useState
 } from 'react';
 
+import { usePresentation } from '../../presentation/PresentationContext';
+
 import './Tabs.scss';
 
 /** One tab entry rendered by {@link Tabs}. */
@@ -25,7 +27,8 @@ export interface TabsProps {
     /**
      * `underline` mirrors the familiar Jellyfin/Classic tab strip; `pills` is the rounded,
      * floating-chip treatment prepared for the Glass theme (RFC-0005 §8.2) - both read the same
-     * `--rf-*` tokens, only the shape/emphasis differs.
+     * `--rf-*` tokens, only the shape/emphasis differs. Omitted, the theme's
+     * `presentation.navigation.tabs` applies (THEME-A1).
      */
     variant?: 'underline' | 'pills';
     className?: string;
@@ -61,10 +64,13 @@ export const Tabs: FC<TabsProps> = ({
     items,
     value,
     onChange,
-    variant = 'underline',
+    variant: variantProp,
     className,
     'aria-label': ariaLabel
 }) => {
+    // Read unconditionally (rules of hooks); a stated variant still wins.
+    const themeVariant = usePresentation().navigation.tabs;
+    const variant = variantProp ?? themeVariant;
     const [focusedIndex, setFocusedIndex] = useState(value);
     const tabRefs = React.useRef<Array<HTMLButtonElement | null>>([]);
 

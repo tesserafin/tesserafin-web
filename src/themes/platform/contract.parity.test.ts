@@ -11,7 +11,16 @@ import { describe, expect, it } from 'vitest';
 
 import themeSchema from '../../../tesserafin-design/schema/theme.schema.json';
 import {
+    GRID_CONTEXTS,
+    GRID_ITEM_SIZES,
+    MEDIA_CARD_TITLE_LINES,
+    NAVIGATION_TABS,
     PAGE_BACKDROPS,
+    SECTION_TITLE_ALIGNS,
+    SECTION_TITLE_CASES,
+    SECTION_TITLE_SIZES,
+    SECTION_TITLE_SPACINGS,
+    SECTION_TITLE_WEIGHTS,
     HOME_SECTIONS,
     HOME_SHELF_DENSITIES,
     ITEM_DETAILS_HEROES,
@@ -196,6 +205,41 @@ describe('contract.ts <-> theme.schema.json', () => {
         // Present, so the package format already has the slot; narrowed to "none", so the contract
         // does not promise a compiler that has not been built.
         expect(source.properties.kind.enum).toEqual(['none']);
+    });
+
+    it('publishes the THEME-A1 vocabulary as runtime lists identical to the schema', () => {
+        // Same reason as the recipes: these lists are what `resolvePresentation` filters a
+        // hand-edited record with, so a schema value missing here would be stripped silently.
+        const enumOf = (def: string, key: string) =>
+            (defs[def].properties as Record<string, { enum: unknown[] }>)[key]
+                .enum;
+        expect([...MEDIA_CARD_TITLE_LINES]).toEqual(
+            enumOf('mediaCardVariant', 'titleLines')
+        );
+        expect([...NAVIGATION_TABS]).toEqual(
+            enumOf('navigationVariant', 'tabs')
+        );
+        expect([...SECTION_TITLE_SIZES]).toEqual(
+            enumOf('sectionTitleVariant', 'size')
+        );
+        expect([...SECTION_TITLE_WEIGHTS]).toEqual(
+            enumOf('sectionTitleVariant', 'weight')
+        );
+        expect([...SECTION_TITLE_ALIGNS]).toEqual(
+            enumOf('sectionTitleVariant', 'align')
+        );
+        expect([...SECTION_TITLE_CASES]).toEqual(
+            enumOf('sectionTitleVariant', 'case')
+        );
+        expect([...SECTION_TITLE_SPACINGS]).toEqual(
+            enumOf('sectionTitleVariant', 'spacing')
+        );
+        expect([...GRID_ITEM_SIZES]).toEqual(
+            (defs.gridItemSize as { enum: string[] }).enum
+        );
+        expect([...GRID_CONTEXTS]).toEqual(
+            Object.keys(defs.gridVariant.properties as object)
+        );
     });
 
     it('keeps every renderer optional, so the universal layer is never Web-only', () => {

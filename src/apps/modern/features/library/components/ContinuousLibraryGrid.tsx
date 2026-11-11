@@ -934,6 +934,7 @@ export const ContinuousLibraryGrid: FC<ContinuousLibraryGridProps> = ({
             </MediaShelf>
         ) : (
             <MediaGrid
+                context='library'
                 density={density}
                 aria-label={label}
                 role='list'

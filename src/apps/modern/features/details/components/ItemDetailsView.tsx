@@ -12,7 +12,7 @@ import globalize from 'lib/globalize';
 import datetime from 'scripts/datetime';
 import { detailsBanner } from 'scripts/settings/userSettings';
 import type { ItemDetailsSection } from 'themes/platform/contract';
-import { EmptyState, ErrorState, LoadingState } from 'ui';
+import { EmptyState, ErrorState, LoadingState, SectionTitle } from 'ui';
 import { usePresentation } from 'ui/presentation/PresentationContext';
 
 import type { DetailItem, DetailUser } from '../adapters/itemDetailsApi';
@@ -841,9 +841,9 @@ const CollectionGroups: FC<{ items: DetailItem[] }> = ({ items }) => {
         <>
             {groups.map((group) => (
                 <div key={group.key}>
-                    <h2 data-detail-heading='collectionItems'>
+                    <SectionTitle data-detail-heading='collectionItems'>
                         {globalize.translate(group.key)}
-                    </h2>
+                    </SectionTitle>
                     <ItemCollectionGrid
                         items={group.items}
                         aspect={group.key === 'Albums' ? 'square' : 'poster'}
@@ -883,9 +883,9 @@ const ProgramGuide: FC<{ items: DetailItem[] }> = ({ items }) => {
         <>
             {groups.map((group) => (
                 <div key={group.label}>
-                    <h2 data-detail-heading='programGuideSection'>
+                    <SectionTitle data-detail-heading='programGuideSection'>
                         {group.label}
-                    </h2>
+                    </SectionTitle>
                     <ul>
                         {group.items.map((entry) => (
                             <li key={entry.Id} data-id={entry.Id}>

@@ -41,6 +41,8 @@ export const THEME_CAPABILITIES = [
     'presentation.surface',
     'presentation.mediaCard',
     'presentation.navigation',
+    'presentation.sectionTitle',
+    'presentation.grid',
     'presentation.page.home',
     'presentation.page.library',
     'presentation.page.itemDetails',
@@ -84,6 +86,8 @@ export const WEB_RENDERER_CAPABILITIES: readonly ThemeCapability[] = [
     'presentation.surface',
     'presentation.mediaCard',
     'presentation.navigation',
+    'presentation.sectionTitle',
+    'presentation.grid',
     'presentation.page.home',
     'presentation.page.library',
     'presentation.page.itemDetails'
@@ -118,12 +122,90 @@ export interface SurfacePresentation {
     elevation?: 'level0' | 'level1' | 'level2' | 'level3';
 }
 
+/**
+ * How many lines a card's title may take before it is cut (THEME-A1). The THEME'S DEFAULT: a call
+ * site that states its own (`titleLines={2}` in search, where the title is what tells results apart)
+ * keeps it. An overlay title never takes fewer than two — there is no caption below to finish it.
+ */
+export const MEDIA_CARD_TITLE_LINES = [1, 2, 3] as const;
+
+export type MediaCardTitleLines = (typeof MEDIA_CARD_TITLE_LINES)[number];
+
 export interface MediaCardPresentation {
     imageAspect?: 'poster' | 'backdrop' | 'square';
     titlePlacement?: 'below' | 'overlay';
     hoverEffect?: 'none' | 'lift' | 'zoom';
     progressStyle?: 'bar' | 'none';
+    titleLines?: MediaCardTitleLines;
 }
+
+/**
+ * The section-title vocabulary (THEME-A1): one recipe for every section heading of Home, Library
+ * and Item Details, whatever state the section is in. It changes how a heading LOOKS — never its
+ * level, its text or whether it exists: an `h2` stays an `h2` under every value.
+ *
+ *   - `size` / `weight`: `auto` keeps what the page does today, including the Item Details hero's
+ *     own heading scale (smaller under `minimal`, larger and bolder under `immersive`). Any other
+ *     value is a deliberate choice and wins over the hero, which is what lets an immersive page
+ *     carry small section titles.
+ *   - `align`: `start` or `center`, in logical terms (right-to-left languages mirror `start`).
+ *   - `case`: `uppercase` adds the letter spacing capitals need; the text in the DOM is unchanged,
+ *     so screen readers and search read the real words.
+ *   - `spacing`: `loose` puts room above and below the heading; `normal` is today's.
+ *
+ * Every size is a step of the token type scale, in `rem`, so it follows the user's zoom.
+ */
+export const SECTION_TITLE_SIZES = [
+    'auto',
+    'small',
+    'medium',
+    'large'
+] as const;
+export const SECTION_TITLE_WEIGHTS = [
+    'auto',
+    'regular',
+    'medium',
+    'bold'
+] as const;
+export const SECTION_TITLE_ALIGNS = ['start', 'center'] as const;
+export const SECTION_TITLE_CASES = ['none', 'uppercase'] as const;
+export const SECTION_TITLE_SPACINGS = ['normal', 'loose'] as const;
+
+export interface SectionTitlePresentation {
+    size?: (typeof SECTION_TITLE_SIZES)[number];
+    weight?: (typeof SECTION_TITLE_WEIGHTS)[number];
+    align?: (typeof SECTION_TITLE_ALIGNS)[number];
+    case?: (typeof SECTION_TITLE_CASES)[number];
+    spacing?: (typeof SECTION_TITLE_SPACINGS)[number];
+}
+
+/**
+ * Media grids by SEMANTIC CONTEXT (THEME-A1), never by component or route:
+ *
+ *   - `library`: a library's items, its genres, a content pack's items;
+ *   - `people`: cast and crew;
+ *   - `episodes`: a container's children (the Item Details `episodes` family);
+ *   - `chapters`: an item's chapters.
+ *
+ * Each takes a bounded item size. It scales the grid's minimum column width; it never sets a pixel
+ * value, never changes what is listed, and never overrides the user's own density toggle — `small`
+ * cards under the user's `compact` are smaller still. `large` applies only where there is room for
+ * it (from a 40em-wide viewport, in `em` so it follows zoom); a phone keeps `medium`.
+ */
+export const GRID_CONTEXTS = [
+    'library',
+    'people',
+    'episodes',
+    'chapters'
+] as const;
+
+export type GridContext = (typeof GRID_CONTEXTS)[number];
+
+export const GRID_ITEM_SIZES = ['small', 'medium', 'large'] as const;
+
+export type GridItemSize = (typeof GRID_ITEM_SIZES)[number];
+
+export type GridPresentation = Partial<Record<GridContext, GridItemSize>>;
 
 /**
  * The navigation vocabulary, as runtime lists for the reason {@link HOME_SECTIONS} is one: the
@@ -150,6 +232,14 @@ export const NAVIGATION_POSITIONS = ['start', 'end'] as const;
 export type NavigationPosition = (typeof NAVIGATION_POSITIONS)[number];
 
 /**
+ * How in-page tabs are drawn (THEME-A1) — Home's and a library's destinations. The theme's default:
+ * a call site that states its own variant keeps it. Same tabs, same order, same keyboard contract.
+ */
+export const NAVIGATION_TABS = ['underline', 'pills'] as const;
+
+export type NavigationTabs = (typeof NAVIGATION_TABS)[number];
+
+/**
  * How navigation LOOKS. Never what it CONTAINS: which destinations exist is authorization and
  * library state, and a theme has no say in it (RFC-0007 §6.1).
  */
@@ -157,6 +247,7 @@ export interface NavigationPresentation {
     shell?: NavigationShell;
     labels?: NavigationLabels;
     position?: NavigationPosition;
+    tabs?: NavigationTabs;
 }
 
 /**
@@ -395,6 +486,8 @@ export interface ThemePresentation {
     surface?: SurfacePresentation;
     mediaCard?: MediaCardPresentation;
     navigation?: NavigationPresentation;
+    sectionTitle?: SectionTitlePresentation;
+    grid?: GridPresentation;
     page?: PageRecipes;
 }
 

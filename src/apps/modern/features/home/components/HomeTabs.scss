@@ -1,0 +1,9 @@
+/*
+ * Home's tab strip runs edge to edge: under `underline` its rule is meant to span the page and the
+ * first label already sits a tab-padding in. A pill has a visible edge, and at the page's very first
+ * pixel it read as clipped (THEME-A1). Under `pills` the strip takes the page gutter instead, so the
+ * first pill lines up with the section titles below it.
+ */
+.rf-home-tabs.rf-tabs--pills {
+    padding: var(--rf-spacing-xs, 4px) var(--rf-spacing-md, 16px) 0;
+}
