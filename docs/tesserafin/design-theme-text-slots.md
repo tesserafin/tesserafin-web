@@ -186,7 +186,7 @@ Three consequences are part of the contract, and each one is tested:
 
 Invalid values at run time (a hand-edited local record, a value from an older build) are skipped
 **per slot and per language**. Resolution moves to the next step, nothing throws, and start-up is
-never blocked. Examples: not a string, empty after trimming, over `maxLength`, missing a required
+never blocked. Examples: not a string, empty after trimming, over the technical ceiling, missing a required
 variable, unknown variable. This is the same rule A1 applies to presentation values. The author gets
 the real error from validation, on import or in the Studio.
 
