@@ -1,0 +1,359 @@
+{
+  "glass-movie-desktop": {
+    "titles": [
+      {
+        "tag": "H2",
+        "text": "Cast & Crew",
+        "size": "large",
+        "fontSize": "22.32px",
+        "fontWeight": "700",
+        "textAlign": "start",
+        "textTransform": "none"
+      }
+    ],
+    "grids": [
+      {
+        "label": null,
+        "size": "medium",
+        "columns": 11
+      }
+    ],
+    "overflow": false
+  },
+  "glass-series-desktop": {
+    "titles": [
+      {
+        "tag": "H2",
+        "text": "Seasons",
+        "size": "large",
+        "fontSize": "22.32px",
+        "fontWeight": "700",
+        "textAlign": "start",
+        "textTransform": "none"
+      }
+    ],
+    "grids": [
+      {
+        "label": "Seasons",
+        "size": "medium",
+        "columns": 8
+      }
+    ],
+    "overflow": false
+  },
+  "glass-movie-mobile": {
+    "titles": [
+      {
+        "tag": "H2",
+        "text": "Cast & Crew",
+        "size": "large",
+        "fontSize": "22.32px",
+        "fontWeight": "700",
+        "textAlign": "start",
+        "textTransform": "none"
+      }
+    ],
+    "grids": [
+      {
+        "label": null,
+        "size": "medium",
+        "columns": 2
+      }
+    ],
+    "overflow": false
+  },
+  "glass-series-mobile": {
+    "titles": [
+      {
+        "tag": "H2",
+        "text": "Seasons",
+        "size": "large",
+        "fontSize": "22.32px",
+        "fontWeight": "700",
+        "textAlign": "start",
+        "textTransform": "none"
+      }
+    ],
+    "grids": [
+      {
+        "label": "Seasons",
+        "size": "medium",
+        "columns": 2
+      }
+    ],
+    "overflow": false
+  },
+  "glass-small-titles-movie-desktop": {
+    "titles": [
+      {
+        "tag": "H2",
+        "text": "Cast & Crew",
+        "size": "small",
+        "fontSize": "14.88px",
+        "fontWeight": "400",
+        "textAlign": "start",
+        "textTransform": "none"
+      }
+    ],
+    "grids": [
+      {
+        "label": null,
+        "size": "medium",
+        "columns": 11
+      }
+    ],
+    "overflow": false
+  },
+  "glass-small-titles-series-desktop": {
+    "titles": [
+      {
+        "tag": "H2",
+        "text": "Seasons",
+        "size": "small",
+        "fontSize": "14.88px",
+        "fontWeight": "400",
+        "textAlign": "start",
+        "textTransform": "none"
+      }
+    ],
+    "grids": [
+      {
+        "label": "Seasons",
+        "size": "medium",
+        "columns": 8
+      }
+    ],
+    "overflow": false
+  },
+  "glass-small-titles-movie-mobile": {
+    "titles": [
+      {
+        "tag": "H2",
+        "text": "Cast & Crew",
+        "size": "small",
+        "fontSize": "14.88px",
+        "fontWeight": "400",
+        "textAlign": "start",
+        "textTransform": "none"
+      }
+    ],
+    "grids": [
+      {
+        "label": null,
+        "size": "medium",
+        "columns": 2
+      }
+    ],
+    "overflow": false
+  },
+  "glass-small-titles-series-mobile": {
+    "titles": [
+      {
+        "tag": "H2",
+        "text": "Seasons",
+        "size": "small",
+        "fontSize": "14.88px",
+        "fontWeight": "400",
+        "textAlign": "start",
+        "textTransform": "none"
+      }
+    ],
+    "grids": [
+      {
+        "label": "Seasons",
+        "size": "medium",
+        "columns": 2
+      }
+    ],
+    "overflow": false
+  },
+  "classic-movie-desktop": {
+    "titles": [
+      {
+        "tag": "H2",
+        "text": "Cast & Crew",
+        "size": "auto",
+        "fontSize": "17.2608px",
+        "fontWeight": "500",
+        "textAlign": "start",
+        "textTransform": "none"
+      }
+    ],
+    "grids": [
+      {
+        "label": null,
+        "size": "medium",
+        "columns": 6
+      }
+    ],
+    "overflow": false
+  },
+  "classic-series-desktop": {
+    "titles": [
+      {
+        "tag": "H2",
+        "text": "Seasons",
+        "size": "auto",
+        "fontSize": "17.2608px",
+        "fontWeight": "500",
+        "textAlign": "start",
+        "textTransform": "none"
+      }
+    ],
+    "grids": [
+      {
+        "label": "Seasons",
+        "size": "medium",
+        "columns": 6
+      }
+    ],
+    "overflow": false
+  },
+  "classic-movie-mobile": {
+    "titles": [
+      {
+        "tag": "H2",
+        "text": "Cast & Crew",
+        "size": "auto",
+        "fontSize": "17.2608px",
+        "fontWeight": "500",
+        "textAlign": "start",
+        "textTransform": "none"
+      }
+    ],
+    "grids": [
+      {
+        "label": null,
+        "size": "medium",
+        "columns": 2
+      }
+    ],
+    "overflow": false
+  },
+  "classic-series-mobile": {
+    "titles": [
+      {
+        "tag": "H2",
+        "text": "Seasons",
+        "size": "auto",
+        "fontSize": "17.2608px",
+        "fontWeight": "500",
+        "textAlign": "start",
+        "textTransform": "none"
+      }
+    ],
+    "grids": [
+      {
+        "label": "Seasons",
+        "size": "medium",
+        "columns": 2
+      }
+    ],
+    "overflow": false
+  },
+  "classic-a1-movie-desktop": {
+    "titles": [
+      {
+        "tag": "H2",
+        "text": "Cast & Crew",
+        "size": "large",
+        "fontSize": "22.32px",
+        "fontWeight": "500",
+        "textAlign": "center",
+        "textTransform": "uppercase"
+      }
+    ],
+    "grids": [
+      {
+        "label": null,
+        "size": "large",
+        "columns": 5
+      }
+    ],
+    "overflow": false
+  },
+  "classic-a1-series-desktop": {
+    "titles": [
+      {
+        "tag": "H2",
+        "text": "Seasons",
+        "size": "large",
+        "fontSize": "22.32px",
+        "fontWeight": "500",
+        "textAlign": "center",
+        "textTransform": "uppercase"
+      }
+    ],
+    "grids": [
+      {
+        "label": "Seasons",
+        "size": "small",
+        "columns": 7
+      }
+    ],
+    "overflow": false
+  },
+  "classic-a1-movie-mobile": {
+    "titles": [
+      {
+        "tag": "H2",
+        "text": "Cast & Crew",
+        "size": "large",
+        "fontSize": "22.32px",
+        "fontWeight": "500",
+        "textAlign": "center",
+        "textTransform": "uppercase"
+      }
+    ],
+    "grids": [
+      {
+        "label": null,
+        "size": "large",
+        "columns": 2
+      }
+    ],
+    "overflow": false
+  },
+  "classic-a1-series-mobile": {
+    "titles": [
+      {
+        "tag": "H2",
+        "text": "Seasons",
+        "size": "large",
+        "fontSize": "22.32px",
+        "fontWeight": "500",
+        "textAlign": "center",
+        "textTransform": "uppercase"
+      }
+    ],
+    "grids": [
+      {
+        "label": "Seasons",
+        "size": "small",
+        "columns": 2
+      }
+    ],
+    "overflow": false
+  },
+  "studio": {
+    "titles": [
+      {
+        "tag": "H2",
+        "text": "Cast",
+        "size": "small",
+        "fontSize": "14.88px",
+        "fontWeight": "700",
+        "textAlign": "start",
+        "textTransform": "none"
+      }
+    ],
+    "grids": [
+      {
+        "label": "Preview cast",
+        "size": "large",
+        "columns": 2
+      }
+    ],
+    "overflow": false
+  }
+}
