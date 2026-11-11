@@ -852,8 +852,8 @@ const HeaderEditor: FC<{
                 only (labels stay as accessible names). Overflow moves SyncPlay
                 and Cast into a More menu; Search, the account and an active
                 remote session always stay in the bar. A page under the bar
-                applies only on wide windows, to Home when its hero comes first
-                and to Item Details with the immersive band.
+                applies only on wide windows, to Item Details with the immersive
+                band; every other page keeps its space under the bar.
             </Scope>
         </>
     );

@@ -104,7 +104,7 @@ const THEME = createTheme({ cssVariables: true });
 let host: HTMLDivElement;
 let root: Root;
 
-const render = () =>
+const render = (isViewNavInBar = true) =>
     act(() => {
         root.render(
             <ThemeProvider theme={THEME}>
@@ -112,6 +112,7 @@ const render = () =>
                     <AppToolbar
                         isDrawerAvailable={false}
                         isDrawerOpen={false}
+                        isViewNavInBar={isViewNavInBar}
                         onDrawerButtonClick={() => undefined}
                     />
                 </MemoryRouter>
@@ -194,6 +195,12 @@ describe('modern header arrangement (THEME-B2)', () => {
         for (const el of host.querySelectorAll<HTMLElement>('*')) {
             expect(el.style.order).toBe('');
         }
+    });
+
+    it('centered with no destinations in the bar (sidebar shell) is start: nothing to centre', () => {
+        state.header = { layout: 'centered' };
+        render(false);
+        expect(host.querySelector('[data-rf-header-layout]')).toBeNull();
     });
 
     it('iconsAndLabels shows each label as the button text, its accessible name', () => {

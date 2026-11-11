@@ -69,7 +69,9 @@ export const HeaderRow: FC<HeaderRowProps> = ({
                         flexWrap: 'wrap',
                         alignItems: 'center',
                         justifyContent: 'flex-end',
-                        minWidth: 0
+                        // The actions keep their own width: the destinations give way (the row
+                        // wraps) before an action is pushed onto a line of its own.
+                        minWidth: 'max-content'
                     }}
                 >
                     {actions}

@@ -147,7 +147,10 @@ const AppToolbar: FC<AppToolbarProps> = ({
             <UserViewNav />
         </nav>
     );
-    const centered = layout === 'centered' && !isDrawerAvailable;
+    // `centered` centres the destinations; with none in the bar (a sidebar or rail shell, a public
+    // path) there is nothing to centre, and it is `start`.
+    const centered =
+        layout === 'centered' && !isDrawerAvailable && Boolean(destinations);
 
     return (
         <BaseToolbar

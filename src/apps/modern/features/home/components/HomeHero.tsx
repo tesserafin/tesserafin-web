@@ -1,7 +1,6 @@
 import React, { type FC } from 'react';
 
 import { playbackManager } from 'components/playback/playbackmanager';
-import { useDeclareHeaderLead } from 'components/toolbar/headerLead';
 import globalize from 'lib/globalize';
 import datetime from 'scripts/datetime';
 import type { BaseItemDto } from 'lib/tesserafin-sdk';
@@ -19,11 +18,6 @@ export interface HomeHeroProps {
     apiClient: ImageApiClient | undefined;
     /** The recipe's `backdrop: 'ambient'`: the artwork also stands, blurred, behind the page. */
     ambient?: boolean;
-    /**
-     * THEME-B2: the hero opens the page (first section), so it is a lead image the header may
-     * overlap under `overlap: hero`. Declared only while it actually draws an item.
-     */
-    lead?: boolean;
 }
 
 /**
@@ -59,11 +53,9 @@ export const HomeHero: FC<HomeHeroProps> = ({
     resumeItems,
     nextUpItems,
     apiClient,
-    ambient,
-    lead = false
+    ambient
 }) => {
     const item = resumeItems?.[0] ?? nextUpItems?.[0];
-    useDeclareHeaderLead(lead && Boolean(item));
     if (!item) return null;
 
     const position = item.UserData?.PlaybackPositionTicks ?? 0;

@@ -188,7 +188,6 @@ const HomeTab: FC = () => {
                         nextUpItems={nextUpQuery.data?.Items}
                         apiClient={__legacyApiClient__}
                         ambient={homeRecipe.backdrop === 'ambient'}
-                        lead={sections[0] === 'hero'}
                     />
                 );
 

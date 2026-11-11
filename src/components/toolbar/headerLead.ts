@@ -3,9 +3,11 @@ import { useLayoutEffect, useSyncExternalStore } from 'react';
 /**
  * Which page, right now, opens on a lead image the header may overlap (THEME-B2 §3.6).
  *
- * `overlap: hero` is a header key, but whether it can apply is the PAGE's to say: only Home with
- * its `hero` section first and Item Details with the `immersive` band declare a compatible lead
- * image. Every other page — and these two whenever they draw no such image — keeps the spacer.
+ * `overlap: hero` is a header key, but whether it can apply is the PAGE's to say: a page is
+ * compatible only when the first thing it draws is its lead image. Today that is Item Details with
+ * the `immersive` band. Home is not, even with its `hero` section first: its Home/Favorites tab strip
+ * opens the page, and putting it over artwork has no contrast guarantee. Every other page keeps the
+ * spacer.
  *
  * A counter, not a flag, so a page that unmounts after the next one mounted cannot clear the
  * newcomer's declaration.

@@ -255,7 +255,7 @@ describe('Home composition — two shipped themes, two compositions', () => {
         ).not.toBeNull();
     });
 
-    it('declares a header lead image only when the hero opens the page (THEME-B2 overlap)', async () => {
+    it('never declares a header lead image: the tab strip, not the hero, opens Home (THEME-B2)', async () => {
         const { useHeaderLead } = await import('components/toolbar/headerLead');
         let lead: boolean | undefined;
         const Probe = () => {
@@ -263,19 +263,15 @@ describe('Home composition — two shipped themes, two compositions', () => {
             return null;
         };
         await render(
-            <PresentationProvider themeId='official.classic'>
-                <Probe />
-                <HomeTab />
-            </PresentationProvider>
-        );
-        expect(lead).toBe(false);
-        await render(
             <PresentationProvider themeId='official.glass'>
                 <Probe />
                 <HomeTab />
             </PresentationProvider>
         );
-        expect(lead).toBe(true);
+        expect(
+            container.querySelector('[data-rf-slot="home-hero"]')
+        ).not.toBeNull();
+        expect(lead).toBe(false);
     });
 
     it('plays the Glass hero from its saved position, and says so', async () => {
