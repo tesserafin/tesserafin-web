@@ -1926,6 +1926,7 @@ nothing imports any more.
 | `components/mediainfo/usePrimaryMediaInfo` | `PURE` | — | derives display strings from the item |
 | `components/mediainfo/useSecondaryMediaInfo` | `PURE` | — | derives display strings from the item |
 | `hooks/useSlotText` | `PURE` | — | THEME-A2. Picks the words of a text slot: the applied Studio draft's override or the theme's (both already in PresentationContext), else globalize's translation. Reads no storage itself and issues nothing. |
+| `components/toolbar/headerLead` | `PURE` | — | THEME-B2. Declares that the page opens on its immersive band, for the header's `overlap: hero`: a module-level counter read by the shell. Reads no storage, issues nothing. |
 | `components/Page` | `UI` | — | the page shell |
 | `ui` | `UI` | — | the published design system: MediaCard, MediaGrid, EmptyState, ErrorState, LoadingState |
 | `lib/globalize` | `PURE` | — | translation |
