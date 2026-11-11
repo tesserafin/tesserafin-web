@@ -1,11 +1,14 @@
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
 import React, {
+    createContext,
     type ElementType,
+    type FC,
     forwardRef,
     type MouseEvent,
-    type ReactNode
+    type ReactElement,
+    type ReactNode,
+    useContext
 } from 'react';
 import type { To } from 'react-router-dom';
 
@@ -27,47 +30,55 @@ export interface HeaderActionButtonProps {
 }
 
 /**
+ * How the header's actions get their tooltip. The application bar provides MUI's `Tooltip` (kept in
+ * the banner landmark); without a provider — the Theme Studio preview — there is none. Injected
+ * rather than imported here so the preview does not pull the Popper engine into the Studio's
+ * route, which put four chunk references on the start-up bundle (THEME-B2 budget).
+ */
+export const HeaderActionTooltip = createContext<
+    FC<{ title: string; hidden: boolean; children: ReactElement }>
+>(({ children }) => children);
+
+/**
  * One action of the header, as an icon or as an icon with its label. Shared by the bar's own
  * actions, the "More" button and the Theme Studio preview, so every one of them is drawn alike.
  *
  * The label never replaces the accessible name: under `icons` it is the `aria-label`, under
- * `iconsAndLabels` it is the button's text, which is the same string. The tooltip stays in the
- * banner landmark, as every toolbar tooltip does.
+ * `iconsAndLabels` it is the button's text, which is the same string.
  */
 export const HeaderActionButton = forwardRef<
     HTMLButtonElement,
     HeaderActionButtonProps
->(({ icon, label, labelled = false, ...props }, ref) => (
-    <Tooltip
-        slotProps={{ popper: { disablePortal: true } }}
-        title={label}
+>(({ icon, label, labelled = false, ...props }, ref) => {
+    const Tip = useContext(HeaderActionTooltip);
+    return (
         // A visible label already says it; a tooltip repeating it is noise.
-        disableHoverListener={labelled}
-    >
-        {labelled ? (
-            <Button
-                ref={ref}
-                size='large'
-                color='inherit'
-                startIcon={icon}
-                className='rf-header-action rf-header-action--labelled'
-                {...props}
-            >
-                {label}
-            </Button>
-        ) : (
-            <IconButton
-                ref={ref}
-                size='large'
-                color='inherit'
-                aria-label={label}
-                {...props}
-            >
-                {icon}
-            </IconButton>
-        )}
-    </Tooltip>
-));
+        <Tip title={label} hidden={labelled}>
+            {labelled ? (
+                <Button
+                    ref={ref}
+                    size='large'
+                    color='inherit'
+                    startIcon={icon}
+                    className='rf-header-action rf-header-action--labelled'
+                    {...props}
+                >
+                    {label}
+                </Button>
+            ) : (
+                <IconButton
+                    ref={ref}
+                    size='large'
+                    color='inherit'
+                    aria-label={label}
+                    {...props}
+                >
+                    {icon}
+                </IconButton>
+            )}
+        </Tip>
+    );
+});
 
 HeaderActionButton.displayName = 'HeaderActionButton';
 

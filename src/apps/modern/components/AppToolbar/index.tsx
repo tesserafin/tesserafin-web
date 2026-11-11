@@ -8,9 +8,11 @@ import { useLocation } from 'react-router-dom';
 
 import { appRouter, PUBLIC_PATHS } from 'components/router/appRouter';
 import BaseToolbar from 'components/toolbar/AppToolbar';
+import { HeaderActionTooltip } from 'components/toolbar/HeaderActionButton';
 import HeaderMoreMenu, {
     type HeaderMoreItem
 } from 'components/toolbar/HeaderMoreMenu';
+import HeaderTooltip from 'components/toolbar/HeaderTooltip';
 import ServerButton from 'components/toolbar/ServerButton';
 import globalize from 'lib/globalize';
 import {
@@ -149,7 +151,13 @@ const AppToolbar: FC<AppToolbarProps> = ({
 
     return (
         <BaseToolbar
-            buttons={!isPublicPath && <>{slots}</>}
+            buttons={
+                !isPublicPath && (
+                    <HeaderActionTooltip.Provider value={HeaderTooltip}>
+                        {slots}
+                    </HeaderActionTooltip.Provider>
+                )
+            }
             isDrawerAvailable={isDrawerAvailable}
             isDrawerOpen={isDrawerOpen}
             onDrawerButtonClick={onDrawerButtonClick}
