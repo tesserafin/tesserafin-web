@@ -180,3 +180,65 @@ describe('toMediaCardPropsArray()', () => {
         ).toEqual([]);
     });
 });
+
+/*
+ * THEME-IDENTITY-1. A 16:9 card used to be filled with the 2:3 poster, so Glass's landscape library
+ * showed a band cut from the middle of every poster. The shape now picks the artwork; the poster
+ * shape is unchanged.
+ */
+describe('toMediaCardProps() — artwork that fits the card', () => {
+    const art = {
+        Id: 'movie-1',
+        ImageTags: { Primary: 'p', Thumb: 't' },
+        BackdropImageTags: ['b']
+    };
+
+    it('fills a backdrop card with the thumb first', () => {
+        expect(
+            toMediaCardProps(item(art), fakeApiClient(), 'backdrop').imageUrl
+        ).toBe('https://server/Items/movie-1/Images/Thumb?tag=t');
+    });
+
+    it('falls back to the first backdrop when there is no thumb', () => {
+        expect(
+            toMediaCardProps(
+                item({ ...art, ImageTags: { Primary: 'p' } }),
+                fakeApiClient(),
+                'backdrop'
+            ).imageUrl
+        ).toBe('https://server/Items/movie-1/Images/Backdrop?tag=b');
+    });
+
+    it('falls back to the poster when the item has no landscape art', () => {
+        expect(
+            toMediaCardProps(
+                item({
+                    ...art,
+                    ImageTags: { Primary: 'p' },
+                    BackdropImageTags: []
+                }),
+                fakeApiClient(),
+                'backdrop'
+            ).imageUrl
+        ).toBe('https://server/Items/movie-1/Images/Primary?tag=p');
+    });
+
+    it('keeps the poster for poster and square cards even when landscape art exists', () => {
+        for (const aspect of ['poster', 'square'] as const) {
+            expect(
+                toMediaCardProps(item(art), fakeApiClient(), aspect).imageUrl,
+                aspect
+            ).toBe('https://server/Items/movie-1/Images/Primary?tag=p');
+        }
+    });
+
+    it('draws the placeholder when the item has no artwork at all', () => {
+        expect(
+            toMediaCardProps(
+                item({ Id: 'movie-1', ImageTags: {}, BackdropImageTags: [] }),
+                fakeApiClient(),
+                'backdrop'
+            ).imageUrl
+        ).toBeUndefined();
+    });
+});

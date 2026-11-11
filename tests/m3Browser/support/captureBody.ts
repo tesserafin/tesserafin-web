@@ -512,9 +512,11 @@ async function captureSettingsAndNavigation(
         // Wait for `UserViewNav` itself, not merely for "an anchor in a toolbar": the generic wait
         // resolves on a skeleton anchor seconds before the navigation actually renders. The
         // Favorites link is the one entry `UserViewNav` always emits.
-        await page.waitForSelector('.MuiToolbar-root a[href="#/home?tab=1"]', {
-            timeout: RESOLVE_TIMEOUT
-        });
+        // In the bar or in the persistent column, whichever `navigation.shell` mounted.
+        await page.waitForSelector(
+            ':is([data-rf-slot="app-topnav"], [data-rf-slot="app-sidenav"]) a[href="#/home?tab=1"]',
+            { timeout: RESOLVE_TIMEOUT }
+        );
         await waitForResolvedTheme(page, theme);
         await shooter(
             page,

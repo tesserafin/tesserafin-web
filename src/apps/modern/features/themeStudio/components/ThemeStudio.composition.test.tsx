@@ -390,10 +390,14 @@ describe('Theme Studio — the Item Details composition control is real', () => 
     it('starts from the theme it copied, not from an invented default', () => {
         render();
         clickButtonLabelled('Copy Tesserafin Glass');
-        // Glass lifts the cast to second and pushes the fact panel last.
-        expect(selectedItemDetailsOrder()[1]).toBe('Cast and crew');
+        // Glass leads with its fact line, then the overview, then lifts the cast to third.
+        expect(selectedItemDetailsOrder().slice(0, 3)).toEqual([
+            'Details, tags and links',
+            'Overview and tagline',
+            'Cast and crew'
+        ]);
         expect(selectedItemDetailsOrder().at(-1)).toBe(
-            'Details, tags and links'
+            'Related and collections'
         );
     });
 
@@ -451,11 +455,13 @@ describe('Theme Studio — the Item Details composition control is real', () => 
         clickButtonLabelled('Apply to Tesserafin');
 
         const applied = loadAppliedPresentation();
-        expect(applied?.page?.itemDetails?.hero).toBe('poster');
+        expect(applied?.page?.itemDetails?.hero).toBe('immersive');
+        expect(applied?.page?.itemDetails?.facts).toBe('inline');
 
         // And the live renderer resolves it — the same call `PresentationProvider` makes.
         const resolved = resolvePresentation({ presentation: applied ?? {} });
-        expect(resolved.presentation.page.itemDetails.hero).toBe('poster');
+        expect(resolved.presentation.page.itemDetails.hero).toBe('immersive');
+        expect(resolved.presentation.page.itemDetails.facts).toBe('inline');
         expect(resolved.fallbacks).toEqual([]);
     });
 
@@ -474,6 +480,14 @@ describe('Theme Studio — the Item Details composition control is real', () => 
         const resolved = resolvePresentation({ presentation: applied ?? {} });
         expect(resolved.presentation.page.home.backdrop).toBe('ambient');
         expect(resolved.presentation.page.itemDetails.backdrop).toBe('ambient');
+        // THEME-IDENTITY-1: the same holds for the keys this slice added — a section edit must
+        // not quietly turn Glass's immersive, inline-facts page back into Classic's.
+        expect(applied?.page?.itemDetails?.hero).toBe('immersive');
+        expect(applied?.page?.itemDetails?.facts).toBe('inline');
+        expect(applied?.page?.itemDetails?.controls).toBe('pill');
+        expect(applied?.page?.itemDetails?.people).toBe('portraits');
+        expect(applied?.navigation?.shell).toBe('topbar');
+        expect(applied?.mediaCard?.titlePlacement).toBe('overlay');
     });
 
     it('does not touch the live record until Apply', () => {

@@ -25,19 +25,25 @@ import {
     type HomeRecipe,
     type HomeSection,
     type HomeShelfDensity,
+    ITEM_DETAILS_CONTROLS,
+    ITEM_DETAILS_FACTS,
     ITEM_DETAILS_HEROES,
+    ITEM_DETAILS_PEOPLE,
     ITEM_DETAILS_SECTIONS,
+    type ItemDetailsControls,
+    type ItemDetailsFacts,
     type ItemDetailsHero,
+    type ItemDetailsPeople,
     type ItemDetailsRecipe,
     type ItemDetailsSection,
     LIBRARY_CARD_ASPECTS,
     LIBRARY_FILTER_PRESENTATIONS,
     LIBRARY_LAYOUTS,
-    type LibraryCardAspect,
-    type LibraryFilterPresentation,
-    type LibraryLayout,
     type LibraryRecipe,
     type MediaCardPresentation,
+    NAVIGATION_LABELS,
+    NAVIGATION_POSITIONS,
+    NAVIGATION_SHELLS,
     type NavigationPresentation,
     type SurfacePresentation,
     type ThemeCapability,
@@ -65,6 +71,9 @@ export interface ResolvedPresentation {
             hero: ItemDetailsHero;
             sections: readonly ItemDetailsSection[];
             backdrop: PageBackdrop;
+            facts: ItemDetailsFacts;
+            controls: ItemDetailsControls;
+            people: ItemDetailsPeople;
         };
     };
 }
@@ -91,8 +100,15 @@ export const PLATFORM_DEFAULT_PRESENTATION: ResolvedPresentation = {
         hoverEffect: 'lift',
         progressStyle: 'bar'
     },
+    /*
+     * Corrected when the modern shell began reading `shell` (THEME-IDENTITY-1), on the terms Home's
+     * order and Item Details' order were corrected before it: while nothing read it this said
+     * `sidebar`, and every user saw destinations in the application bar. Binding the value without
+     * correcting the default would have moved navigation into a column for every theme that never
+     * declared one. `topbar` is what the shell rendered; Classic now asks for `sidebar` and gets it.
+     */
     navigation: {
-        shell: 'sidebar',
+        shell: 'topbar',
         labels: 'always',
         position: 'start'
     },
@@ -155,7 +171,11 @@ export const PLATFORM_DEFAULT_PRESENTATION: ResolvedPresentation = {
         itemDetails: {
             hero: 'backdrop',
             sections: [...ITEM_DETAILS_SECTIONS],
-            backdrop: 'none'
+            backdrop: 'none',
+            // What the route rendered before these keys existed.
+            facts: 'table',
+            controls: 'form',
+            people: 'cards'
         }
     }
 };
@@ -227,48 +247,67 @@ const PAGE_BACKDROP_NAMES: ReadonlySet<string> = new Set(PAGE_BACKDROPS);
  * degrades to the default instead of preventing boot.
  */
 function sanitizeHomeRecipe(override: HomeRecipe | undefined): HomeRecipe {
-    if (!override || typeof override !== 'object') return {};
-
-    const clean: HomeRecipe = {};
-
-    if (Array.isArray(override.sections)) {
-        const seen = new Set<string>();
-        const sections = override.sections.filter(
-            (section): section is HomeSection => {
-                if (typeof section !== 'string') return false;
-                if (!HOME_SECTION_NAMES.has(section)) return false;
-                if (seen.has(section)) return false;
-                seen.add(section);
-                return true;
-            }
-        );
-        if (sections.length > 0) clean.sections = sections;
-    }
-
-    if (
-        typeof override.shelfDensity === 'string' &&
-        HOME_SHELF_DENSITY_NAMES.has(override.shelfDensity)
-    ) {
-        clean.shelfDensity = override.shelfDensity;
-    }
-
-    if (
-        typeof override.backdrop === 'string' &&
-        PAGE_BACKDROP_NAMES.has(override.backdrop)
-    ) {
-        clean.backdrop = override.backdrop;
-    }
-
+    const clean = pickEnums<HomeRecipe>(override, {
+        shelfDensity: HOME_SHELF_DENSITY_NAMES,
+        backdrop: PAGE_BACKDROP_NAMES
+    });
+    const sections = pickSections<HomeSection>(
+        override?.sections,
+        HOME_SECTION_NAMES
+    );
+    if (sections) clean.sections = sections;
     return clean;
 }
 
-const LIBRARY_LAYOUT_NAMES: ReadonlySet<string> = new Set(LIBRARY_LAYOUTS);
-const LIBRARY_CARD_ASPECT_NAMES: ReadonlySet<string> = new Set(
-    LIBRARY_CARD_ASPECTS
-);
-const LIBRARY_FILTER_PRESENTATION_NAMES: ReadonlySet<string> = new Set(
-    LIBRARY_FILTER_PRESENTATIONS
-);
+/**
+ * The scalar half of every sanitiser below, written once (THEME-IDENTITY-1 added the fourth
+ * caller, `navigation`, and a fifth copy of the same `typeof … && set.has(…)` block was the wrong
+ * way to pay for it in the start-up bundle). Each key of `table` is kept when `override` names one
+ * of its published values and dropped otherwise, INDEPENDENTLY of the others; anything that is not
+ * an object yields `{}`. It never throws and never reports.
+ */
+function pickEnums<T>(
+    override: unknown,
+    table: Record<string, ReadonlySet<string>>
+): Partial<T> {
+    const clean: Record<string, string> = {};
+    if (override && typeof override === 'object') {
+        for (const key of Object.keys(table)) {
+            const value = (override as Record<string, unknown>)[key];
+            if (typeof value === 'string' && table[key].has(value)) {
+                clean[key] = value;
+            }
+        }
+    }
+    return clean as Partial<T>;
+}
+
+/**
+ * The array half: known names only, first occurrence kept, and `undefined` when nothing survives
+ * so the platform default order applies (an empty composition is not one anyone chose). A value
+ * that is not an array is ignored entirely.
+ */
+function pickSections<S extends string>(
+    value: unknown,
+    names: ReadonlySet<string>
+): S[] | undefined {
+    if (!Array.isArray(value)) return undefined;
+    const seen = new Set<string>();
+    const sections = value.filter(
+        (section): section is S =>
+            typeof section === 'string' &&
+            names.has(section) &&
+            !seen.has(section) &&
+            !!seen.add(section)
+    );
+    return sections.length > 0 ? sections : undefined;
+}
+
+const LIBRARY_ENUMS = {
+    layout: new Set<string>(LIBRARY_LAYOUTS),
+    cardAspect: new Set<string>(LIBRARY_CARD_ASPECTS),
+    filters: new Set<string>(LIBRARY_FILTER_PRESENTATIONS)
+};
 
 /**
  * The Library recipe's three keys are scalar enums, which is exactly why they need this: `object`
@@ -285,40 +324,19 @@ const LIBRARY_FILTER_PRESENTATION_NAMES: ReadonlySet<string> = new Set(
 function sanitizeLibraryRecipe(
     override: LibraryRecipe | undefined
 ): LibraryRecipe {
-    if (!override || typeof override !== 'object') return {};
-
-    const clean: LibraryRecipe = {};
-
-    if (
-        typeof override.layout === 'string' &&
-        LIBRARY_LAYOUT_NAMES.has(override.layout)
-    ) {
-        clean.layout = override.layout as LibraryLayout;
-    }
-
-    if (
-        typeof override.cardAspect === 'string' &&
-        LIBRARY_CARD_ASPECT_NAMES.has(override.cardAspect)
-    ) {
-        clean.cardAspect = override.cardAspect as LibraryCardAspect;
-    }
-
-    if (
-        typeof override.filters === 'string' &&
-        LIBRARY_FILTER_PRESENTATION_NAMES.has(override.filters)
-    ) {
-        clean.filters = override.filters as LibraryFilterPresentation;
-    }
-
-    return clean;
+    return pickEnums<LibraryRecipe>(override, LIBRARY_ENUMS);
 }
 
 const ITEM_DETAILS_SECTION_NAMES: ReadonlySet<string> = new Set(
     ITEM_DETAILS_SECTIONS
 );
-const ITEM_DETAILS_HERO_NAMES: ReadonlySet<string> = new Set(
-    ITEM_DETAILS_HEROES
-);
+const ITEM_DETAILS_ENUMS = {
+    hero: new Set<string>(ITEM_DETAILS_HEROES),
+    backdrop: PAGE_BACKDROP_NAMES,
+    facts: new Set<string>(ITEM_DETAILS_FACTS),
+    controls: new Set<string>(ITEM_DETAILS_CONTROLS),
+    people: new Set<string>(ITEM_DETAILS_PEOPLE)
+};
 
 /**
  * The Item Details recipe has one of each shape the other two recipes have separately — an ordered
@@ -332,7 +350,8 @@ const ITEM_DETAILS_HERO_NAMES: ReadonlySet<string> = new Set(
  *     `localStorage` record;
  *   - if nothing survives, `sections` is ignored and the platform default order applies — an Item
  *     Details page with no content is not a composition anyone chose;
- *   - an unknown `hero` or `backdrop` is ignored on its own, so one bad key never costs another.
+ *   - an unknown `hero`, `backdrop` or `facts` is ignored on its own, so one bad key never costs
+ *     another.
  *
  * The last point is the one Step 2 is asked to prove: `{"hero":"cinematic","sections":["cast"]}`
  * must keep `cast` and fall back to the default hero, not discard both.
@@ -340,39 +359,31 @@ const ITEM_DETAILS_HERO_NAMES: ReadonlySet<string> = new Set(
 function sanitizeItemDetailsRecipe(
     override: ItemDetailsRecipe | undefined
 ): ItemDetailsRecipe {
-    if (!override || typeof override !== 'object') return {};
-
-    const clean: ItemDetailsRecipe = {};
-
-    if (Array.isArray(override.sections)) {
-        const seen = new Set<string>();
-        const sections = override.sections.filter(
-            (section): section is ItemDetailsSection => {
-                if (typeof section !== 'string') return false;
-                if (!ITEM_DETAILS_SECTION_NAMES.has(section)) return false;
-                if (seen.has(section)) return false;
-                seen.add(section);
-                return true;
-            }
-        );
-        if (sections.length > 0) clean.sections = sections;
-    }
-
-    if (
-        typeof override.hero === 'string' &&
-        ITEM_DETAILS_HERO_NAMES.has(override.hero)
-    ) {
-        clean.hero = override.hero;
-    }
-
-    if (
-        typeof override.backdrop === 'string' &&
-        PAGE_BACKDROP_NAMES.has(override.backdrop)
-    ) {
-        clean.backdrop = override.backdrop;
-    }
-
+    const clean = pickEnums<ItemDetailsRecipe>(override, ITEM_DETAILS_ENUMS);
+    const sections = pickSections<ItemDetailsSection>(
+        override?.sections,
+        ITEM_DETAILS_SECTION_NAMES
+    );
+    if (sections) clean.sections = sections;
     return clean;
+}
+
+const NAVIGATION_ENUMS = {
+    shell: new Set<string>(NAVIGATION_SHELLS),
+    labels: new Set<string>(NAVIGATION_LABELS),
+    position: new Set<string>(NAVIGATION_POSITIONS)
+};
+
+/**
+ * `navigation` became a LAYOUT input when the modern shell began reading `shell`
+ * (THEME-IDENTITY-1). Spread unchecked, `{"shell":"floating"}` from a hand-edited record would
+ * reach that branch as a value no renderer defines. Same rule as the page recipes: each key is
+ * kept only when it names a published value, independently of the others, and nothing throws.
+ */
+function sanitizeNavigation(
+    override: NavigationPresentation | undefined
+): NavigationPresentation {
+    return pickEnums<NavigationPresentation>(override, NAVIGATION_ENUMS);
 }
 
 function mergeGroup<T extends object>(
@@ -429,7 +440,7 @@ export function resolvePresentation(
         ),
         navigation: mergeGroup(
             defaults.navigation,
-            themePresentation.navigation,
+            sanitizeNavigation(themePresentation.navigation),
             supports(CAPABILITY_FOR_PRESENTATION_KEY.navigation),
             CAPABILITY_FOR_PRESENTATION_KEY.navigation,
             fallbacks

@@ -233,14 +233,35 @@ export function resolveHeroLayout(options: {
     treatment: ItemDetailsHero;
     itemSupportsBackdrop: boolean;
     userWantsBackdrop: boolean;
+    /**
+     * Whether the item actually carries backdrop artwork. Only `immersive` needs it: its layout is
+     * BUILT on the band, so with no picture to stand on it would be a tall empty header.
+     * `backdrop` keeps its pre-existing behaviour (an empty, masked layer) and ignores it.
+     */
+    itemHasBackdropImage?: boolean;
 }): HeroLayout {
-    const { treatment, itemSupportsBackdrop, userWantsBackdrop } = options;
+    const {
+        treatment,
+        itemSupportsBackdrop,
+        userWantsBackdrop,
+        itemHasBackdropImage = true
+    } = options;
+    const bandAllowed = itemSupportsBackdrop && userWantsBackdrop;
+
+    /*
+     * `immersive` sits UNDER the same chain as `backdrop`: the item and the user outrank it. When
+     * either says no — or there is no picture — the page falls back to `poster`, the layout that
+     * leads with artwork the item is guaranteed to have, rather than to a band-shaped hole.
+     */
+    if (treatment === 'immersive' && !(bandAllowed && itemHasBackdropImage)) {
+        return { treatment: 'poster', backdrop: false, logo: true };
+    }
+
     return {
         treatment,
         backdrop:
-            treatment === 'backdrop' &&
-            itemSupportsBackdrop &&
-            userWantsBackdrop,
+            (treatment === 'backdrop' || treatment === 'immersive') &&
+            bandAllowed,
         // `minimal` is minimal decoration: the title carries the item, not its logotype. The poster
         // stays either way, and the logo URL is still built, so no treatment changes the request set.
         logo: treatment !== 'minimal'

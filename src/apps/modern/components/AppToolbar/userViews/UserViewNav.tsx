@@ -3,6 +3,7 @@ import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-ite
 import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
 import ArrowDropDown from '@mui/icons-material/ArrowDropDown';
 import Favorite from '@mui/icons-material/Favorite';
+import HomeIcon from '@mui/icons-material/Home';
 import Button from '@mui/material/Button/Button';
 import Icon from '@mui/material/Icon';
 import { Theme } from '@mui/material/styles';
@@ -62,7 +63,20 @@ const getCurrentUserView = (
     return userViews?.find(({ Id: id }) => id === libraryId);
 };
 
-const UserViewNav = () => {
+export interface UserViewNavProps {
+    /**
+     * `horizontal` is the application bar's row: a few destinations, the rest behind "More".
+     * `vertical` is the persistent column the `sidebar` and `rail` shells draw
+     * (THEME-IDENTITY-1): it has the height to list every destination, so nothing overflows, and
+     * it leads with Home because the column, unlike the bar, has no server button standing in for
+     * it. The DESTINATIONS are the same in both: which libraries exist is library and
+     * authorization state, never a presentation choice.
+     */
+    orientation?: 'horizontal' | 'vertical';
+}
+
+const UserViewNav = ({ orientation = 'horizontal' }: UserViewNavProps) => {
+    const isVertical = orientation === 'vertical';
     const location = useLocation();
     const [searchParams] = useSearchParams();
     const itemId = searchParams.get('id') || undefined;
@@ -127,12 +141,12 @@ const UserViewNav = () => {
     const primaryNavItems = useMemo(() => {
         // If the number of nav items exceeds the max + 1, we put the excess items in the overflow menu.
         // We add 1 to prevent the overflow menu from showing only one item.
-        if (navItems.length > maxViews + 1) {
+        if (!isVertical && navItems.length > maxViews + 1) {
             return navItems.slice(0, maxViews);
         }
 
         return navItems;
-    }, [maxViews, navItems]);
+    }, [isVertical, maxViews, navItems]);
 
     const overflowNavItems = useMemo(
         () => navItems.slice(primaryNavItems?.length || 0),
@@ -175,8 +189,31 @@ const UserViewNav = () => {
 
     if (isPending) return null;
 
+    /*
+     * The current destination is announced, not only coloured: `aria-current="page"` on the link
+     * a reader is on. The bar never said it, so a screen reader heard every destination alike.
+     */
+    const current = (isCurrent: boolean) =>
+        isCurrent ? ('page' as const) : undefined;
+    const isHome = location.pathname === HOME_PATH && !currentUserView;
+
     return (
         <>
+            {isVertical && (
+                <Button
+                    variant='text'
+                    color={isHome ? 'primary' : 'inherit'}
+                    aria-current={current(isHome)}
+                    startIcon={<HomeIcon />}
+                    component={Link}
+                    to={HOME_PATH}
+                >
+                    <span className='rf-app-nav__label'>
+                        {globalize.translate('Home')}
+                    </span>
+                </Button>
+            )}
+
             {packsLead && (
                 <Button
                     variant='text'
@@ -185,7 +222,9 @@ const UserViewNav = () => {
                     component={Link}
                     to='contentpacks'
                 >
-                    {globalize.translate('ContentPacks')}
+                    <span className='rf-app-nav__label'>
+                        {globalize.translate('ContentPacks')}
+                    </span>
                 </Button>
             )}
 
@@ -196,11 +235,16 @@ const UserViewNav = () => {
                         ? 'primary'
                         : 'inherit'
                 }
+                aria-current={current(
+                    currentUserView?.Id === MetaView.Favorites.Id
+                )}
                 startIcon={<Favorite />}
                 component={Link}
                 to='/home?tab=1'
             >
-                {globalize.translate(MetaView.Favorites.Name)}
+                <span className='rf-app-nav__label'>
+                    {globalize.translate(MetaView.Favorites.Name)}
+                </span>
             </Button>
 
             {primaryNavItems?.map((navItem) => {
@@ -216,7 +260,9 @@ const UserViewNav = () => {
                             target='_blank'
                             rel='noopener noreferrer'
                         >
-                            {navItem.name}
+                            <span className='rf-app-nav__label'>
+                                {navItem.name}
+                            </span>
                         </Button>
                     );
                 }
@@ -230,6 +276,9 @@ const UserViewNav = () => {
                                 ? 'primary'
                                 : 'inherit'
                         }
+                        aria-current={current(
+                            navItem.Id === currentUserView?.Id
+                        )}
                         startIcon={<LibraryIcon item={navItem} />}
                         component={Link}
                         to={appRouter
@@ -238,7 +287,9 @@ const UserViewNav = () => {
                             })
                             .substring(1)}
                     >
-                        {navItem.Name}
+                        <span className='rf-app-nav__label'>
+                            {navItem.Name}
+                        </span>
                     </Button>
                 );
             })}

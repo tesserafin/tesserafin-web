@@ -7,21 +7,24 @@ import {
 import { DIST, expect, shot, test } from './support/harness';
 
 /**
- * The primary navigation is the MUI toolbar `AppToolbar` renders. One selector, not an alternation:
- * a comma here would compose into `header nav, header .MuiToolbar-root a` and silently wait on the
- * wrong half.
+ * The primary navigation: the bar's destination row (`navigation.shell: topbar`) or the persistent
+ * column (`sidebar` / `rail`, THEME-IDENTITY-1) — exactly one of them is mounted. One `:is()`
+ * compound, not a comma list: a comma would compose into `A, B a` and silently wait on the wrong
+ * half.
  */
-const NAV = '.MuiToolbar-root';
+const NAV = ':is([data-rf-slot="app-topnav"], [data-rf-slot="app-sidenav"])';
 
 /**
  * The visible labels of the browsing entries, in document order.
  *
- * The server-name button that opens the toolbar is dropped: it is the product's identity, not a
- * browsing destination, and "content packs lead" is a claim about where you can go, not about the
- * logo. Everything after it is what the household actually navigates with.
+ * The server-name button sits outside the navigation landmark, and the column's `Home` is filtered:
+ * both are the way back, not a browsing destination, and "content packs lead" is a claim about where
+ * you can go. Everything listed is what the household actually navigates with.
  */
 const navLabels = async (page: Parameters<typeof installFixtureApi>[0]) => {
-    const labels = await page.$$eval(`${NAV} a`, (nodes) =>
+    // `Home` leads the column as the column's way back; like the server-name button it is not a
+    // browsing destination.
+    const labels = await page.$$eval(`${NAV} a:not([href="#/home"])`, (nodes) =>
         nodes
             .map((node) => {
                 // `material-icons` renders its glyph as a LIGATURE, so `textContent` on the button
@@ -35,7 +38,7 @@ const navLabels = async (page: Parameters<typeof installFixtureApi>[0]) => {
             })
             .filter(Boolean)
     );
-    return labels.slice(1);
+    return labels;
 };
 
 const signedIn = (

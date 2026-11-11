@@ -268,17 +268,33 @@ describe('the treatment changes layout, never which images are built', () => {
 });
 
 describe('the backdrop layer follows the precedence chain', () => {
-    it('renders only under the backdrop treatment', async () => {
+    it('renders only under the backdrop and immersive treatments', async () => {
         for (const hero of ITEM_DETAILS_HEROES) {
             const mounted = await mountForLedger('movie', {
                 itemOverride: ARTWORK_STATES[0].override,
                 presentation: recipe(hero)
             });
             expect(Boolean(backdropOf(mounted.container)), hero).toBe(
-                hero === 'backdrop'
+                hero === 'backdrop' || hero === 'immersive'
             );
             unmountAll();
         }
+    });
+
+    // THEME-IDENTITY-1: no band to stand on, no immersive geometry. The page is laid out as
+    // `poster` — the attribute the stylesheet keys on says so — and draws no empty band.
+    it('lays immersive out as poster for an item with no backdrop artwork', async () => {
+        const mounted = await mountForLedger('movie', {
+            itemOverride: ARTWORK_STATES[1].override,
+            presentation: recipe('immersive')
+        });
+        expect(backdropOf(mounted.container)).toBeNull();
+        expect(
+            mounted.container
+                .querySelector('.rf-item-details')
+                ?.getAttribute('data-rf-hero')
+        ).toBe('poster');
+        unmountAll();
     });
 
     it.each(['person', 'book'])(

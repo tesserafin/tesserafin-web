@@ -358,3 +358,50 @@ describe('getLatestMediaCardOptions()', () => {
         expect(options.preferThumb).toBe(true);
     });
 });
+
+/*
+ * THEME-IDENTITY-1. An episode with no landscape art of its own fell through to the primary
+ * candidates: the Home hero (landscape only) then rendered an empty grey slab, and a 16:9 shelf
+ * card cropped the series poster.
+ */
+describe('toMediaCardProps() — an episode inherits its series backdrop', () => {
+    const episode = item({
+        Id: 'ep-3',
+        Type: 'Episode',
+        SeriesId: 'series-1',
+        SeriesPrimaryImageTag: 'series-poster',
+        ParentBackdropItemId: 'series-1',
+        ParentBackdropImageTags: ['series-fanart']
+    });
+
+    it('uses the parent backdrop for landscape artwork', () => {
+        expect(
+            toMediaCardProps(episode, fakeApiClient(), {
+                imageAspect: 'backdrop',
+                preferThumb: true
+            }).imageUrl
+        ).toBe(
+            'https://server/Items/series-1/Images/Backdrop?tag=series-fanart'
+        );
+    });
+
+    it('still prefers the series thumb over the parent backdrop', () => {
+        expect(
+            toMediaCardProps(
+                { ...episode, SeriesThumbImageTag: 'series-thumb' },
+                fakeApiClient(),
+                { imageAspect: 'backdrop', preferThumb: true }
+            ).imageUrl
+        ).toBe('https://server/Items/series-1/Images/Thumb?tag=series-thumb');
+    });
+
+    it('leaves poster cards on the series poster', () => {
+        expect(
+            toMediaCardProps(episode, fakeApiClient(), {
+                imageAspect: 'poster'
+            }).imageUrl
+        ).toBe(
+            'https://server/Items/series-1/Images/Primary?tag=series-poster'
+        );
+    });
+});

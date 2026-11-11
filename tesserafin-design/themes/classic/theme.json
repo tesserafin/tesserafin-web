@@ -1,9 +1,9 @@
 {
     "contractVersion": 2,
     "id": "official.classic",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "name": "Tesserafin Classic",
-    "description": "The default Tesserafin experience: the canonical paper-and-ink palette, the four elements as semantic accents, opaque surfaces, no frosted treatment.",
+    "description": "The default Tesserafin experience: a library column, dense poster grids, labelled facts, opaque surfaces, the paper-and-ink palette.",
     "author": "Tesserafin Project",
     "license": "GPL-2.0-or-later",
     "compatibility": {
@@ -44,6 +44,9 @@
             },
             "itemDetails": {
                 "hero": "backdrop",
+                "facts": "table",
+                "controls": "form",
+                "people": "cards",
                 "sections": [
                     "overview",
                     "mediaInfo",

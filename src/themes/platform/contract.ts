@@ -126,13 +126,37 @@ export interface MediaCardPresentation {
 }
 
 /**
+ * The navigation vocabulary, as runtime lists for the reason {@link HOME_SECTIONS} is one: the
+ * applied-presentation record is hand-editable, and since the modern shell began READING `shell`
+ * (THEME-IDENTITY-1) an unknown value would otherwise reach a layout branch.
+ *
+ *   - `topbar`: the destinations sit in the application bar, above the page;
+ *   - `sidebar`: a persistent column beside the page on wide screens, one destination per row;
+ *   - `rail`: the same column, narrow, with each label under its icon.
+ *
+ * On a narrow screen every shell collapses to the drawer: a persistent column on a phone costs the
+ * content it is meant to organise, and a theme cannot overrule that (usage before identity).
+ */
+export const NAVIGATION_SHELLS = ['sidebar', 'rail', 'topbar'] as const;
+
+export type NavigationShell = (typeof NAVIGATION_SHELLS)[number];
+
+export const NAVIGATION_LABELS = ['always', 'active', 'never'] as const;
+
+export type NavigationLabels = (typeof NAVIGATION_LABELS)[number];
+
+export const NAVIGATION_POSITIONS = ['start', 'end'] as const;
+
+export type NavigationPosition = (typeof NAVIGATION_POSITIONS)[number];
+
+/**
  * How navigation LOOKS. Never what it CONTAINS: which destinations exist is authorization and
  * library state, and a theme has no say in it (RFC-0007 §6.1).
  */
 export interface NavigationPresentation {
-    shell?: 'sidebar' | 'rail' | 'topbar';
-    labels?: 'always' | 'active' | 'never';
-    position?: 'start' | 'end';
+    shell?: NavigationShell;
+    labels?: NavigationLabels;
+    position?: NavigationPosition;
 }
 
 /**
@@ -254,15 +278,72 @@ export type ItemDetailsSection = (typeof ITEM_DETAILS_SECTIONS)[number];
  *
  * No value here causes an extra image or API request, none overrides the user's details-banner
  * setting, none gives a `Person` or a `Book` a backdrop, and the poster is rendered under all
- * three — `MUST PRESERVE` #9 is a product guarantee, not a theme preference.
+ * four — `MUST PRESERVE` #9 is a product guarantee, not a theme preference.
+ *
+ * `immersive` (THEME-IDENTITY-1) makes the item's backdrop the page's lead: a full-width band
+ * with the identity, facts and actions set over its foot, and the poster as a smaller inset. It
+ * reads the same backdrop URL `backdrop` reads, so it adds no request, and it degrades to the
+ * `poster` layout whenever the band cannot render — an item with no backdrop, a `Person`, a
+ * `Book`, or a user who turned the details banner off.
  */
-export const ITEM_DETAILS_HEROES = ['backdrop', 'poster', 'minimal'] as const;
+export const ITEM_DETAILS_HEROES = [
+    'backdrop',
+    'poster',
+    'minimal',
+    'immersive'
+] as const;
 
 export type ItemDetailsHero = (typeof ITEM_DETAILS_HEROES)[number];
+
+/**
+ * How the item's factual lists — people, studios, genres — are GROUPED (THEME-IDENTITY-1).
+ *
+ *   - `table`: one labelled row per list, label and values in two aligned columns. A catalogue
+ *     reading: every fact has a fixed place, so the eye finds "Director" in the same spot on
+ *     every page.
+ *   - `inline`: the lists run together on one line under the item's identity, values first and
+ *     labels kept for assistive technology only. The fact line reads as part of the title block
+ *     rather than as a form.
+ *
+ * Neither value changes WHICH lists exist, their order, their links or their data: the six lists
+ * and their gates are the route's, and the same links are emitted under both.
+ */
+export const ITEM_DETAILS_FACTS = ['table', 'inline'] as const;
+
+export type ItemDetailsFacts = (typeof ITEM_DETAILS_FACTS)[number];
+
+/**
+ * How the FIXED controls are dressed — the action bar and the track selectors (THEME-IDENTITY-1).
+ *
+ *   - `form`: a labelled form. Rectangular buttons in a row; each selector with its label in a
+ *     column of its own.
+ *   - `pill`: a player's controls. The play action is a large pill with a play glyph, secondary
+ *     actions are outlined pills, icon actions are round, and the selectors run as one row of chips
+ *     with the label set inside each chip.
+ *
+ * A presentation of the fixed region, never a decision about it: the same controls, in the same
+ * order, with the same labels, states and keyboard behaviour exist under both values. Which actions
+ * and tracks are offered stays the route's, as RFC-0007 §6.1 requires.
+ */
+export const ITEM_DETAILS_CONTROLS = ['form', 'pill'] as const;
+
+export type ItemDetailsControls = (typeof ITEM_DETAILS_CONTROLS)[number];
+
+/**
+ * How people (cast, crew, guest stars) are drawn: `cards` are poster cards with the name and role
+ * under them; `portraits` are round head-shots with the name centred under them. Same people, same
+ * order, same links.
+ */
+export const ITEM_DETAILS_PEOPLE = ['cards', 'portraits'] as const;
+
+export type ItemDetailsPeople = (typeof ITEM_DETAILS_PEOPLE)[number];
 
 export interface ItemDetailsRecipe {
     hero?: ItemDetailsHero;
     backdrop?: PageBackdrop;
+    facts?: ItemDetailsFacts;
+    controls?: ItemDetailsControls;
+    people?: ItemDetailsPeople;
     sections?: readonly ItemDetailsSection[];
 }
 
