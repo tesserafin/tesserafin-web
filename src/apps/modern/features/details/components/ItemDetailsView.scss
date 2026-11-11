@@ -768,3 +768,18 @@
         transition: none;
     }
 }
+
+/*
+ * THEME-B2 `overlap: hero`: the immersive band rises under the bar by the header's measured
+ * footprint and the page's content keeps its place below it, so the artwork gains the bar's height
+ * and nothing readable moves under the header.
+ */
+:root[data-rf-header-overlap] .rf-item-details[data-rf-hero='immersive'] {
+    --rf-item-details-backdrop-height: calc(min(70vh, 40rem) + var(--rf-header-footprint, 0px));
+
+    padding-top:
+        max(
+            calc(var(--rf-header-footprint, 0px) + var(--rf-spacing-xl, 32px)),
+            calc(var(--rf-item-details-backdrop-height) - 17rem)
+        );
+}

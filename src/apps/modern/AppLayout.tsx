@@ -9,7 +9,8 @@ import CustomCss from 'components/CustomCss';
 import OffsetAppBar from 'components/OffsetAppBar';
 import ThemeCss from 'components/ThemeCss';
 import { useApi } from 'hooks/useApi';
-import { resolveHeader } from 'themes/platform/headerRecipe';
+import { useHeaderLead } from 'components/toolbar/headerLead';
+import { effectiveHeader, resolveHeader } from 'themes/platform/headerRecipe';
 import { usePresentation } from 'ui';
 
 import AppSideNav from './components/AppSideNav/AppSideNav';
@@ -47,6 +48,18 @@ export const Component = () => {
         isSignedIn: Boolean(user)
     });
 
+    const header = resolveHeader(
+        presentation.header,
+        presentation.surface.variant
+    );
+    // THEME-B2 `overlap: hero`: the recipe asks, the page must declare a lead image, and a compact
+    // window always keeps the spacer.
+    const hasLead = useHeaderLead();
+    const { overlap } = effectiveHeader(header, {
+        compact: !isMediumScreen,
+        lead: hasLead
+    });
+
     const onToggleDrawer = useCallback(() => {
         setIsDrawerActive(!isDrawerActive);
     }, [isDrawerActive, setIsDrawerActive]);
@@ -66,10 +79,8 @@ export const Component = () => {
                         dense
                         elevation={4}
                         onHeightChange={setAppBarHeight}
-                        recipe={resolveHeader(
-                            presentation.header,
-                            presentation.surface.variant
-                        )}
+                        recipe={header}
+                        overlap={overlap}
                     >
                         <AppToolbar
                             isViewNavInBar={!sideNav}

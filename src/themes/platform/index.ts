@@ -108,16 +108,26 @@ export {
 } from './validateManifest';
 
 export {
+    HEADER_ACTION_GROUPINGS,
+    HEADER_ACTION_LABELS,
     HEADER_BRAND_LABELS,
     HEADER_BRAND_SHOWS,
     HEADER_BRAND_SIZES,
     HEADER_DENSITIES,
+    HEADER_LAYOUTS,
     HEADER_NAV_STYLES,
+    HEADER_OVERLAPS,
     HEADER_REST_MATERIALS,
     HEADER_SCROLLED_MATERIALS,
     HEADER_SEPARATORS,
     HEADER_SHAPES,
     PLATFORM_DEFAULT_HEADER,
+    arrangeHeaderActions,
+    effectiveHeader,
     resolveHeader
 } from './headerRecipe';
-export type { ResolvedHeader } from './headerRecipe';
+export type {
+    HeaderActionId,
+    HeaderActionSlot,
+    ResolvedHeader
+} from './headerRecipe';

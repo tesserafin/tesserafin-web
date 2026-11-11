@@ -45,3 +45,41 @@
 .MuiAppBar-root[data-rf-header-density] .rf-user-menu-button {
     padding: 2px;
 }
+
+/*
+ * THEME-B2 `overlap: hero`. The page's lead image runs under a transparent bar, so the renderer —
+ * not the theme — lays a scrim of the page background under the bar's text: the bar's text is
+ * token-coloured against that background, so its contrast is the palette's (AA, gated by
+ * `palette-contrast.test.ts`) whatever the artwork. 88 % keeps it there over pure white or black
+ * art; it fades out just below the bar instead of ending on an edge.
+ */
+.MuiAppBar-root[data-rf-header-overlap='hero'][data-rf-header-material='transparent']::before {
+    position: absolute;
+    inset: 0 0 -1.5rem;
+    z-index: -1;
+    content: '';
+    background:
+        linear-gradient(
+            to bottom,
+            color-mix(in srgb, var(--rf-color-background, #101010) 88%, transparent) calc(100% - 1.5rem),
+            transparent
+        );
+    pointer-events: none;
+}
+
+/* `actions.labels: iconsAndLabels`: labels read as the destinations do, in sentence case. */
+.rf-header-action--labelled {
+    min-height: 44px;
+    text-transform: none;
+}
+
+/*
+ * The remote-session indicator carries a device name of any length (§5.3): it wraps inside a
+ * bounded width rather than pushing Search or the account out of the bar.
+ */
+.MuiAppBar-root[data-rf-header-density] .rf-header-remote-session {
+    max-width: min(16rem, 40vw);
+    overflow-wrap: anywhere;
+    text-align: start;
+    text-transform: none;
+}

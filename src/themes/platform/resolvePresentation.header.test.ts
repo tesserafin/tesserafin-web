@@ -4,11 +4,15 @@ import themeSchema from '../../../tesserafin-design/schema/theme.schema.json';
 
 import { type ThemePresentation, WEB_RENDERER_CAPABILITIES } from './contract';
 import {
+    HEADER_ACTION_GROUPINGS,
+    HEADER_ACTION_LABELS,
     HEADER_BRAND_LABELS,
     HEADER_BRAND_SHOWS,
     HEADER_BRAND_SIZES,
     HEADER_DENSITIES,
+    HEADER_LAYOUTS,
     HEADER_NAV_STYLES,
+    HEADER_OVERLAPS,
     HEADER_REST_MATERIALS,
     HEADER_SCROLLED_MATERIALS,
     HEADER_SEPARATORS,
@@ -39,7 +43,10 @@ describe('header recipe defaults (THEME-B1)', () => {
             density: 'compact',
             shape: 'bar',
             separator: 'shadow',
+            layout: 'start',
+            overlap: 'none',
             material: { rest: 'transparent', scrolled: 'surface' },
+            actions: { labels: 'icons', grouping: 'inline' },
             brand: { show: 'markAndName', size: 'medium', label: 'server' },
             nav: { style: 'plain' }
         });
@@ -127,13 +134,31 @@ describe('header recipe sanitising', () => {
         ]);
     });
 
-    it('publishes only the B1 keys, and the same lists as the schema', () => {
+    it('publishes the B1 and B2 keys (no B3 anchor), and the same lists as the schema', () => {
         type Node = { enum?: string[]; properties: Record<string, Node> };
         const def = (themeSchema.$defs as unknown as Record<string, Node>)
             .headerVariant;
         expect(Object.keys(def.properties).sort()).toEqual(
-            ['brand', 'density', 'material', 'nav', 'separator', 'shape'].sort()
+            [
+                'actions',
+                'brand',
+                'density',
+                'layout',
+                'material',
+                'nav',
+                'overlap',
+                'separator',
+                'shape'
+            ].sort()
         );
+        expect(def.properties.layout.enum).toEqual([...HEADER_LAYOUTS]);
+        expect(def.properties.overlap.enum).toEqual([...HEADER_OVERLAPS]);
+        expect(def.properties.actions.properties.labels.enum).toEqual([
+            ...HEADER_ACTION_LABELS
+        ]);
+        expect(def.properties.actions.properties.grouping.enum).toEqual([
+            ...HEADER_ACTION_GROUPINGS
+        ]);
         expect(def.properties.density.enum).toEqual([...HEADER_DENSITIES]);
         expect(def.properties.shape.enum).toEqual([...HEADER_SHAPES]);
         expect(def.properties.separator.enum).toEqual([...HEADER_SEPARATORS]);
