@@ -1,6 +1,6 @@
 # Theme header recipe (THEME-B) — contract proposal
 
-- **Status**: Proposal, for review before any code
+- **Status**: Accepted for implementation in three lots, B1 / B2 / B3 (decisions of 2026-11-11, §9)
 - **Date**: 2026-11-11
 - **Scope**: lot B of the 2026-11-11 component and text customisation review: the application
   header and how navigation is drawn in it
@@ -64,12 +64,22 @@ New capability `presentation.header`, a group of its own, independent of `naviga
 `surface.variant`. Every key is a closed enum. Every default reproduces the bar as it is drawn on
 #271 (§7).
 
+**Each key ships with its lot, and not before.** A key or value planned for a later lot is not in the
+schema, the runtime lists or the Studio until that lot binds it, so B1 never offers a B2 or B3 value
+as usable.
+
+| Lot | Keys |
+| --- | --- |
+| B1 | `density`, `shape`, `material.rest`, `material.scrolled`, `separator`, `brand.*`, `nav.style` |
+| B2 | `layout`, `actions.labels`, `actions.grouping`, `overlap` |
+| B3 | `anchor` (`sticky`, `static`), an embedded search field |
+
 ### 3.1 Bar
 
 | Key | Values | Default (today) | Notes |
 | --- | --- | --- | --- |
-| `anchor` | `fixed`, `sticky`, `static` | `fixed` | `sticky` and `static` ship only once proven against the real scroll container: today's material change listens to window scroll, and a page that scrolls inside its own container must not leave the bar stuck in its resting material. |
-| `density` | `compact`, `comfortable`, `spacious` | `compact` (48 px) | 48 / 56 / 64 px minimum heights, expressed in `rem`, so the bar grows with zoom and never clips. Every interactive target stays at least 44 × 44 px. |
+| `anchor` *(B3)* | `fixed`, `sticky`, `static` | `fixed` | Absent until B3; the bar is `fixed` until then. `sticky` and `static` ship only once proven against the real scroll container: today's material change listens to window scroll, and a page that scrolls inside its own container must not leave the bar stuck in its resting material. |
+| `density` | `compact`, `comfortable`, `spacious` | `compact` (48 px) | 48 / 56 / 64 px minimum heights for the **main row**, expressed in `rem`, so the bar grows with zoom and never clips. `spacious` is optional; `compact` stays the default. Every interactive target is at least 44 × 44 px. The library toolbar row keeps its own height (§3.7). |
 | `shape` | `bar`, `floating` | `bar` | `floating` insets the bar from the window edges, with radius and margin. |
 | `material.rest` | `transparent`, `surface`, `glass` | `transparent` | |
 | `material.scrolled` | `surface`, `glass` | `surface` | |
@@ -106,6 +116,11 @@ Under `mark`, the link keeps an accessible name, the label it would have shown. 
 | --- | --- | --- |
 | `nav.style` | `plain`, `underline`, `segmented`, `floating` | **derived**: `floating` under a glass surface, `plain` otherwise |
 
+The derived default reads the **global, historical material**: the resolved `surface.variant`, the
+same value `AppTopNav.scss` keys on today. It never reads `header.material.rest` or
+`header.material.scrolled`, so it never changes while the page scrolls and never changes because a
+theme gave the bar its own material.
+
 The derived default is what decouples material and shape without changing any existing theme:
 - A theme that says nothing renders exactly as #271 does.
 - A Glass-based theme can now ask for `underline` and keep its glass bar.
@@ -121,8 +136,11 @@ The active destination keeps `aria-current="page"` and a visible state under eve
 | `actions.grouping` | `inline`, `overflow` | `inline` |
 
 `overflow` may move **secondary** actions into one "More" menu. Search, the account menu and the
-remote-session indicator are never moved: while a remote session is active, its device name stays
-visible in the bar. SyncPlay and Cast under `overflow` keep their own menus, opened from the "More"
+remote-session indicator are never moved.
+
+When a remote session **becomes** active while Cast is grouped in "More", the indicator and the
+device name come out of the menu into the bar at once. They go back only when the session ends.
+Focus is never moved by that change. SyncPlay and Cast under `overflow` keep their own menus, opened from the "More"
 menu, with focus returned to "More" on close.
 
 ### 3.6 Relation to the page
@@ -133,9 +151,26 @@ menu, with focus returned to "More" on close.
 
 `hero` lets the page start under a transparent bar, but only on pages that declare a compatible lead
 image: Home with its `hero` section, and Item Details with the `immersive` band. Every other page
-keeps the spacer. The bar's measured height (already tracked by `OffsetAppBar`) is published as an
-offset the hero reads, so no title or control ever sits under the bar. A scrim keeps the bar's text
-at WCAG AA contrast over any artwork.
+keeps the spacer. A scrim keeps the bar's text at WCAG AA contrast over any artwork.
+
+The offset the hero reads is the **real footprint of the whole fixed header**, not the main row's
+height. That covers:
+- the library toolbar row;
+- any row added when the toolbar wraps;
+- the margin of a `floating` bar.
+
+It is measured on the outermost fixed element and kept current with a resize observer, as
+`OffsetAppBar` already does for its spacer. A test checks that no title or control intersects the
+header's box after a wrap.
+
+`floating` with `overlap: hero` is allowed (B2). On a compact window, and on any page without a
+compatible hero, the bar falls back to the normal `bar` shape with the spacer.
+
+### 3.7 The library toolbar row
+
+On library paths the library toolbar sits inside the same fixed header. It **inherits the material**
+(rest, scrolled, separator) so the header reads as one object. It **keeps its own height and
+density**: `density` applies to the main row only.
 
 ## 4. What is never themeable
 
@@ -199,8 +234,11 @@ renderer adds a top scrim sized to the bar. The theme cannot turn it off.
 - The schema, `contract.ts` runtime lists, the resolver, the defaults, the parity test and the
   Studio move together, as in A1.
 - **Default = #271's rendering**, checked by captures:
-  - Classic and Glass desktop states are byte-identical to the #271 build;
+  - Classic and Glass desktop states match the #271 build;
   - the admin dashboard and public-path headers are unchanged.
+- **One documented exception: target size.** If a control of today's bar is below 44 × 44 px (the
+  brand button and the destination links are to be measured first), B1 corrects it. The captures and
+  the PR then show the exact pixel difference and why, rather than claiming pixel identity.
 - Hand-edited applied records are sanitised key by key and never block start-up.
 - `nav.style` absent → derived (§3.4). An explicit value always wins.
 - **Budget.** The header is on the start-up path, so lot B measures before and after. Any increase
@@ -225,20 +263,22 @@ The preview covers:
 Each control states its scope ("signed-in pages, modern layout"). A control that a compact window
 overrides says so.
 
-## 9. Open questions for review
+## 9. Decisions (review of 2026-11-11)
 
-1. **Slicing.** Proposal:
-   - **B1:** the presentational primitive, material and separator, density, shape, brand, and
-     `nav.style` decoupling, with the Studio preview.
-   - **B2:** layout, action presentation and grouping, `overlap: hero`.
-   - **B3:** `sticky` and `static` anchoring once the scroll container is settled, and an embedded
-     search field if the search page can serve one.
-2. **Public paths** (login, server selection, wizard). Proposal: keep the default bar in B, and
-   declare them as a later surface once their own layout is reviewed.
-3. **`floating` shape and `overlap: hero` together**: allowed, or one at a time in B?
-4. **`spacious` density (64 px)**: useful on desktop, or only `compact` / `comfortable`?
-5. **Library toolbar inside the bar** (library paths): it inherits the bar's material. Does it also
-   follow `density`, or keep its own height?
+| Question | Decision |
+| --- | --- |
+| Slicing | **B1 / B2 / B3.** B1: foundations and preview. B2: layout, actions, overlap. B3: other anchors and embedded search. |
+| Public paths | **Unchanged in B.** Their customisation gets its own scope. |
+| `floating` with `overlap: hero` | **Allowed in B2**, falling back to a normal bar on a compact window and on pages without a compatible hero. |
+| `spacious` density (64 px) | **Yes**, as an option. The default stays `compact`. |
+| Library toolbar | Inherits the material, **keeps its own height and density**. `density` is the main row's. |
+
+Clarifications made after review:
+- `nav.style`'s derived default reads the historical global material, never the header's (§3.4).
+- The hero offset covers the whole header's footprint (§3.6).
+- An active remote session always surfaces in the bar (§3.5).
+- Later lots' values are never offered early (§3).
+- A target-size correction is documented, not hidden (§7).
 
 ## 10. Acceptance, when implemented
 
