@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -24,10 +24,14 @@ const SRC = resolve(__dirname, '../..');
 const sources = (() => {
     const files: { path: string; text: string }[] = [];
     const walk = (dir: string) => {
-        for (const name of readdirSync(dir)) {
-            const path = join(dir, name);
-            if (statSync(path).isDirectory()) walk(path);
-            else if (/\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name)) {
+        for (const entry of readdirSync(dir, { withFileTypes: true })) {
+            const path = join(dir, entry.name);
+            if (entry.isDirectory()) walk(path);
+            else if (
+                entry.isFile() &&
+                /\.tsx?$/.test(entry.name) &&
+                !/\.test\.tsx?$/.test(entry.name)
+            ) {
                 files.push({ path, text: readFileSync(path, 'utf8') });
             }
         }

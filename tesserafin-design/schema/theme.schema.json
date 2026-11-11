@@ -196,29 +196,112 @@
                 "home.continueWatching.title": { "$ref": "#/$defs/textTitle" },
                 "home.nextUp.title": { "$ref": "#/$defs/textTitle" },
                 "home.latestMedia.title": { "$ref": "#/$defs/textTitle" },
-                "library.suggestions.continueWatching.title": { "$ref": "#/$defs/textTitle" },
-                "library.suggestions.nextUp.title": { "$ref": "#/$defs/textTitle" },
-                "library.suggestions.upcomingEpisodes.title": { "$ref": "#/$defs/textTitle" },
+                "library.suggestions.continueWatching.title": {
+                    "$ref": "#/$defs/textTitle"
+                },
+                "library.suggestions.nextUp.title": {
+                    "$ref": "#/$defs/textTitle"
+                },
+                "library.suggestions.upcomingEpisodes.title": {
+                    "$ref": "#/$defs/textTitle"
+                },
                 "details.schedule.title": { "$ref": "#/$defs/textTitle" },
-                "details.overview.expand.label": { "$ref": "#/$defs/textAction" },
-                "details.overview.collapse.label": { "$ref": "#/$defs/textAction" }
+                "details.overview.expand.label": {
+                    "$ref": "#/$defs/textAction"
+                },
+                "details.overview.collapse.label": {
+                    "$ref": "#/$defs/textAction"
+                }
             }
         },
         "textLocale": {
             "description": "A supported interface locale, normalised as globalize normalises it (lower case, `_` read as `-`).",
-            "enum": ["af", "ar", "be-by", "bg-bg", "bn-bd", "ca", "cs", "cy", "da", "de", "el", "en-gb", "en-us", "eo", "es", "es-419", "es-ar", "es-do", "es-mx", "et", "eu", "fa", "fi", "fil", "fr", "fr-ca", "gl", "gsw", "he", "hi-in", "hr", "hu", "id", "it", "ja", "kk", "ko", "lt-lt", "lv", "mr", "ms", "nb", "nl", "nn", "pl", "pr", "pt", "pt-br", "pt-pt", "ro", "ru", "sk", "sl-si", "sq", "sv", "ta", "th", "tr", "uk", "ur-pk", "vi", "zh-cn", "zh-hk", "zh-tw"]
+            "enum": [
+                "af",
+                "ar",
+                "be-by",
+                "bg-bg",
+                "bn-bd",
+                "ca",
+                "cs",
+                "cy",
+                "da",
+                "de",
+                "el",
+                "en-gb",
+                "en-us",
+                "eo",
+                "es",
+                "es-419",
+                "es-ar",
+                "es-do",
+                "es-mx",
+                "et",
+                "eu",
+                "fa",
+                "fi",
+                "fil",
+                "fr",
+                "fr-ca",
+                "gl",
+                "gsw",
+                "he",
+                "hi-in",
+                "hr",
+                "hu",
+                "id",
+                "it",
+                "ja",
+                "kk",
+                "ko",
+                "lt-lt",
+                "lv",
+                "mr",
+                "ms",
+                "nb",
+                "nl",
+                "nn",
+                "pl",
+                "pr",
+                "pt",
+                "pt-br",
+                "pt-pt",
+                "ro",
+                "ru",
+                "sk",
+                "sl-si",
+                "sq",
+                "sv",
+                "ta",
+                "th",
+                "tr",
+                "uk",
+                "ur-pk",
+                "vi",
+                "zh-cn",
+                "zh-hk",
+                "zh-tw"
+            ]
         },
         "textTitle": {
             "type": "object",
             "minProperties": 1,
             "propertyNames": { "$ref": "#/$defs/textLocale" },
-            "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 120 }
+            "additionalProperties": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+            }
         },
         "textAction": {
             "type": "object",
             "minProperties": 1,
             "propertyNames": { "$ref": "#/$defs/textLocale" },
-            "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 80 }
+            "additionalProperties": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+            }
         },
         "capabilityName": {
             "type": "string",

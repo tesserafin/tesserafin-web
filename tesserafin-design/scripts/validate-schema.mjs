@@ -167,7 +167,12 @@ function validateDeclaredProperties(schema, data, keys, schemaRoot, path) {
     if (isSchemaLike(schema.propertyNames)) {
         for (const key of keys) {
             errors.push(
-                ...validate(schema.propertyNames, key, schemaRoot, `${path}.${key}`)
+                ...validate(
+                    schema.propertyNames,
+                    key,
+                    schemaRoot,
+                    `${path}.${key}`
+                )
             );
         }
     }
