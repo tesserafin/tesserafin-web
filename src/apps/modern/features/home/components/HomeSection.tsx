@@ -7,6 +7,8 @@ import './HomeSection.scss';
 
 export interface HomeSectionProps {
     title: string;
+    /** `lang` of the title when it is not in the interface language (THEME-A2 §6). */
+    titleLang?: string;
     isLoading: boolean;
     isError: boolean;
     onRetry: () => void;
@@ -25,8 +27,13 @@ export interface HomeSectionProps {
 }
 
 // The theme's section-title recipe in every one of the four states, loading and error included.
-const SectionHeading: FC<{ title: string }> = ({ title }) => (
-    <SectionTitle className='rf-home-section__title'>{title}</SectionTitle>
+const SectionHeading: FC<{ title: string; lang?: string }> = ({
+    title,
+    lang
+}) => (
+    <SectionTitle className='rf-home-section__title' lang={lang}>
+        {title}
+    </SectionTitle>
 );
 
 /**
@@ -43,6 +50,7 @@ const SectionHeading: FC<{ title: string }> = ({ title }) => (
  */
 const HomeSection: FC<PropsWithChildren<HomeSectionProps>> = ({
     title,
+    titleLang,
     isLoading,
     isError,
     onRetry,
@@ -56,7 +64,7 @@ const HomeSection: FC<PropsWithChildren<HomeSectionProps>> = ({
     if (isLoading) {
         return (
             <div className='rf-home-section'>
-                <SectionHeading title={title} />
+                <SectionHeading title={title} lang={titleLang} />
                 <LoadingState
                     variant='shelf'
                     label={globalize.translate('Loading')}
@@ -68,7 +76,7 @@ const HomeSection: FC<PropsWithChildren<HomeSectionProps>> = ({
     if (isError) {
         return (
             <div className='rf-home-section'>
-                <SectionHeading title={title} />
+                <SectionHeading title={title} lang={titleLang} />
                 <ErrorState
                     title={globalize.translate('HeaderError')}
                     message={globalize.translate('ErrorDefault')}
@@ -84,7 +92,7 @@ const HomeSection: FC<PropsWithChildren<HomeSectionProps>> = ({
 
         return (
             <div className='rf-home-section'>
-                <SectionHeading title={title} />
+                <SectionHeading title={title} lang={titleLang} />
                 <EmptyState
                     title={emptyLabel}
                     description={emptyDescription}

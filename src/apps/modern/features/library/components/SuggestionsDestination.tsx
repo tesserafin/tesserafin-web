@@ -1,7 +1,9 @@
 import type { UseQueryResult } from '@tanstack/react-query';
 import React, { type FC, useMemo } from 'react';
 
+import { useSlotText } from 'hooks/useSlotText';
 import globalize from 'lib/globalize';
+import type { TextSlotId } from 'themes/platform/contract';
 import { BaseItemKind, CollectionType } from 'lib/tesserafin-sdk';
 import type { ItemDto } from 'types/base/models/item-dto';
 import type { ItemDtoQueryResult } from 'types/base/models/item-dto-query-result';
@@ -47,8 +49,20 @@ const SHELF_TITLE_KEY: Record<string, string> = {
     UpcomingEpisodes: 'HeaderUpcoming'
 };
 
+/**
+ * The shelves a theme may reword (THEME-A2). Their own slots, distinct from Home's even where the
+ * translation key is shared, so renaming Home's "Next up" leaves this tab alone and vice versa.
+ */
+const SHELF_TITLE_SLOT: Record<string, TextSlotId> = {
+    ContinueWatchingMovies: 'library.suggestions.continueWatching.title',
+    ContinueWatchingEpisode: 'library.suggestions.continueWatching.title',
+    NextUp: 'library.suggestions.nextUp.title',
+    UpcomingEpisodes: 'library.suggestions.upcomingEpisodes.title'
+};
+
 interface ShelfProps {
-    title: string;
+    /** The section's `SectionType` name, which picks both its heading key and its text slot. */
+    name: string;
     query: UseQueryResult<ItemDtoQueryResult | undefined, Error>;
     density: LibraryDensity;
     apiClient: ImageApiClient | undefined;
@@ -62,7 +76,7 @@ interface ShelfProps {
  * reason — one failing shelf must not replace the whole destination with an error state.
  */
 const Shelf: FC<ShelfProps> = ({
-    title,
+    name,
     query,
     density,
     apiClient,
@@ -71,6 +85,10 @@ const Shelf: FC<ShelfProps> = ({
     const cards = useMemo(
         () => toMediaCardPropsArray(query.data?.Items, apiClient, cardAspect),
         [query.data?.Items, apiClient, cardAspect]
+    );
+    const title = useSlotText(
+        SHELF_TITLE_SLOT[name],
+        SHELF_TITLE_KEY[name] ?? name
     );
 
     if (query.isPending && query.fetchStatus !== 'idle') {
@@ -85,7 +103,11 @@ const Shelf: FC<ShelfProps> = ({
     if (!cards.length) return null;
 
     return (
-        <MediaShelf title={title} density={density}>
+        <MediaShelf
+            title={title.text}
+            titleLang={title.langAttribute}
+            density={density}
+        >
             {cards.map((cardProps) => (
                 <MediaCard key={cardProps.href} {...cardProps} />
             ))}
@@ -201,9 +223,7 @@ export const SuggestionsDestination: FC<SuggestionsDestinationProps> = ({
             {orderedShelves.map((entry) => (
                 <Shelf
                     key={entry.name}
-                    title={globalize.translate(
-                        SHELF_TITLE_KEY[entry.name] ?? entry.name
-                    )}
+                    name={entry.name}
                     query={entry.query}
                     density={density}
                     apiClient={apiClient}

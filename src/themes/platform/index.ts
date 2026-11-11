@@ -41,6 +41,9 @@ export type {
     ThemePresentation,
     ThemeProfileName,
     ThemeRendererDeclaration,
+    TextSlotId,
+    ThemeText,
+    ThemeTextSlots,
     ThemeTokensPartial,
     WebRendererDeclaration
 } from './contract';
@@ -85,11 +88,11 @@ export {
 
 export { getManifestForThemeId, MANIFEST_THEME_IDS } from './manifests';
 
+export { loadAppliedPresentation } from './localPresentation';
 export {
     clearAppliedPresentation,
-    loadAppliedPresentation,
     saveAppliedPresentation
-} from './localPresentation';
+} from './localPresentationWrite';
 
 export type {
     ThemeValidationCode,

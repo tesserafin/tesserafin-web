@@ -27,7 +27,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.stubGlobal('__WEBPACK_SERVE__', false);
 
 vi.mock('lib/globalize', () => ({
-    default: { translate: (key: string) => key },
+    default: {
+        getCurrentLocale: () => 'en-us',
+        translateWithLocale(key: string, ...args: unknown[]) {
+            // THEME-A2 `useSlotText`: the mocked text, as written in the mocked locale.
+            return {
+                text: (
+                    this as {
+                        translate: (k: string, ...a: unknown[]) => string;
+                    }
+                ).translate(key, ...args),
+                lang: 'en-us'
+            };
+        },
+        translate: (key: string) => key
+    },
     translate: (key: string) => key
 }));
 
@@ -125,7 +139,7 @@ const { PresentationProvider } = await import(
     'ui/presentation/PresentationContext'
 );
 const { saveAppliedPresentation } = await import(
-    'themes/platform/localPresentation'
+    'themes/platform/localPresentationWrite'
 );
 
 let container: HTMLDivElement;

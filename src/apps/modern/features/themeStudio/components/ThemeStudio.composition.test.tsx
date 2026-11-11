@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadAppliedPresentation } from 'themes/platform/localPresentation';
 import { resolvePresentation } from 'themes/platform/resolvePresentation';
@@ -11,6 +11,31 @@ import { createDraft } from '../draftState';
 import { getOfficialSource } from '../officialSources';
 
 import { ThemeStudio } from './ThemeStudio';
+
+/*
+ * The Studio reads the application's wording since THEME-A2 (text slots). The real module's import
+ * chain needs the app host, so it is replaced by the shipped English dictionary, interpolated the
+ * way `translate` does.
+ */
+vi.mock('lib/globalize', async () => {
+    const dictionary = (await import('../../../../../strings/en-us.json'))
+        .default as Record<string, string>;
+    const translate = (key: string, ...args: unknown[]) =>
+        args.reduce<string>(
+            (text, value, index) =>
+                text.split(`{${index}}`).join(String(value)),
+            dictionary[key] ?? key
+        );
+    const api = {
+        translate,
+        getCurrentLocale: () => 'en-us',
+        translateWithLocale: (key: string, ...args: unknown[]) => ({
+            text: translate(key, ...args),
+            lang: 'en-us'
+        })
+    };
+    return { ...api, default: api };
+});
 
 /**
  * The Home composition control, asserted as a REAL control.

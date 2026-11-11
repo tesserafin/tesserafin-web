@@ -287,6 +287,12 @@
             "note": "derives display strings from the item"
         },
         {
+            "module": "hooks/useSlotText",
+            "classification": "PURE",
+            "surface": null,
+            "note": "THEME-A2. Picks the words of a text slot: the applied Studio draft's override or the theme's (both already in PresentationContext), else globalize's translation. Reads no storage itself and issues nothing."
+        },
+        {
             "module": "components/Page",
             "classification": "UI",
             "surface": null,

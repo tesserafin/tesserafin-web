@@ -1,9 +1,14 @@
-import React, { type FC, useMemo } from 'react';
+import React, { type FC, useCallback, useMemo, useState } from 'react';
+
+import { useSlotText } from 'hooks/useSlotText';
 
 import type { ResolvedPresentation } from 'themes/platform';
 import { MediaCard } from 'ui/components/MediaCard/MediaCard';
 import { MediaGrid } from 'ui/components/MediaGrid/MediaGrid';
-import { MediaShelf } from 'ui/components/MediaShelf/MediaShelf';
+import {
+    MediaShelf,
+    type MediaShelfProps
+} from 'ui/components/MediaShelf/MediaShelf';
 import { Surface } from 'ui/components/Surface/Surface';
 import { SectionTitle } from 'ui/components/SectionTitle/SectionTitle';
 import { Tabs } from 'ui/components/Tabs/Tabs';
@@ -118,9 +123,16 @@ export const PreviewCanvas: FC<PreviewCanvasProps> = ({
      * working after Apply. `value` is the provider's documented escape hatch for a nested,
      * local presentation: it never repaints the document behind it.
      */
+    const textSlots = draft.manifest.text?.slots;
     const context = useMemo(
-        () => ({ presentation, fallbacks: [], activatable: true }),
-        [presentation]
+        // THEME-A2: the draft's text slots, the only layer the preview has.
+        () => ({
+            presentation,
+            fallbacks: [],
+            activatable: true,
+            text: [textSlots]
+        }),
+        [presentation, textSlots]
     );
 
     const libraryCards = PREVIEW_LIBRARY_ITEMS.map((item) => (
@@ -190,8 +202,8 @@ export const PreviewCanvas: FC<PreviewCanvasProps> = ({
                                         key={section}
                                         data-rf-preview-section={section}
                                     >
-                                        <MediaShelf
-                                            title={shelf.title}
+                                        <PreviewShelf
+                                            section={section}
                                             density={density}
                                         >
                                             {shelf.items.map((item) => (
@@ -219,7 +231,7 @@ export const PreviewCanvas: FC<PreviewCanvasProps> = ({
                                                     }
                                                 />
                                             ))}
-                                        </MediaShelf>
+                                        </PreviewShelf>
                                     </div>
                                 );
                             })}
@@ -309,6 +321,7 @@ export const PreviewCanvas: FC<PreviewCanvasProps> = ({
                                 <p className='rf-studio-preview__overview'>
                                     {PREVIEW_DETAIL.overview}
                                 </p>
+                                <PreviewOverviewToggle />
                             </Surface>
                             <Surface
                                 variant={presentation.surface.variant}
@@ -358,6 +371,70 @@ export const PreviewCanvas: FC<PreviewCanvasProps> = ({
                 </div>
             </div>
         </PresentationProvider>
+    );
+};
+
+/**
+ * A Home shelf whose heading is resolved exactly as Home resolves it (`useSlotText`, same slot, same
+ * key), from the draft's text slots — so a text edit is visible here before Apply. The sample library
+ * name stands in for a real one.
+ */
+const HOME_SHELF_TEXT = {
+    continueWatching: ['home.continueWatching.title', 'HeaderContinueWatching'],
+    nextUp: ['home.nextUp.title', 'NextUp'],
+    latestMedia: ['home.latestMedia.title', 'LatestFromLibrary'],
+    libraries: ['home.libraries.title', 'HeaderMyMedia']
+} as const;
+const SAMPLE_LIBRARY = { libraryName: 'Films' };
+
+const PreviewShelf: FC<{
+    section: keyof typeof HOME_SHELF_TEXT;
+    density: MediaShelfProps['density'];
+    children: React.ReactNode;
+}> = ({ section, density, children }) => {
+    const [slot, key] = HOME_SHELF_TEXT[section];
+    const title = useSlotText(
+        slot,
+        key,
+        section === 'latestMedia' ? SAMPLE_LIBRARY : undefined
+    );
+    return (
+        <MediaShelf
+            title={title.text}
+            titleLang={title.langAttribute}
+            density={density}
+        >
+            {children}
+        </MediaShelf>
+    );
+};
+
+/** The synopsis toggle's two labels, as the details page resolves them. */
+const PreviewOverviewToggle: FC = () => {
+    const [expanded, setExpanded] = useState(false);
+    const expand = useSlotText(
+        'details.overview.expand.label',
+        'ShowMore',
+        undefined,
+        'action'
+    );
+    const collapse = useSlotText(
+        'details.overview.collapse.label',
+        'ShowLess',
+        undefined,
+        'action'
+    );
+    const label = expanded ? collapse : expand;
+    const toggle = useCallback(() => setExpanded((open) => !open), []);
+    return (
+        <button
+            type='button'
+            className='rf-studio-preview__overview-toggle'
+            onClick={toggle}
+            lang={label.langAttribute}
+        >
+            {label.text}
+        </button>
     );
 };
 

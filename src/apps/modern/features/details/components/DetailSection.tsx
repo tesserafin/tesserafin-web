@@ -25,6 +25,8 @@ interface DetailSectionProps {
     slot?: string;
     /** Already-translated heading text, or nothing for a section with no heading. */
     heading?: string;
+    /** `lang` of the heading when it is not in the interface language (a text slot's fallback). */
+    headingLang?: string;
     /** Suppress the heading element while keeping the section. `renderChildren` does this for
      * albums and seasons, and the frozen fixture records no heading for those classes. */
     headingHidden?: boolean;
@@ -47,6 +49,7 @@ const DetailSection: FC<DetailSectionProps> = ({
     column = 'full',
     slot,
     heading,
+    headingLang,
     headingHidden,
     children
 }) => (
@@ -61,6 +64,7 @@ const DetailSection: FC<DetailSectionProps> = ({
             <SectionTitle
                 className='rf-item-details__section-title'
                 data-detail-heading={name}
+                lang={headingLang}
             >
                 {heading}
             </SectionTitle>

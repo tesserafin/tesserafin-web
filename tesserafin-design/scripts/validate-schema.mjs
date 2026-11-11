@@ -6,8 +6,12 @@
  * implements just the subset of JSON Schema draft 2020-12 actually used by
  * `tesserafin-design/schema/theme.schema.json` and `tokens.schema.json`:
  *
- *   type, enum, pattern, minLength, minimum, maximum, properties, additionalProperties,
- *   required, minProperties, items, minItems, uniqueItems, $ref (to local "#/$defs/<name>").
+ *   type, enum, pattern, minLength, maxLength, minimum, maximum, properties,
+ *   additionalProperties, propertyNames, required, minProperties, items, minItems, uniqueItems,
+ *   $ref (to local "#/$defs/<name>").
+ *
+ * `maxLength` counts Unicode code points, as JSON Schema specifies: an emoji or an accented letter
+ * written as one character is one character, whatever its UTF-16 length.
  *
  * It is NOT a general-purpose JSON Schema implementation — no remote $ref, no allOf/anyOf/oneOf,
  * no $dynamicRef, no format keyword. If the two schema files above start using more of the spec,
@@ -82,6 +86,14 @@ function validateString(schema, data, path) {
             `${path}: length ${data.length} is below minLength ${schema.minLength}`
         );
     }
+    if (schema.maxLength !== undefined) {
+        const length = [...data].length;
+        if (length > schema.maxLength) {
+            errors.push(
+                `${path}: length ${length} is above maxLength ${schema.maxLength}`
+            );
+        }
+    }
     return errors;
 }
 
@@ -152,6 +164,13 @@ function validateRequiredProperties(schema, data, _keys, path) {
 function validateDeclaredProperties(schema, data, keys, schemaRoot, path) {
     const declaredProperties = schema.properties ?? {};
     const errors = [];
+    if (isSchemaLike(schema.propertyNames)) {
+        for (const key of keys) {
+            errors.push(
+                ...validate(schema.propertyNames, key, schemaRoot, `${path}.${key}`)
+            );
+        }
+    }
     for (const key of keys) {
         const propertySchema = declaredProperties[key];
         if (propertySchema) {

@@ -20,7 +20,8 @@
 
 import type { ThemePresentation } from './contract';
 
-const KEY = 'tesserafin.themeStudio.appliedPresentation';
+/** Exported for the writer (`localPresentationWrite.ts`), which only the Theme Studio loads. */
+export const KEY = 'tesserafin.themeStudio.appliedPresentation';
 
 /**
  * Subscribers notified when the applied presentation changes.
@@ -48,6 +49,9 @@ function notify(): void {
     for (const listener of [...listeners]) listener();
 }
 
+/** Lets the applied text record (`localText.ts`, outside the start-up bundle) wake the same subscribers. */
+export { notify as notifyAppliedPresentation };
+
 /**
  * Snapshot identity for `useSyncExternalStore`, which compares snapshots with `Object.is`.
  * `loadAppliedPresentation` parses JSON and would return a NEW object every call, so using it
@@ -64,29 +68,6 @@ function storage(): Storage | null {
         // Private-browsing modes expose `localStorage` and throw on access.
         return null;
     }
-}
-
-/** Records the presentation of the draft the user just applied. */
-export function saveAppliedPresentation(
-    presentation: ThemePresentation | undefined
-): void {
-    const store = storage();
-    if (!store) return;
-    try {
-        store.setItem(KEY, JSON.stringify(presentation ?? {}));
-        cachedRaw = undefined;
-        notify();
-    } catch {
-        // Quota. The overlay's tokens are what matter most; losing the presentation record
-        // degrades to the theme's own presentation rather than breaking the apply.
-    }
-}
-
-/** Forgets it. Called when the overlay is cleared, so the two can never disagree. */
-export function clearAppliedPresentation(): void {
-    storage()?.removeItem(KEY);
-    cachedRaw = undefined;
-    notify();
 }
 
 /**

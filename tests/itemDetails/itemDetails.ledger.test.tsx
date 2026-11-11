@@ -46,6 +46,10 @@ vi.mock('../../src/lib/globalize', () => {
         args.length ? [key, ...args].join(' ') : key;
     const api = {
         translate,
+        translateWithLocale: (key: string, ...args: unknown[]) => ({
+            text: translate(key, ...args),
+            lang: 'en-us'
+        }),
         translateHtml: (html: string) => html,
         loadStrings: () => Promise.resolve(),
         defaultModule: () => 'core',

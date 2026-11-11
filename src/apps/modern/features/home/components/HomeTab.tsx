@@ -7,6 +7,7 @@ import React, {
 
 import LibraryIcon from 'apps/modern/components/LibraryIcon';
 import { useApi } from 'hooks/useApi';
+import { useSlotText } from 'hooks/useSlotText';
 import globalize from 'lib/globalize';
 import type { BaseItemDto } from 'lib/tesserafin-sdk';
 import {
@@ -76,14 +77,17 @@ const LatestMediaSection: FC<LatestMediaSectionProps> = ({
         () => getLatestMediaCardOptions(view.CollectionType),
         [view.CollectionType]
     );
-    const title = globalize.translate('LatestFromLibrary', view.Name ?? '');
+    const title = useSlotText('home.latestMedia.title', 'LatestFromLibrary', {
+        libraryName: view.Name ?? ''
+    });
 
     // After every hook, never before: the early return must not change hook order.
     if (hidden) return null;
 
     return (
         <HomeSection
-            title={title}
+            title={title.text}
+            titleLang={title.langAttribute}
             isLoading={query.isPending}
             isError={query.isError}
             onRetry={() => void query.refetch()}
@@ -91,7 +95,8 @@ const LatestMediaSection: FC<LatestMediaSectionProps> = ({
         >
             <MediaShelf
                 id={`home-latest-${view.Id}`}
-                title={title}
+                title={title.text}
+                titleLang={title.langAttribute}
                 density={density}
             >
                 {toMediaCardPropsArray(
@@ -165,9 +170,13 @@ const HomeTab: FC = () => {
         [userViews]
     );
 
-    const myMediaTitle = globalize.translate('HeaderMyMedia');
-    const continueWatchingTitle = globalize.translate('HeaderContinueWatching');
-    const nextUpTitle = globalize.translate('NextUp');
+    // THEME-A2 text slots: the theme's wording, or the application's, with its language.
+    const myMediaTitle = useSlotText('home.libraries.title', 'HeaderMyMedia');
+    const continueWatchingTitle = useSlotText(
+        'home.continueWatching.title',
+        'HeaderContinueWatching'
+    );
+    const nextUpTitle = useSlotText('home.nextUp.title', 'NextUp');
 
     const renderSection = (section: WebHomeSection): ReactNode => {
         switch (section) {
@@ -186,7 +195,8 @@ const HomeTab: FC = () => {
                 return (
                     <HomeSection
                         key='libraries'
-                        title={myMediaTitle}
+                        title={myMediaTitle.text}
+                        titleLang={myMediaTitle.langAttribute}
                         isLoading={userViewsQuery.isPending}
                         isError={userViewsQuery.isError}
                         onRetry={() => void userViewsQuery.refetch()}
@@ -208,7 +218,8 @@ const HomeTab: FC = () => {
                     >
                         <MediaShelf
                             id='home-libraries'
-                            title={myMediaTitle}
+                            title={myMediaTitle.text}
+                            titleLang={myMediaTitle.langAttribute}
                             density={density}
                         >
                             {(userViews ?? []).map((view) => {
@@ -239,7 +250,8 @@ const HomeTab: FC = () => {
                 return (
                     <HomeSection
                         key='continueWatching'
-                        title={continueWatchingTitle}
+                        title={continueWatchingTitle.text}
+                        titleLang={continueWatchingTitle.langAttribute}
                         isLoading={resumeQuery.isPending}
                         isError={resumeQuery.isError}
                         onRetry={() => void resumeQuery.refetch()}
@@ -247,7 +259,8 @@ const HomeTab: FC = () => {
                     >
                         <MediaShelf
                             id='home-continueWatching'
-                            title={continueWatchingTitle}
+                            title={continueWatchingTitle.text}
+                            titleLang={continueWatchingTitle.langAttribute}
                             density={density}
                         >
                             {toMediaCardPropsArray(
@@ -268,7 +281,8 @@ const HomeTab: FC = () => {
                 return (
                     <HomeSection
                         key='nextUp'
-                        title={nextUpTitle}
+                        title={nextUpTitle.text}
+                        titleLang={nextUpTitle.langAttribute}
                         isLoading={nextUpQuery.isPending}
                         isError={nextUpQuery.isError}
                         onRetry={() => void nextUpQuery.refetch()}
@@ -276,7 +290,8 @@ const HomeTab: FC = () => {
                     >
                         <MediaShelf
                             id='home-nextUp'
-                            title={nextUpTitle}
+                            title={nextUpTitle.text}
+                            titleLang={nextUpTitle.langAttribute}
                             density={density}
                         >
                             {toMediaCardPropsArray(

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadAppliedPresentation } from 'themes/platform/localPresentation';
 import { resolvePresentation } from 'themes/platform/resolvePresentation';
@@ -10,6 +10,31 @@ import { parseDraft, serialiseDraft } from '../draftFormat';
 import { loadDraft } from '../draftStorage';
 
 import { ThemeStudio } from './ThemeStudio';
+
+/*
+ * The Studio reads the application's wording since THEME-A2 (text slots). The real module's import
+ * chain needs the app host, so it is replaced by the shipped English dictionary, interpolated the
+ * way `translate` does.
+ */
+vi.mock('lib/globalize', async () => {
+    const dictionary = (await import('../../../../../strings/en-us.json'))
+        .default as Record<string, string>;
+    const translate = (key: string, ...args: unknown[]) =>
+        args.reduce<string>(
+            (text, value, index) =>
+                text.split(`{${index}}`).join(String(value)),
+            dictionary[key] ?? key
+        );
+    const api = {
+        translate,
+        getCurrentLocale: () => 'en-us',
+        translateWithLocale: (key: string, ...args: unknown[]) => ({
+            text: translate(key, ...args),
+            lang: 'en-us'
+        })
+    };
+    return { ...api, default: api };
+});
 
 /**
  * THEME-A1 in the Studio, held to the standard of the composition controls: a setting must act in
@@ -82,91 +107,112 @@ const preview = () =>
         '[data-testid="theme-studio-preview"]'
     );
 
+/**
+ * Each flow drives the whole Studio through real MUI selects and inputs. Alone a flow takes 1-3 s;
+ * under the full suite's parallel load it has crossed the 5 s default, so the budget is explicit.
+ */
+const FLOW_TIMEOUT = 15_000;
+
 describe('Theme Studio — THEME-A1 settings are real', () => {
-    it('acts in the preview through the real primitives', () => {
-        render();
-        clickButtonLabelled('Copy Tesserafin Classic');
+    it(
+        'acts in the preview through the real primitives',
+        () => {
+            render();
+            clickButtonLabelled('Copy Tesserafin Classic');
 
-        choose('presentation-title-size', 'small');
-        choose('presentation-title-lines', '3');
-        // Home: the shelves' headings and cards.
-        expect(
-            preview()
-                ?.querySelector('h2.rf-section-title')
-                ?.getAttribute('data-rf-title-size')
-        ).toBe('small');
-        expect(
-            preview()?.querySelector('[data-rf-slot="media-card"]')?.className
-        ).toContain('rf-media-card--title-3');
+            choose('presentation-title-size', 'small');
+            choose('presentation-title-lines', '3');
+            // Home: the shelves' headings and cards.
+            expect(
+                preview()
+                    ?.querySelector('h2.rf-section-title')
+                    ?.getAttribute('data-rf-title-size')
+            ).toBe('small');
+            expect(
+                preview()?.querySelector('[data-rf-slot="media-card"]')
+                    ?.className
+            ).toContain('rf-media-card--title-3');
 
-        choose('presentation-tabs', 'pills');
-        choose('studio-surface', 'library');
-        expect(
-            preview()?.querySelector('[data-rf-slot="tabs"]')?.className
-        ).toContain('rf-tabs--pills');
+            choose('presentation-tabs', 'pills');
+            choose('studio-surface', 'library');
+            expect(
+                preview()?.querySelector('[data-rf-slot="tabs"]')?.className
+            ).toContain('rf-tabs--pills');
 
-        choose('presentation-people-grid', 'large');
-        choose('studio-surface', 'itemDetails');
-        expect(
-            preview()
-                ?.querySelector('[aria-label="Preview cast"]')
-                ?.getAttribute('data-rf-grid-size')
-        ).toBe('large');
-    });
+            choose('presentation-people-grid', 'large');
+            choose('studio-surface', 'itemDetails');
+            expect(
+                preview()
+                    ?.querySelector('[aria-label="Preview cast"]')
+                    ?.getAttribute('data-rf-grid-size')
+            ).toBe('large');
+        },
+        FLOW_TIMEOUT
+    );
 
-    it('previews the DRAFT, not the applied theme', () => {
-        // The applied record asks for pills; the Classic draft being edited does not. Before
-        // THEME-A1 the preview's primitives read the applied record and showed pills anyway.
-        window.localStorage.setItem(
-            'tesserafin.themeStudio.appliedPresentation',
-            JSON.stringify({ navigation: { tabs: 'pills' } })
-        );
-        render();
-        clickButtonLabelled('Copy Tesserafin Classic');
-        choose('studio-surface', 'library');
-        expect(
-            preview()?.querySelector('[data-rf-slot="tabs"]')?.className
-        ).toContain('rf-tabs--underline');
-    });
+    it(
+        'previews the DRAFT, not the applied theme',
+        () => {
+            // The applied record asks for pills; the Classic draft being edited does not. Before
+            // THEME-A1 the preview's primitives read the applied record and showed pills anyway.
+            window.localStorage.setItem(
+                'tesserafin.themeStudio.appliedPresentation',
+                JSON.stringify({ navigation: { tabs: 'pills' } })
+            );
+            render();
+            clickButtonLabelled('Copy Tesserafin Classic');
+            choose('studio-surface', 'library');
+            expect(
+                preview()?.querySelector('[data-rf-slot="tabs"]')?.className
+            ).toContain('rf-tabs--underline');
+        },
+        FLOW_TIMEOUT
+    );
 
-    it('reaches the live record on Apply, survives a reload, and round-trips on export', () => {
-        render();
-        clickButtonLabelled('Copy Tesserafin Glass');
-        choose('presentation-title-alignment', 'center');
-        choose('presentation-library-grid', 'small');
-        clickButtonLabelled('Apply to Tesserafin');
+    it(
+        'reaches the live record on Apply, survives a reload, and round-trips on export',
+        () => {
+            render();
+            clickButtonLabelled('Copy Tesserafin Glass');
+            choose('presentation-title-alignment', 'center');
+            choose('presentation-library-grid', 'small');
+            clickButtonLabelled('Apply to Tesserafin');
 
-        const applied = loadAppliedPresentation();
-        // The edited keys, and Glass's own A1 keys kept beside them.
-        expect(applied?.sectionTitle).toEqual({
-            size: 'large',
-            weight: 'bold',
-            align: 'center'
-        });
-        expect(applied?.grid).toEqual({ library: 'small' });
-        expect(applied?.navigation?.tabs).toBe('pills');
-        const resolved = resolvePresentation({ presentation: applied ?? {} });
-        expect(resolved.fallbacks).toEqual([]);
-        expect(resolved.presentation.sectionTitle.align).toBe('center');
-        expect(resolved.presentation.grid.library).toBe('small');
+            const applied = loadAppliedPresentation();
+            // The edited keys, and Glass's own A1 keys kept beside them.
+            expect(applied?.sectionTitle).toEqual({
+                size: 'large',
+                weight: 'bold',
+                align: 'center'
+            });
+            expect(applied?.grid).toEqual({ library: 'small' });
+            expect(applied?.navigation?.tabs).toBe('pills');
+            const resolved = resolvePresentation({
+                presentation: applied ?? {}
+            });
+            expect(resolved.fallbacks).toEqual([]);
+            expect(resolved.presentation.sectionTitle.align).toBe('center');
+            expect(resolved.presentation.grid.library).toBe('small');
 
-        // A reload of the Studio reads the persisted draft back into the controls.
-        act(() => {
-            root.unmount();
-            root = createRoot(container);
-        });
-        render();
-        const combobox = container.querySelector(
-            '[role="combobox"][aria-labelledby~="presentation-title-alignment"]'
-        );
-        expect(combobox?.textContent).toBe('center');
+            // A reload of the Studio reads the persisted draft back into the controls.
+            act(() => {
+                root.unmount();
+                root = createRoot(container);
+            });
+            render();
+            const combobox = container.querySelector(
+                '[role="combobox"][aria-labelledby~="presentation-title-alignment"]'
+            );
+            expect(combobox?.textContent).toBe('center');
 
-        const stored = loadDraft();
-        if (!stored) throw new Error('the draft must be persisted');
-        const reimported = parseDraft(serialiseDraft(stored));
-        expect(reimported.issues).toEqual([]);
-        expect(
-            reimported.valid && reimported.draft.manifest.presentation?.grid
-        ).toEqual({ library: 'small' });
-    });
+            const stored = loadDraft();
+            if (!stored) throw new Error('the draft must be persisted');
+            const reimported = parseDraft(serialiseDraft(stored));
+            expect(reimported.issues).toEqual([]);
+            expect(
+                reimported.valid && reimported.draft.manifest.presentation?.grid
+            ).toEqual({ library: 'small' });
+        },
+        FLOW_TIMEOUT
+    );
 });

@@ -36,6 +36,19 @@ vi.stubGlobal('__WEBPACK_SERVE__', false);
 // distinguishable from one another in the rendered heading order.
 vi.mock('lib/globalize', () => ({
     default: {
+        getCurrentLocale: () => 'en-us',
+        translateWithLocale(key: string, ...args: unknown[]) {
+            // THEME-A2 `useSlotText`: the mocked text, as written in the mocked locale.
+            return {
+                text: (
+                    this as {
+                        translate: (k: string, ...a: unknown[]) => string;
+                    }
+                ).translate(key, ...args),
+                lang: 'en-us'
+            };
+        },
+
         translate: (key: string, ...args: string[]) =>
             [key, ...args].join(' ').trim(),
         getCurrentDateTimeLocale: () => 'en-US'
@@ -121,7 +134,7 @@ const { PLATFORM_DEFAULT_PRESENTATION } = await import(
     'themes/platform/resolvePresentation'
 );
 const { saveAppliedPresentation, clearAppliedPresentation } = await import(
-    'themes/platform/localPresentation'
+    'themes/platform/localPresentationWrite'
 );
 
 let container: HTMLDivElement;

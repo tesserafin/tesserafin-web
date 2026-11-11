@@ -192,3 +192,15 @@
     font-size: var(--rf-typography-font-size-lg, 1.25rem);
     font-weight: var(--rf-typography-font-weight-medium, 500);
 }
+
+/* The synopsis toggle, drawn like the details page's link-styled button. */
+.rf-studio-preview__overview-toggle {
+    align-self: start;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--rf-color-primary, #00a4dc);
+    font: inherit;
+    font-size: var(--rf-typography-font-size-sm, 0.875rem);
+    cursor: pointer;
+}

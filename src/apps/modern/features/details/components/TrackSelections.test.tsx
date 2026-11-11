@@ -7,7 +7,21 @@ import type { TrackSelection } from '../hooks/useTrackSelection';
 import TrackSelections from './TrackSelections';
 
 vi.mock('lib/globalize', () => ({
-    default: { translate: (key: string) => key }
+    default: {
+        getCurrentLocale: () => 'en-us',
+        translateWithLocale(key: string, ...args: unknown[]) {
+            // THEME-A2 `useSlotText`: the mocked text, as written in the mocked locale.
+            return {
+                text: (
+                    this as {
+                        translate: (k: string, ...a: unknown[]) => string;
+                    }
+                ).translate(key, ...args),
+                lang: 'en-us'
+            };
+        },
+        translate: (key: string) => key
+    }
 }));
 
 (

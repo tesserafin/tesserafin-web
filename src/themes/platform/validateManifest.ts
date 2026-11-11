@@ -23,6 +23,7 @@
 import { validate } from '../../../tesserafin-design/scripts/validate-schema.mjs';
 import themeSchema from '../../../tesserafin-design/schema/theme.schema.json';
 import { THEME_CONTRACT_VERSION, type ThemeManifest } from './contract';
+import { validateTextSlots } from './textSlots';
 
 export type ThemeValidationCode =
     | 'not-an-object'
@@ -30,7 +31,8 @@ export type ThemeValidationCode =
     | 'unsupported-contract-version'
     | 'schema-violation'
     | 'executable-surface'
-    | 'incompatible-web-version';
+    | 'incompatible-web-version'
+    | 'invalid-text-slot';
 
 export interface ThemeValidationIssue {
     code: ThemeValidationCode;
@@ -151,6 +153,19 @@ export function validateManifest(
     }
 
     const manifest = candidate as unknown as ThemeManifest;
+
+    // THEME-A2: what the schema cannot say about a text slot — its variables and its braces.
+    const textIssues = validateTextSlots(manifest.text);
+    if (textIssues.length > 0) {
+        return {
+            valid: false,
+            manifest: null,
+            issues: textIssues.map((issue) => ({
+                code: 'invalid-text-slot' as const,
+                ...issue
+            }))
+        };
+    }
 
     if (appWebVersion && manifest.compatibility.web) {
         if (!satisfiesLooseRange(appWebVersion, manifest.compatibility.web)) {

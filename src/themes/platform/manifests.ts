@@ -22,7 +22,7 @@
  * import would only move the cost to a chunk that is always fetched anyway, while making the
  * presentation arrive one tick after first paint.
  *
- * Only the three keys the renderer reads (and `id`, its lookup key) are taken from them, by static property access, and that
+ * Only what the renderer reads (`presentation`, `capabilities.required`, and `id`, its lookup key) are taken from them, by static property access, and that
  * is what lets webpack drop the rest of each document — description, author, licence,
  * compatibility, modes, renderer declarations, lineage, ~1.3 KB — from the start-up bundle
  * (THEME-A1 paid for its own vocabulary that way). It works only while nothing else in the build
@@ -35,13 +35,12 @@ import glassManifest from '../../../tesserafin-design/themes/glass/theme.json';
 
 import { getThemeEntry } from '../registry';
 
-import type { ThemeManifest } from './contract';
+import type { ThemeCapability, ThemeManifest } from './contract';
 
 /** What the renderer reads of a manifest. Nothing else of it reaches the start-up bundle. */
-export type RuntimeManifest = Pick<
-    ThemeManifest,
-    'id' | 'presentation' | 'capabilities'
->;
+export type RuntimeManifest = Pick<ThemeManifest, 'id' | 'presentation'> & {
+    capabilities: { required: readonly ThemeCapability[] };
+};
 
 // Spelled out key by key, never spread: a spread reads every key and would keep them all.
 const MANIFESTS: Readonly<Record<string, RuntimeManifest>> = {
@@ -49,15 +48,21 @@ const MANIFESTS: Readonly<Record<string, RuntimeManifest>> = {
         id: classicManifest.id,
         presentation:
             classicManifest.presentation as ThemeManifest['presentation'],
-        capabilities:
-            classicManifest.capabilities as ThemeManifest['capabilities']
+        // `required` only: it is all the resolver reads (may this theme activate?), and naming it
+        // lets webpack drop the `optional` list from the start-up bundle too.
+        capabilities: {
+            required: classicManifest.capabilities.required as ThemeCapability[]
+        }
     },
     [glassManifest.id]: {
         id: glassManifest.id,
         presentation:
             glassManifest.presentation as ThemeManifest['presentation'],
-        capabilities:
-            glassManifest.capabilities as ThemeManifest['capabilities']
+        // `required` only: it is all the resolver reads (may this theme activate?), and naming it
+        // lets webpack drop the `optional` list from the start-up bundle too.
+        capabilities: {
+            required: glassManifest.capabilities.required as ThemeCapability[]
+        }
     }
 };
 

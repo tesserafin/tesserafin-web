@@ -14,6 +14,7 @@ import React, {
  * dependencies of the Theme Studio's lazy chunk, and ~24 KB the MAIN bundle has no use for. A
  * barrel import here would have dragged all of it in for two functions.
  */
+import type { ThemeTextSlots } from 'themes/platform/contract';
 import {
     loadAppliedPresentation,
     subscribeAppliedPresentation
@@ -50,6 +51,12 @@ export interface PresentationContextValue {
     fallbacks: readonly CapabilityFallback[];
     /** `false` when the active theme requires a capability the renderer lacks; it must not be applied. */
     activatable: boolean;
+    /**
+     * THEME-A2 text slot layers, for a provider given `value` (the Theme Studio preview, tests).
+     * The app root never sets it: `useSlotText` reads the applied draft's text itself, so the
+     * start-up bundle carries none of it.
+     */
+    text?: readonly (ThemeTextSlots | null | undefined)[];
 }
 
 const DEFAULT_VALUE: PresentationContextValue = {

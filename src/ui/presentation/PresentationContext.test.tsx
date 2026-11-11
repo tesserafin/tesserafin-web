@@ -9,11 +9,11 @@ import {
     getManifestForThemeId
 } from 'themes/platform';
 import { THEME_REGISTRY, getThemeEntry } from 'themes/registry';
+import { loadAppliedPresentation } from 'themes/platform/localPresentation';
 import {
     clearAppliedPresentation,
-    loadAppliedPresentation,
     saveAppliedPresentation
-} from 'themes/platform/localPresentation';
+} from 'themes/platform/localPresentationWrite';
 
 import {
     PresentationProvider,

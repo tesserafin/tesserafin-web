@@ -12,7 +12,21 @@ import sessionDetailWithoutDiagnostic from './__fixtures__/sessionDetailWithoutD
 // constraint `formatReasonCode.test.ts` works around). The identity mock keeps
 // `formatReasonCode(code)` equal to `ReasonCode.${code}` for the assertions below.
 vi.mock('lib/globalize', () => ({
-    default: { translate: (key: string) => key }
+    default: {
+        getCurrentLocale: () => 'en-us',
+        translateWithLocale(key: string, ...args: unknown[]) {
+            // THEME-A2 `useSlotText`: the mocked text, as written in the mocked locale.
+            return {
+                text: (
+                    this as {
+                        translate: (k: string, ...a: unknown[]) => string;
+                    }
+                ).translate(key, ...args),
+                lang: 'en-us'
+            };
+        },
+        translate: (key: string) => key
+    }
 }));
 
 /**
