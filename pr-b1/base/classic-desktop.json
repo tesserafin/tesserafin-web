@@ -1,0 +1,34 @@
+{
+ "rest": {
+  "attrs": {},
+  "box": [
+   0,
+   0,
+   1440,
+   48
+  ],
+  "background": "rgba(0, 0, 0, 0)",
+  "backdrop": "none",
+  "shadow": false,
+  "border": "0px",
+  "navStyle": null,
+  "smallestTarget": 40,
+  "overflow": false
+ },
+ "scrolled": {
+  "attrs": {},
+  "box": [
+   0,
+   0,
+   1440,
+   48
+  ],
+  "background": "rgb(7, 20, 47)",
+  "backdrop": "none",
+  "shadow": true,
+  "border": "0px",
+  "navStyle": null,
+  "smallestTarget": 40,
+  "overflow": false
+ }
+}

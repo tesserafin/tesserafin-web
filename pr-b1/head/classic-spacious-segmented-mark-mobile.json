@@ -1,0 +1,44 @@
+{
+ "rest": {
+  "attrs": {
+   "rfHeaderMaterial": "transparent",
+   "rfHeaderSeparator": "shadow",
+   "rfHeaderShape": "bar",
+   "rfHeaderDensity": "spacious"
+  },
+  "box": [
+   0,
+   0,
+   390,
+   60
+  ],
+  "background": "rgba(0, 0, 0, 0)",
+  "backdrop": "none",
+  "shadow": false,
+  "border": "0px",
+  "navStyle": null,
+  "smallestTarget": 44,
+  "overflow": false
+ },
+ "scrolled": {
+  "attrs": {
+   "rfHeaderMaterial": "surface",
+   "rfHeaderSeparator": "shadow",
+   "rfHeaderShape": "bar",
+   "rfHeaderDensity": "spacious"
+  },
+  "box": [
+   0,
+   0,
+   390,
+   60
+  ],
+  "background": "rgb(7, 20, 47)",
+  "backdrop": "none",
+  "shadow": true,
+  "border": "0px",
+  "navStyle": null,
+  "smallestTarget": 44,
+  "overflow": false
+ }
+}
