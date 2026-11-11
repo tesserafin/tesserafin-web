@@ -22,6 +22,7 @@ export type {
     GridContext,
     GridItemSize,
     GridPresentation,
+    HeaderPresentation,
     MediaCardPresentation,
     MediaCardTitleLines,
     NavigationLabels,
@@ -105,3 +106,18 @@ export {
     validateManifest,
     validateThemePackage
 } from './validateManifest';
+
+export {
+    HEADER_BRAND_LABELS,
+    HEADER_BRAND_SHOWS,
+    HEADER_BRAND_SIZES,
+    HEADER_DENSITIES,
+    HEADER_NAV_STYLES,
+    HEADER_REST_MATERIALS,
+    HEADER_SCROLLED_MATERIALS,
+    HEADER_SEPARATORS,
+    HEADER_SHAPES,
+    PLATFORM_DEFAULT_HEADER,
+    resolveHeader
+} from './headerRecipe';
+export type { ResolvedHeader } from './headerRecipe';

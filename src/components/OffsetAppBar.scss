@@ -1,0 +1,47 @@
+/**
+ * The header recipe (THEME-B1) — only for values other than the default. The default recipe is
+ * drawn by MUI itself (`headerBarProps`), so none of these rules matches a theme that says nothing.
+ * Keyed on data attributes the modern shell sets; the admin dashboard sets none.
+ */
+
+@use '../ui/styles/glass-surface' as glass;
+
+.MuiAppBar-root[data-rf-header-material='glass'] {
+    @include glass.rf-glass-surface;
+}
+
+.MuiAppBar-root[data-rf-header-separator='hairline'] {
+    border-bottom: 1px solid var(--rf-color-divider, rgba(255, 255, 255, 0.12));
+}
+
+/* `density` sizes the MAIN row only: the library toolbar below it keeps its own height. */
+.MuiAppBar-root[data-rf-header-density='comfortable'] > .MuiToolbar-root:first-child {
+    min-height: 3.5rem;
+}
+
+.MuiAppBar-root[data-rf-header-density='spacious'] > .MuiToolbar-root:first-child {
+    min-height: 4rem;
+}
+
+/*
+ * A floating bar is inset from the window and rounded. On a compact window it falls back to the
+ * normal bar: a phone has no room to spare around it. `OffsetAppBar` measures the bar's bottom edge,
+ * so the spacer clears the inset as well.
+ */
+@media (min-width: 900px) {
+    .MuiAppBar-root[data-rf-header-shape='floating'] {
+        top: var(--rf-spacing-sm, 8px);
+        right: var(--rf-spacing-sm, 8px);
+        left: var(--rf-spacing-sm, 8px);
+        width: auto;
+        border-radius: var(--rf-shape-radius-lg, 16px);
+    }
+}
+
+/*
+ * The account button in the MODERN header (the attribute is set by its recipe; the dashboard has
+ * none): 40 px measured, 44 px is the target size (THEME-B1 §7). Documented, not hidden.
+ */
+.MuiAppBar-root[data-rf-header-density] .rf-user-menu-button {
+    padding: 2px;
+}

@@ -2,6 +2,10 @@ import React, { type FC, useCallback, useMemo, useState } from 'react';
 
 import { useSlotText } from 'hooks/useSlotText';
 
+import { resolveHeader } from 'themes/platform/headerRecipe';
+
+import { HeaderPreview } from './HeaderPreview';
+
 import type { ResolvedPresentation } from 'themes/platform';
 import { MediaCard } from 'ui/components/MediaCard/MediaCard';
 import { MediaGrid } from 'ui/components/MediaGrid/MediaGrid';
@@ -174,6 +178,13 @@ export const PreviewCanvas: FC<PreviewCanvasProps> = ({
                         </span>
                     ))}
                 </nav>
+
+                <HeaderPreview
+                    header={resolveHeader(
+                        presentation.header,
+                        presentation.surface.variant
+                    )}
+                />
 
                 <div className='rf-studio-preview__body'>
                     {surface === 'home' && (

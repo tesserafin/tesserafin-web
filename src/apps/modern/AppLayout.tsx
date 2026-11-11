@@ -9,6 +9,7 @@ import CustomCss from 'components/CustomCss';
 import OffsetAppBar from 'components/OffsetAppBar';
 import ThemeCss from 'components/ThemeCss';
 import { useApi } from 'hooks/useApi';
+import { resolveHeader } from 'themes/platform/headerRecipe';
 import { usePresentation } from 'ui';
 
 import AppSideNav from './components/AppSideNav/AppSideNav';
@@ -25,7 +26,8 @@ import './surfaceMaterial.scss';
 export const Component = () => {
     const [isDrawerActive, setIsDrawerActive] = useState(false);
     const [appBarHeight, setAppBarHeight] = useState(48);
-    const navigationShell = usePresentation().navigation.shell;
+    const presentation = usePresentation();
+    const navigationShell = presentation.navigation.shell;
     const { user } = useApi();
     const location = useLocation();
 
@@ -64,6 +66,10 @@ export const Component = () => {
                         dense
                         elevation={4}
                         onHeightChange={setAppBarHeight}
+                        recipe={resolveHeader(
+                            presentation.header,
+                            presentation.surface.variant
+                        )}
                     >
                         <AppToolbar
                             isViewNavInBar={!sideNav}

@@ -8,6 +8,10 @@ import React, {
     type PropsWithChildren
 } from 'react';
 
+import type { ResolvedHeader } from 'themes/platform/headerRecipe';
+
+import './OffsetAppBar.scss';
+
 /** The default height of an AppBar. */
 const DEFAULT_APP_BAR_HEIGHT = 64;
 /** The height of a dense AppBar. */
@@ -20,6 +24,41 @@ interface OffsetAppBarProps extends AppBarProps {
     elevation?: number;
     /** Told the bar's measured height, for content that must sit under it (a sticky column). */
     onHeightChange?: (height: number) => void;
+    /**
+     * The theme's header recipe (THEME-B1), for the modern shell only. Absent — the dashboard —
+     * the bar is exactly what it always was.
+     */
+    recipe?: ResolvedHeader;
+}
+
+/**
+ * MUI colour, elevation and data attributes for a header in a given scroll state. The default
+ * recipe keeps MUI's own path (transparent at rest; `default` with the given elevation once
+ * scrolled), so a theme that says nothing renders byte for byte as before; every other value is
+ * drawn by `OffsetAppBar.scss` from the attributes. Shared with the Theme Studio preview, which
+ * draws the same bar unscrolled and scrolled side by side.
+ */
+export function headerBarProps(
+    recipe: ResolvedHeader | undefined,
+    scrolled: boolean,
+    elevation: number
+) {
+    let material: string = scrolled ? 'surface' : 'transparent';
+    if (recipe) material = recipe.material[scrolled ? 'scrolled' : 'rest'];
+    return {
+        color:
+            material === 'surface'
+                ? ('default' as const)
+                : ('transparent' as const),
+        elevation:
+            scrolled && (recipe?.separator ?? 'shadow') === 'shadow'
+                ? elevation
+                : 0,
+        'data-rf-header-material': recipe && material,
+        'data-rf-header-separator': recipe?.separator,
+        'data-rf-header-shape': recipe?.shape,
+        'data-rf-header-density': recipe?.density
+    };
 }
 
 /**
@@ -30,6 +69,7 @@ const OffsetAppBar: FC<PropsWithChildren<OffsetAppBarProps>> = ({
     dense = false,
     elevation = 1,
     onHeightChange,
+    recipe,
     ...props
 }) => {
     const appBarRef = useRef<HTMLHtmlElement>(null);
@@ -50,9 +90,10 @@ const OffsetAppBar: FC<PropsWithChildren<OffsetAppBarProps>> = ({
         const el = appBarRef.current;
         if (!el) return;
 
-        // Set initial measured height
+        // The bar's BOTTOM edge, not its height: a floating bar (THEME-B1) is inset from the top,
+        // and the spacer must clear the whole of it. For a bar at the top the two are equal.
         const updateHeight = () => {
-            setHeight(Math.ceil(el.getBoundingClientRect().height || 0));
+            setHeight(Math.ceil(el.getBoundingClientRect().bottom || 0));
         };
 
         updateHeight();
@@ -62,7 +103,11 @@ const OffsetAppBar: FC<PropsWithChildren<OffsetAppBarProps>> = ({
             // Use requestAnimationFrame to batch DOM writes
             window.requestAnimationFrame(() => {
                 for (const entry of entries) {
-                    setHeight(Math.ceil(entry.contentRect.height || 0));
+                    setHeight(
+                        Math.ceil(
+                            entry.target.getBoundingClientRect().bottom || 0
+                        )
+                    );
                 }
             });
         });
@@ -82,8 +127,7 @@ const OffsetAppBar: FC<PropsWithChildren<OffsetAppBarProps>> = ({
                 {...props}
                 ref={appBarRef}
                 position='fixed'
-                color={scrollTrigger ? 'default' : 'transparent'}
-                elevation={scrollTrigger ? elevation : 0}
+                {...headerBarProps(recipe, scrollTrigger, elevation)}
             >
                 {children}
             </AppBar>

@@ -31,6 +31,7 @@ import {
     THEME_CAPABILITIES,
     WEB_RENDERER_CAPABILITIES
 } from './contract';
+import { isBoundByWebRenderer } from './resolvePresentation';
 
 const defs = themeSchema.$defs as Record<string, Record<string, unknown>>;
 
@@ -240,6 +241,14 @@ describe('contract.ts <-> theme.schema.json', () => {
         expect([...GRID_CONTEXTS]).toEqual(
             Object.keys(defs.gridVariant.properties as object)
         );
+    });
+
+    it('tells the Web renderer apart by its unbound capabilities, equal to the published list', () => {
+        for (const capability of THEME_CAPABILITIES) {
+            expect(isBoundByWebRenderer(capability), capability).toBe(
+                WEB_RENDERER_CAPABILITIES.includes(capability)
+            );
+        }
     });
 
     it('keeps every renderer optional, so the universal layer is never Web-only', () => {

@@ -43,6 +43,7 @@ export const THEME_CAPABILITIES = [
     'presentation.navigation',
     'presentation.sectionTitle',
     'presentation.grid',
+    'presentation.header',
     'presentation.page.home',
     'presentation.page.library',
     'presentation.page.itemDetails',
@@ -89,6 +90,7 @@ export const WEB_RENDERER_CAPABILITIES: readonly ThemeCapability[] = [
     'presentation.navigation',
     'presentation.sectionTitle',
     'presentation.grid',
+    'presentation.header',
     'presentation.page.home',
     'presentation.page.library',
     'presentation.page.itemDetails',
@@ -484,12 +486,17 @@ export interface PageRecipes {
     itemDetails?: ItemDetailsRecipe;
 }
 
+/** THEME-B1: the header recipe's vocabulary lives with its resolver, outside the start-up bundle. */
+export type { HeaderPresentation } from './headerRecipe';
+import type { HeaderPresentation } from './headerRecipe';
+
 export interface ThemePresentation {
     surface?: SurfacePresentation;
     mediaCard?: MediaCardPresentation;
     navigation?: NavigationPresentation;
     sectionTitle?: SectionTitlePresentation;
     grid?: GridPresentation;
+    header?: HeaderPresentation;
     page?: PageRecipes;
 }
 

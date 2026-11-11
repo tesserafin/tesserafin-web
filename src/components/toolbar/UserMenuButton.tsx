@@ -39,6 +39,7 @@ const UserMenuButton = () => {
                     aria-haspopup='true'
                     onClick={onUserButtonClick}
                     color='inherit'
+                    className='rf-user-menu-button'
                     sx={{ padding: 0 }}
                 >
                     <UserAvatar user={user} />

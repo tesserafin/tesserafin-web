@@ -1,35 +1,20 @@
-import icon from 'assets/branding/mark.svg';
-import Button from '@mui/material/Button/Button';
 import React, { FC } from 'react';
-import { Link } from 'react-router-dom';
 
 import { useSystemInfo } from 'hooks/useSystemInfo';
 
-const ServerButton: FC = () => {
-    const { data: systemInfo, isPending } = useSystemInfo();
+import { type Brand, HeaderBrand } from './HeaderBrand';
 
-    return (
-        <Button
-            variant='text'
-            size='large'
-            color='inherit'
-            startIcon={
-                <img
-                    src={icon}
-                    alt=''
-                    aria-hidden
-                    style={{
-                        height: '1.25em',
-                        width: '1.25em'
-                    }}
-                />
-            }
-            component={Link}
-            to='/'
-        >
-            {isPending ? '' : systemInfo?.ServerName || 'Tesserafin'}
-        </Button>
-    );
+/** The server's name, or the product's — never a change to server data. */
+const ServerButton: FC<{ brand?: Brand }> = ({ brand }) => {
+    const { data: systemInfo, isPending } = useSystemInfo();
+    let name = '';
+    if (!isPending) {
+        name =
+            brand?.label === 'product'
+                ? 'Tesserafin'
+                : systemInfo?.ServerName || 'Tesserafin';
+    }
+    return <HeaderBrand name={name} brand={brand} />;
 };
 
 export default ServerButton;

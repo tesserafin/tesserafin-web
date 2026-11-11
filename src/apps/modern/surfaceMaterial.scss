@@ -37,24 +37,25 @@
     @include glass.rf-glass-surface;
 }
 
-:root[data-rf-surface-border='hairline'] .MuiAppBar-colorDefault {
+/* A recipe's zero elevation is authoritative, including a surface at rest. Admin has no recipe. */
+:root[data-rf-surface-border='hairline'] .MuiAppBar-colorDefault:not([data-rf-header-separator].MuiPaper-elevation0) {
     outline: 1px solid var(--rf-color-divider, rgba(255, 255, 255, 0.12));
     outline-offset: -1px;
 }
 
-:root[data-rf-surface-elevation='level0'] .MuiAppBar-colorDefault {
+:root[data-rf-surface-elevation='level0'] .MuiAppBar-colorDefault:not([data-rf-header-separator].MuiPaper-elevation0) {
     box-shadow: var(--rf-elevation-level0, none);
 }
 
-:root[data-rf-surface-elevation='level1'] .MuiAppBar-colorDefault {
+:root[data-rf-surface-elevation='level1'] .MuiAppBar-colorDefault:not([data-rf-header-separator].MuiPaper-elevation0) {
     box-shadow: var(--rf-elevation-level1, none);
 }
 
-:root[data-rf-surface-elevation='level2'] .MuiAppBar-colorDefault {
+:root[data-rf-surface-elevation='level2'] .MuiAppBar-colorDefault:not([data-rf-header-separator].MuiPaper-elevation0) {
     box-shadow: var(--rf-elevation-level2, none);
 }
 
-:root[data-rf-surface-elevation='level3'] .MuiAppBar-colorDefault {
+:root[data-rf-surface-elevation='level3'] .MuiAppBar-colorDefault:not([data-rf-header-separator].MuiPaper-elevation0) {
     box-shadow: var(--rf-elevation-level3, none);
 }
 
