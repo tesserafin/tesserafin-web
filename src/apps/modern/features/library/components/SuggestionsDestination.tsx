@@ -74,7 +74,12 @@ const Shelf: FC<ShelfProps> = ({
     );
 
     if (query.isPending && query.fetchStatus !== 'idle') {
-        return <LoadingState variant='shelf' />;
+        return (
+            <LoadingState
+                variant='shelf'
+                label={globalize.translate('Loading')}
+            />
+        );
     }
 
     if (!cards.length) return null;

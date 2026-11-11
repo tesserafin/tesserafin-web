@@ -57,12 +57,18 @@ export const GenresDestination: FC<GenresDestinationProps> = ({
     );
 
     if (genresQuery.isPending) {
-        return <LoadingState variant='grid' />;
+        return (
+            <LoadingState
+                variant='grid'
+                label={globalize.translate('Loading')}
+            />
+        );
     }
 
     if (genresQuery.isError) {
         return (
             <ErrorState
+                title={globalize.translate('HeaderError')}
                 message={globalize.translate('ErrorDefault')}
                 retryLabel={globalize.translate('Retry')}
                 onRetry={onRetry}

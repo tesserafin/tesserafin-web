@@ -80,7 +80,12 @@ const ContentPackAssignment: FC<ContentPackAssignmentProps> = ({
         }
 
         if (isError) {
-            return <ErrorState message={globalize.translate('ErrorDefault')} />;
+            return (
+                <ErrorState
+                    title={globalize.translate('HeaderError')}
+                    message={globalize.translate('ErrorDefault')}
+                />
+            );
         }
 
         const packs = packsQuery.data ?? [];

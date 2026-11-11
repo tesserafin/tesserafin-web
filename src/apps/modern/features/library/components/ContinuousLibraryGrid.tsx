@@ -876,7 +876,10 @@ export const ContinuousLibraryGrid: FC<ContinuousLibraryGridProps> = ({
         return (
             <>
                 {observers}
-                <LoadingState variant='grid' />
+                <LoadingState
+                    variant='grid'
+                    label={globalize.translate('Loading')}
+                />
             </>
         );
     }

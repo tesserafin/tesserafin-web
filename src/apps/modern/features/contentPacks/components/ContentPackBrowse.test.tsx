@@ -305,7 +305,7 @@ describe('paging', () => {
             '[data-rf-slot="pagination"]'
         );
         expect(pagination).not.toBeNull();
-        expect(pagination?.textContent).toContain('Page 1 of 3');
+        expect(pagination?.textContent).toContain('PaginationPageLabel:1,3');
     });
 });
 

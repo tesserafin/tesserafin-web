@@ -56,7 +56,10 @@ const HomeSection: FC<PropsWithChildren<HomeSectionProps>> = ({
         return (
             <div className='rf-home-section'>
                 <SectionHeading title={title} />
-                <LoadingState variant='shelf' />
+                <LoadingState
+                    variant='shelf'
+                    label={globalize.translate('Loading')}
+                />
             </div>
         );
     }
@@ -66,6 +69,7 @@ const HomeSection: FC<PropsWithChildren<HomeSectionProps>> = ({
             <div className='rf-home-section'>
                 <SectionHeading title={title} />
                 <ErrorState
+                    title={globalize.translate('HeaderError')}
                     message={globalize.translate('ErrorDefault')}
                     retryLabel={globalize.translate('Retry')}
                     onRetry={onRetry}

@@ -85,6 +85,7 @@ export const LibraryItemsFailure: FC<{
 
     return (
         <ErrorState
+            title={globalize.translate('HeaderError')}
             message={globalize.translate('ErrorDefault')}
             retryLabel={globalize.translate('Retry')}
             onRetry={onRetry}
@@ -138,7 +139,12 @@ export const LibraryItemsGrid: FC<LibraryItemsGridProps> = ({
     );
 
     if (itemsQuery.isPending) {
-        return <LoadingState variant='grid' />;
+        return (
+            <LoadingState
+                variant='grid'
+                label={globalize.translate('Loading')}
+            />
+        );
     }
 
     if (itemsQuery.isError) {
@@ -158,7 +164,12 @@ export const LibraryItemsGrid: FC<LibraryItemsGridProps> = ({
         page > totalPages ||
         (itemsQuery.isPlaceholderData && !itemsQuery.data?.Items?.length);
     if (isCorrectingOutOfRangePage) {
-        return <LoadingState variant='grid' />;
+        return (
+            <LoadingState
+                variant='grid'
+                label={globalize.translate('Loading')}
+            />
+        );
     }
 
     if (!itemsQuery.data?.Items?.length) {
