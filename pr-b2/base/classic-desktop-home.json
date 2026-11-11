@@ -1,0 +1,164 @@
+{
+ "rest": {
+  "attrs": {
+   "rfHeaderMaterial": "transparent",
+   "rfHeaderSeparator": "shadow",
+   "rfHeaderShape": "bar",
+   "rfHeaderDensity": "compact"
+  },
+  "htmlOverlap": null,
+  "footprintVar": "",
+  "box": {
+   "top": 0,
+   "bottom": 48,
+   "left": 0,
+   "width": 1440,
+   "height": 48
+  },
+  "background": "rgba(0, 0, 0, 0)",
+  "shadow": false,
+  "layout": "start",
+  "controls": [
+   {
+    "name": "Fixture",
+    "x": 48,
+    "y": 2,
+    "w": 108,
+    "h": 44,
+    "inView": true
+   },
+   {
+    "name": "SyncPlay",
+    "x": 1210,
+    "y": 1,
+    "w": 46,
+    "h": 46,
+    "inView": true
+   },
+   {
+    "name": "Cast to Device",
+    "x": 1256,
+    "y": 1,
+    "w": 46,
+    "h": 46,
+    "inView": true
+   },
+   {
+    "name": "Search",
+    "x": 1302,
+    "y": 1,
+    "w": 46,
+    "h": 46,
+    "inView": true
+   },
+   {
+    "name": "User Menu",
+    "x": 1348,
+    "y": 2,
+    "w": 44,
+    "h": 44,
+    "inView": true
+   }
+  ],
+  "smallestTarget": 44,
+  "hiddenControls": [],
+  "underHeader": [],
+  "leadTop": null,
+  "scrollY": 0,
+  "scrollHeight": 2078,
+  "overflowX": false
+ },
+ "scrolled": {
+  "attrs": {
+   "rfHeaderMaterial": "surface",
+   "rfHeaderSeparator": "shadow",
+   "rfHeaderShape": "bar",
+   "rfHeaderDensity": "compact"
+  },
+  "htmlOverlap": null,
+  "footprintVar": "",
+  "box": {
+   "top": 0,
+   "bottom": 48,
+   "left": 0,
+   "width": 1440,
+   "height": 48
+  },
+  "background": "rgb(7, 20, 47)",
+  "shadow": true,
+  "layout": "start",
+  "controls": [
+   {
+    "name": "Fixture",
+    "x": 48,
+    "y": 2,
+    "w": 108,
+    "h": 44,
+    "inView": true
+   },
+   {
+    "name": "SyncPlay",
+    "x": 1210,
+    "y": 1,
+    "w": 46,
+    "h": 46,
+    "inView": true
+   },
+   {
+    "name": "Cast to Device",
+    "x": 1256,
+    "y": 1,
+    "w": 46,
+    "h": 46,
+    "inView": true
+   },
+   {
+    "name": "Search",
+    "x": 1302,
+    "y": 1,
+    "w": 46,
+    "h": 46,
+    "inView": true
+   },
+   {
+    "name": "User Menu",
+    "x": 1348,
+    "y": 2,
+    "w": 44,
+    "h": 44,
+    "inView": true
+   }
+  ],
+  "smallestTarget": 44,
+  "hiddenControls": [],
+  "underHeader": [
+   "a \"Film 122026\"",
+   "a \"Film 132026\"",
+   "a \"Film 142026\"",
+   "a \"Film 152026\"",
+   "a \"Film 162026\"",
+   "a \"Film 172026\"",
+   "a \"Film 182026\""
+  ],
+  "leadTop": null,
+  "scrollY": 1178,
+  "scrollHeight": 2078,
+  "overflowX": false
+ },
+ "keys": {
+  "focus": [
+   "Fixture",
+   "SyncPlay",
+   "Cast to Device",
+   "Search",
+   "User Menu"
+  ],
+  "visual": [
+   "Fixture",
+   "SyncPlay",
+   "Cast to Device",
+   "Search",
+   "User Menu"
+  ]
+ }
+}

@@ -1,0 +1,9 @@
+User Menu: opened, focus on Profile
+User Menu: closed, focus back on User Menu
+
+rest: 0 violation(s), 15 passes
+none
+User Menu open: 0 violation(s), 14 passes
+none
+scrolled: 0 violation(s), 20 passes
+none

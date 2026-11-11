@@ -1,0 +1,231 @@
+{
+ "rest": {
+  "attrs": {
+   "rfHeaderMaterial": "transparent",
+   "rfHeaderSeparator": "shadow",
+   "rfHeaderShape": "bar",
+   "rfHeaderDensity": "compact"
+  },
+  "htmlOverlap": null,
+  "footprintVar": "",
+  "box": {
+   "top": 0,
+   "bottom": 48,
+   "left": 0,
+   "width": 1440,
+   "height": 48
+  },
+  "background": "rgba(0, 0, 0, 0)",
+  "shadow": false,
+  "layout": "start",
+  "controls": [
+   {
+    "name": "Fixture",
+    "x": 48,
+    "y": 0,
+    "w": 108,
+    "h": 48,
+    "inView": true
+   },
+   {
+    "name": "Favorites",
+    "x": 177,
+    "y": 2,
+    "w": 107,
+    "h": 44,
+    "inView": true
+   },
+   {
+    "name": "Films",
+    "x": 288,
+    "y": 2,
+    "w": 83,
+    "h": 44,
+    "inView": true
+   },
+   {
+    "name": "Séries",
+    "x": 375,
+    "y": 2,
+    "w": 87,
+    "h": 44,
+    "inView": true
+   },
+   {
+    "name": "Musique",
+    "x": 466,
+    "y": 2,
+    "w": 104,
+    "h": 44,
+    "inView": true
+   },
+   {
+    "name": "Livres audio",
+    "x": 574,
+    "y": 2,
+    "w": 124,
+    "h": 44,
+    "inView": true
+   },
+   {
+    "name": "More",
+    "x": 1256,
+    "y": 1,
+    "w": 46,
+    "h": 46,
+    "inView": true
+   },
+   {
+    "name": "Search",
+    "x": 1302,
+    "y": 1,
+    "w": 46,
+    "h": 46,
+    "inView": true
+   },
+   {
+    "name": "User Menu",
+    "x": 1348,
+    "y": 2,
+    "w": 44,
+    "h": 44,
+    "inView": true
+   }
+  ],
+  "smallestTarget": 44,
+  "hiddenControls": [],
+  "underHeader": [],
+  "leadTop": 48,
+  "scrollY": 0,
+  "scrollHeight": 2211,
+  "overflowX": false
+ },
+ "scrolled": {
+  "attrs": {
+   "rfHeaderMaterial": "surface",
+   "rfHeaderSeparator": "shadow",
+   "rfHeaderShape": "bar",
+   "rfHeaderDensity": "compact"
+  },
+  "htmlOverlap": null,
+  "footprintVar": "",
+  "box": {
+   "top": 0,
+   "bottom": 48,
+   "left": 0,
+   "width": 1440,
+   "height": 48
+  },
+  "background": "rgba(22, 27, 38, 0.55)",
+  "shadow": true,
+  "layout": "start",
+  "controls": [
+   {
+    "name": "Fixture",
+    "x": 48,
+    "y": 0,
+    "w": 108,
+    "h": 48,
+    "inView": true
+   },
+   {
+    "name": "Favorites",
+    "x": 177,
+    "y": 2,
+    "w": 107,
+    "h": 44,
+    "inView": true
+   },
+   {
+    "name": "Films",
+    "x": 288,
+    "y": 2,
+    "w": 83,
+    "h": 44,
+    "inView": true
+   },
+   {
+    "name": "Séries",
+    "x": 375,
+    "y": 2,
+    "w": 87,
+    "h": 44,
+    "inView": true
+   },
+   {
+    "name": "Musique",
+    "x": 466,
+    "y": 2,
+    "w": 104,
+    "h": 44,
+    "inView": true
+   },
+   {
+    "name": "Livres audio",
+    "x": 574,
+    "y": 2,
+    "w": 124,
+    "h": 44,
+    "inView": true
+   },
+   {
+    "name": "More",
+    "x": 1256,
+    "y": 1,
+    "w": 46,
+    "h": 46,
+    "inView": true
+   },
+   {
+    "name": "Search",
+    "x": 1302,
+    "y": 1,
+    "w": 46,
+    "h": 46,
+    "inView": true
+   },
+   {
+    "name": "User Menu",
+    "x": 1348,
+    "y": 2,
+    "w": 44,
+    "h": 44,
+    "inView": true
+   }
+  ],
+  "smallestTarget": 44,
+  "hiddenControls": [],
+  "underHeader": [
+   "a \"FDFixture Director\"",
+   "a \"FAFixture ActorSomeone\""
+  ],
+  "leadTop": -1263,
+  "scrollY": 1311,
+  "scrollHeight": 2211,
+  "overflowX": false
+ },
+ "keys": {
+  "focus": [
+   "Fixture",
+   "Favorites",
+   "Films",
+   "Séries",
+   "Musique",
+   "Livres audio",
+   "More",
+   "Search",
+   "User Menu"
+  ],
+  "visual": [
+   "Fixture",
+   "Favorites",
+   "Films",
+   "Séries",
+   "Musique",
+   "Livres audio",
+   "More",
+   "Search",
+   "User Menu"
+  ]
+ }
+}

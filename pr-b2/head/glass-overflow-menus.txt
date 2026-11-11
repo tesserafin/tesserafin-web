@@ -1,0 +1,14 @@
+User Menu: opened, focus on Profile
+User Menu: closed, focus back on User Menu
+More: opened, focus on SyncPlay
+More: item chosen, visible menus = 1, focus on No groups available
+More: closed, focus back on More
+
+rest: 0 violation(s), 15 passes
+none
+User Menu open: 0 violation(s), 14 passes
+none
+More open: 0 violation(s), 12 passes
+none
+scrolled: 0 violation(s), 20 passes
+none

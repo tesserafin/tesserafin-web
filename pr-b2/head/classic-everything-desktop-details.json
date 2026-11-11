@@ -1,0 +1,143 @@
+{
+ "rest": {
+  "attrs": {
+   "rfHeaderMaterial": "transparent",
+   "rfHeaderSeparator": "shadow",
+   "rfHeaderShape": "floating",
+   "rfHeaderDensity": "comfortable",
+   "rfHeaderOverlap": "hero"
+  },
+  "htmlOverlap": "hero",
+  "footprintVar": "64px",
+  "box": {
+   "top": 11,
+   "bottom": 63,
+   "left": 11,
+   "width": 1418,
+   "height": 52
+  },
+  "background": "rgba(0, 0, 0, 0)",
+  "shadow": false,
+  "layout": "start",
+  "controls": [
+   {
+    "name": "Fixture",
+    "x": 58,
+    "y": 15,
+    "w": 108,
+    "h": 44,
+    "inView": true
+   },
+   {
+    "name": "More",
+    "x": 1108,
+    "y": 15,
+    "w": 109,
+    "h": 44,
+    "inView": true
+   },
+   {
+    "name": "Search",
+    "x": 1217,
+    "y": 15,
+    "w": 121,
+    "h": 44,
+    "inView": true
+   },
+   {
+    "name": "User Menu",
+    "x": 1338,
+    "y": 15,
+    "w": 44,
+    "h": 44,
+    "inView": true
+   }
+  ],
+  "smallestTarget": 44,
+  "hiddenControls": [],
+  "underHeader": [],
+  "leadTop": 0,
+  "scrollY": 0,
+  "scrollHeight": 3059,
+  "overflowX": false
+ },
+ "scrolled": {
+  "attrs": {
+   "rfHeaderMaterial": "surface",
+   "rfHeaderSeparator": "shadow",
+   "rfHeaderShape": "floating",
+   "rfHeaderDensity": "comfortable",
+   "rfHeaderOverlap": "hero"
+  },
+  "htmlOverlap": "hero",
+  "footprintVar": "64px",
+  "box": {
+   "top": 11,
+   "bottom": 63,
+   "left": 11,
+   "width": 1418,
+   "height": 52
+  },
+  "background": "rgb(7, 20, 47)",
+  "shadow": true,
+  "layout": "start",
+  "controls": [
+   {
+    "name": "Fixture",
+    "x": 58,
+    "y": 15,
+    "w": 108,
+    "h": 44,
+    "inView": true
+   },
+   {
+    "name": "More",
+    "x": 1108,
+    "y": 15,
+    "w": 109,
+    "h": 44,
+    "inView": true
+   },
+   {
+    "name": "Search",
+    "x": 1217,
+    "y": 15,
+    "w": 121,
+    "h": 44,
+    "inView": true
+   },
+   {
+    "name": "User Menu",
+    "x": 1338,
+    "y": 15,
+    "w": 44,
+    "h": 44,
+    "inView": true
+   }
+  ],
+  "smallestTarget": 44,
+  "hiddenControls": [],
+  "underHeader": [
+   "a \"Fixture DirectorFixture Direct\"",
+   "a \"Fixture ActorFixture ActorSome\""
+  ],
+  "leadTop": -1400,
+  "scrollY": 1400,
+  "scrollHeight": 3059,
+  "overflowX": false
+ },
+ "keys": {
+  "focus": [
+   "Fixture",
+   "More",
+   "Search",
+   "User Menu"
+  ],
+  "visual": [
+   "Fixture",
+   "More",
+   "Search",
+   "User Menu"
+  ]
+ }
+}
