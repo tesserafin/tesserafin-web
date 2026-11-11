@@ -1,8 +1,6 @@
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import MenuIcon from '@mui/icons-material/Menu';
-import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
-import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
 import React, { type FC, type PropsWithChildren, ReactNode } from 'react';
 
@@ -10,6 +8,7 @@ import { appRouter } from 'components/router/appRouter';
 import { useApi } from 'hooks/useApi';
 import globalize from 'lib/globalize';
 
+import HeaderRow from './HeaderRow';
 import UserMenuButton from './UserMenuButton';
 
 interface AppToolbarProps {
@@ -20,6 +19,10 @@ interface AppToolbarProps {
     isBackButtonAvailable?: boolean;
     isUserMenuAvailable?: boolean;
     className?: string;
+    /** THEME-B2: the effective layout of the modern header. Absent (the dashboard): `start`. */
+    layout?: 'start' | 'centered';
+    /** THEME-B2, `centered` only: the destinations, drawn between the brand and the actions. */
+    center?: ReactNode;
 }
 
 const onBackButtonClick = () => {
@@ -38,77 +41,65 @@ const AppToolbar: FC<PropsWithChildren<AppToolbarProps>> = ({
     },
     isBackButtonAvailable = false,
     isUserMenuAvailable = true,
-    className
+    className,
+    layout,
+    center
 }) => {
     const { user } = useApi();
     const isUserLoggedIn = Boolean(user);
 
     return (
-        <Toolbar
-            variant='dense'
+        <HeaderRow
             className={className}
-            sx={{
-                flexWrap: {
-                    xs: 'wrap',
-                    lg: 'nowrap'
-                }
-            }}
-        >
-            {/* Toolbar tooltips render inside the banner landmark, not in a <body> portal (axe `region`). */}
-            {isUserLoggedIn && isDrawerAvailable && (
-                <Tooltip
-                    slotProps={{ popper: { disablePortal: true } }}
-                    title={globalize.translate(
-                        isDrawerOpen ? 'MenuClose' : 'MenuOpen'
+            layout={layout}
+            center={center}
+            actions={buttons}
+            account={
+                isUserLoggedIn && isUserMenuAvailable && <UserMenuButton />
+            }
+            lead={
+                <>
+                    {/* Toolbar tooltips render inside the banner landmark, not in a <body> portal (axe `region`). */}
+                    {isUserLoggedIn && isDrawerAvailable && (
+                        <Tooltip
+                            slotProps={{ popper: { disablePortal: true } }}
+                            title={globalize.translate(
+                                isDrawerOpen ? 'MenuClose' : 'MenuOpen'
+                            )}
+                        >
+                            <IconButton
+                                size='large'
+                                color='inherit'
+                                aria-label={globalize.translate(
+                                    isDrawerOpen ? 'MenuClose' : 'MenuOpen'
+                                )}
+                                onClick={onDrawerButtonClick}
+                            >
+                                <MenuIcon />
+                            </IconButton>
+                        </Tooltip>
                     )}
-                >
-                    <IconButton
-                        size='large'
-                        color='inherit'
-                        aria-label={globalize.translate(
-                            isDrawerOpen ? 'MenuClose' : 'MenuOpen'
-                        )}
-                        onClick={onDrawerButtonClick}
-                    >
-                        <MenuIcon />
-                    </IconButton>
-                </Tooltip>
-            )}
 
-            {isBackButtonAvailable && (
-                <Tooltip
-                    slotProps={{ popper: { disablePortal: true } }}
-                    title={globalize.translate('ButtonBack')}
-                >
-                    <IconButton
-                        size='large'
-                        color='inherit'
-                        aria-label={globalize.translate('ButtonBack')}
-                        onClick={onBackButtonClick}
-                    >
-                        <ArrowBack />
-                    </IconButton>
-                </Tooltip>
-            )}
-
+                    {isBackButtonAvailable && (
+                        <Tooltip
+                            slotProps={{ popper: { disablePortal: true } }}
+                            title={globalize.translate('ButtonBack')}
+                        >
+                            <IconButton
+                                size='large'
+                                color='inherit'
+                                aria-label={globalize.translate('ButtonBack')}
+                                onClick={onBackButtonClick}
+                            >
+                                <ArrowBack />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                </>
+            }
+        >
             {children}
-
-            <Box
-                sx={{
-                    display: 'flex',
-                    flexGrow: 1,
-                    justifyContent: 'flex-end'
-                }}
-            >
-                {buttons}
-            </Box>
-
-            {isUserLoggedIn && isUserMenuAvailable && (
-                <Box sx={{ flexGrow: 0 }}>
-                    <UserMenuButton />
-                </Box>
-            )}
-        </Toolbar>
+        </HeaderRow>
     );
 };
 
