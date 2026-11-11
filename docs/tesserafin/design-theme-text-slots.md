@@ -31,7 +31,7 @@ A2 is **not**:
 - **A change of meaning.** A slot on an action keeps that action's purpose. "Show more" can become
   "Read the full synopsis", not "Play".
 - **Server-side state.** Slots live in the theme document and in the locally applied draft. Sharing
-  or syncing between devices is a separate decision (§9, Q3).
+  or syncing between devices is out of A2 (§9).
 
 ## 2. The slot registry
 
