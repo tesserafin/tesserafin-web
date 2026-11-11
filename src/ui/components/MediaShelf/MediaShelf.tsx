@@ -1,5 +1,7 @@
 import React, { type FC, type ReactNode, type Ref } from 'react';
 
+import { SectionTitle } from '../SectionTitle/SectionTitle';
+
 import './MediaShelf.scss';
 
 /**
@@ -50,9 +52,9 @@ export const MediaShelf: FC<MediaShelfProps> = ({
     return (
         <section className={classes} data-rf-slot='media-shelf' id={id}>
             <div className='rf-media-shelf__header'>
-                <h2 className='rf-media-shelf__title' id={headingId}>
+                <SectionTitle className='rf-media-shelf__title' id={headingId}>
                     {title}
-                </h2>
+                </SectionTitle>
                 {viewAllHref && viewAllLabel && (
                     <a className='rf-media-shelf__view-all' href={viewAllHref}>
                         {viewAllLabel}

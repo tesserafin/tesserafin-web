@@ -18,6 +18,9 @@
  */
 
 import {
+    GRID_CONTEXTS,
+    GRID_ITEM_SIZES,
+    type GridPresentation,
     PAGE_BACKDROPS,
     HOME_SECTIONS,
     HOME_SHELF_DENSITIES,
@@ -40,11 +43,19 @@ import {
     LIBRARY_FILTER_PRESENTATIONS,
     LIBRARY_LAYOUTS,
     type LibraryRecipe,
+    MEDIA_CARD_TITLE_LINES,
     type MediaCardPresentation,
     NAVIGATION_LABELS,
     NAVIGATION_POSITIONS,
     NAVIGATION_SHELLS,
+    NAVIGATION_TABS,
     type NavigationPresentation,
+    SECTION_TITLE_ALIGNS,
+    SECTION_TITLE_CASES,
+    SECTION_TITLE_SIZES,
+    SECTION_TITLE_SPACINGS,
+    SECTION_TITLE_WEIGHTS,
+    type SectionTitlePresentation,
     type SurfacePresentation,
     type ThemeCapability,
     type ThemeManifest,
@@ -60,6 +71,8 @@ export interface ResolvedPresentation {
     surface: Required<SurfacePresentation>;
     mediaCard: Required<MediaCardPresentation>;
     navigation: Required<NavigationPresentation>;
+    sectionTitle: Required<SectionTitlePresentation>;
+    grid: Required<GridPresentation>;
     page: {
         home: {
             sections: readonly HomeSection[];
@@ -98,7 +111,9 @@ export const PLATFORM_DEFAULT_PRESENTATION: ResolvedPresentation = {
         imageAspect: 'poster',
         titlePlacement: 'below',
         hoverEffect: 'lift',
-        progressStyle: 'bar'
+        progressStyle: 'bar',
+        // What every card rendered before the key existed; search states its own 2.
+        titleLines: 1
     },
     /*
      * Corrected when the modern shell began reading `shell` (THEME-IDENTITY-1), on the terms Home's
@@ -110,7 +125,27 @@ export const PLATFORM_DEFAULT_PRESENTATION: ResolvedPresentation = {
     navigation: {
         shell: 'topbar',
         labels: 'always',
-        position: 'start'
+        position: 'start',
+        // Home and Library both drew underlined tabs before the key existed.
+        tabs: 'underline'
+    },
+    /*
+     * THEME-A1. Every value reproduces what the three page families drew before the recipe existed:
+     * all their section headings were `font-size-lg` / `font-weight-medium` with no margin, and
+     * `auto` keeps the Item Details hero's own heading scale.
+     */
+    sectionTitle: {
+        size: 'auto',
+        weight: 'auto',
+        align: 'start',
+        case: 'none',
+        spacing: 'normal'
+    },
+    grid: {
+        library: 'medium',
+        people: 'medium',
+        episodes: 'medium',
+        chapters: 'medium'
     },
     page: {
         home: {
@@ -197,24 +232,22 @@ export interface PresentationResolution {
     presentation: ResolvedPresentation;
 }
 
-/** Which capability governs which `presentation` key. */
-const CAPABILITY_FOR_PRESENTATION_KEY = {
-    surface: 'presentation.surface',
-    mediaCard: 'presentation.mediaCard',
-    navigation: 'presentation.navigation'
-} as const satisfies Record<
-    'surface' | 'mediaCard' | 'navigation',
-    ThemeCapability
->;
-
-const CAPABILITY_FOR_PAGE_KEY = {
-    home: 'presentation.page.home',
-    library: 'presentation.page.library',
-    itemDetails: 'presentation.page.itemDetails'
-} as const satisfies Record<
-    'home' | 'library' | 'itemDetails',
-    ThemeCapability
->;
+/**
+ * Which capability governs which `presentation` key: `presentation.<key>`, and
+ * `presentation.page.<key>` for a page recipe. Derived rather than tabled, and checked by the
+ * compiler: a key whose derived name is not a published capability does not type-check.
+ */
+type GroupKey =
+    | 'surface'
+    | 'mediaCard'
+    | 'navigation'
+    | 'sectionTitle'
+    | 'grid';
+type PageKey = 'home' | 'library' | 'itemDetails';
+const groupCapability = (key: GroupKey) =>
+    `presentation.${key}` as const satisfies ThemeCapability;
+const pageCapability = (key: PageKey) =>
+    `presentation.page.${key}` as const satisfies ThemeCapability;
 
 const HOME_SECTION_NAMES: ReadonlySet<string> = new Set(HOME_SECTIONS);
 const HOME_SHELF_DENSITY_NAMES: ReadonlySet<string> = new Set(
@@ -268,15 +301,15 @@ function sanitizeHomeRecipe(override: HomeRecipe | undefined): HomeRecipe {
  */
 function pickEnums<T>(
     override: unknown,
-    table: Record<string, ReadonlySet<string>>
+    table: Record<string, ReadonlySet<unknown>>
 ): Partial<T> {
-    const clean: Record<string, string> = {};
+    const clean: Record<string, unknown> = {};
     if (override && typeof override === 'object') {
         for (const key of Object.keys(table)) {
             const value = (override as Record<string, unknown>)[key];
-            if (typeof value === 'string' && table[key].has(value)) {
-                clean[key] = value;
-            }
+            // `Set.has` is an identity check, so a number (`titleLines`) passes only as a number
+            // and an object or array never matches a published value.
+            if (table[key].has(value)) clean[key] = value;
         }
     }
     return clean as Partial<T>;
@@ -311,7 +344,7 @@ const LIBRARY_ENUMS = {
 
 /**
  * The Library recipe's three keys are scalar enums, which is exactly why they need this: `object`
- * spread in {@link mergeGroup} would merge `{"layout":"enormous"}` straight into the resolved
+ * spread in {@link resolvePresentation} would merge `{"layout":"enormous"}` straight into the resolved
  * presentation, and the route would then branch on a value no renderer defines.
  *
  * Same rule as {@link sanitizeHomeRecipe}, and same reason — a hand-edited `localStorage` record
@@ -368,39 +401,57 @@ function sanitizeItemDetailsRecipe(
     return clean;
 }
 
-const NAVIGATION_ENUMS = {
-    shell: new Set<string>(NAVIGATION_SHELLS),
-    labels: new Set<string>(NAVIGATION_LABELS),
-    position: new Set<string>(NAVIGATION_POSITIONS)
+const GRID_SIZE_NAMES: ReadonlySet<string> = new Set(GRID_ITEM_SIZES);
+
+/**
+ * The scalar enums of the top-level groups, checked key by key with {@link pickEnums}.
+ *
+ * `navigation` became a LAYOUT input when the modern shell began reading `shell`
+ * (THEME-IDENTITY-1). Spread unchecked, `{"shell":"floating"}` from a hand-edited record would
+ * reach that branch as a value no renderer defines. `sectionTitle` and `grid` (THEME-A1) are read
+ * the same way from the start. Same rule as the page recipes: each key is kept only when it names a
+ * published value, independently of the others, and nothing throws.
+ *
+ * `surface` and `mediaCard` predate the rule and are still spread as declared, except for
+ * `mediaCard.titleLines`, the one key of theirs that is new: see {@link sanitizeGroup}.
+ */
+const GROUP_ENUMS: Partial<
+    Record<GroupKey, Record<string, ReadonlySet<unknown>>>
+> = {
+    mediaCard: { titleLines: new Set<unknown>(MEDIA_CARD_TITLE_LINES) },
+    navigation: {
+        shell: new Set<string>(NAVIGATION_SHELLS),
+        labels: new Set<string>(NAVIGATION_LABELS),
+        position: new Set<string>(NAVIGATION_POSITIONS),
+        tabs: new Set<string>(NAVIGATION_TABS)
+    },
+    sectionTitle: {
+        size: new Set<string>(SECTION_TITLE_SIZES),
+        weight: new Set<string>(SECTION_TITLE_WEIGHTS),
+        align: new Set<string>(SECTION_TITLE_ALIGNS),
+        case: new Set<string>(SECTION_TITLE_CASES),
+        spacing: new Set<string>(SECTION_TITLE_SPACINGS)
+    },
+    grid: Object.fromEntries(
+        GRID_CONTEXTS.map((context) => [context, GRID_SIZE_NAMES])
+    )
 };
 
 /**
- * `navigation` became a LAYOUT input when the modern shell began reading `shell`
- * (THEME-IDENTITY-1). Spread unchecked, `{"shell":"floating"}` from a hand-edited record would
- * reach that branch as a value no renderer defines. Same rule as the page recipes: each key is
- * kept only when it names a published value, independently of the others, and nothing throws.
+ * `mediaCard` keeps every key it declares and is checked only on `titleLines`: the four older keys
+ * were spread unchecked before this rule existed, and tightening them is a change of its own.
  */
-function sanitizeNavigation(
-    override: NavigationPresentation | undefined
-): NavigationPresentation {
-    return pickEnums<NavigationPresentation>(override, NAVIGATION_ENUMS);
-}
-
-function mergeGroup<T extends object>(
-    defaults: T,
-    override: Partial<T> | undefined,
-    supported: boolean,
-    capability: ThemeCapability,
-    fallbacks: CapabilityFallback[]
-): T {
-    if (!override || Object.keys(override).length === 0) return defaults;
-    if (!supported) {
-        // The theme asked for something this renderer cannot express. Record it and use the
-        // default — an unsupported capability is a documented downgrade, not an error.
-        fallbacks.push({ capability, reason: 'unsupported-by-renderer' });
-        return defaults;
-    }
-    return { ...defaults, ...override };
+function sanitizeGroup(
+    key: GroupKey,
+    override: object | undefined
+): object | undefined {
+    const table = GROUP_ENUMS[key];
+    if (!table) return override;
+    const clean = pickEnums<object>(override, table);
+    if (key !== 'mediaCard' || !override) return clean;
+    const { titleLines: _checked, ...declared } =
+        override as MediaCardPresentation;
+    return { ...declared, ...clean };
 }
 
 /**
@@ -423,49 +474,50 @@ export function resolvePresentation(
     const themePresentation: ThemePresentation = manifest.presentation ?? {};
     const defaults = PLATFORM_DEFAULT_PRESENTATION;
 
+    const merge = <T extends object>(
+        groupDefaults: T,
+        override: object | undefined,
+        capability: ThemeCapability
+    ): T => {
+        if (!override || Object.keys(override).length === 0)
+            return groupDefaults;
+        if (!supports(capability)) {
+            // The theme asked for something this renderer cannot express. Record it and use the
+            // default — an unsupported capability is a documented downgrade, not an error.
+            fallbacks.push({ capability, reason: 'unsupported-by-renderer' });
+            return groupDefaults;
+        }
+        return { ...groupDefaults, ...override };
+    };
+    const group = <K extends GroupKey>(key: K): ResolvedPresentation[K] =>
+        merge(
+            defaults[key],
+            sanitizeGroup(key, themePresentation[key]),
+            groupCapability(key)
+        );
+
+    // Built in this order, which is also the order `fallbacks` reports in.
     const presentation: ResolvedPresentation = {
-        surface: mergeGroup(
-            defaults.surface,
-            themePresentation.surface,
-            supports(CAPABILITY_FOR_PRESENTATION_KEY.surface),
-            CAPABILITY_FOR_PRESENTATION_KEY.surface,
-            fallbacks
-        ),
-        mediaCard: mergeGroup(
-            defaults.mediaCard,
-            themePresentation.mediaCard,
-            supports(CAPABILITY_FOR_PRESENTATION_KEY.mediaCard),
-            CAPABILITY_FOR_PRESENTATION_KEY.mediaCard,
-            fallbacks
-        ),
-        navigation: mergeGroup(
-            defaults.navigation,
-            sanitizeNavigation(themePresentation.navigation),
-            supports(CAPABILITY_FOR_PRESENTATION_KEY.navigation),
-            CAPABILITY_FOR_PRESENTATION_KEY.navigation,
-            fallbacks
-        ),
+        surface: group('surface'),
+        mediaCard: group('mediaCard'),
+        navigation: group('navigation'),
+        sectionTitle: group('sectionTitle'),
+        grid: group('grid'),
         page: {
-            home: mergeGroup(
+            home: merge(
                 defaults.page.home,
                 sanitizeHomeRecipe(themePresentation.page?.home),
-                supports(CAPABILITY_FOR_PAGE_KEY.home),
-                CAPABILITY_FOR_PAGE_KEY.home,
-                fallbacks
+                pageCapability('home')
             ),
-            library: mergeGroup(
+            library: merge(
                 defaults.page.library,
                 sanitizeLibraryRecipe(themePresentation.page?.library),
-                supports(CAPABILITY_FOR_PAGE_KEY.library),
-                CAPABILITY_FOR_PAGE_KEY.library,
-                fallbacks
+                pageCapability('library')
             ),
-            itemDetails: mergeGroup(
+            itemDetails: merge(
                 defaults.page.itemDetails,
                 sanitizeItemDetailsRecipe(themePresentation.page?.itemDetails),
-                supports(CAPABILITY_FOR_PAGE_KEY.itemDetails),
-                CAPABILITY_FOR_PAGE_KEY.itemDetails,
-                fallbacks
+                pageCapability('itemDetails')
             )
         }
     };

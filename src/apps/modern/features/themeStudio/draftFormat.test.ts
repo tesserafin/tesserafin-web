@@ -92,6 +92,72 @@ describe('export / import keeps the THEME-IDENTITY-1 keys', () => {
     });
 });
 
+describe('export / import keeps the THEME-A1 keys', () => {
+    it('round-trips section titles, title lines, tabs and grid sizes', () => {
+        const edited = mutate((envelope) => {
+            const manifest = envelope.manifest as {
+                presentation: Record<string, Record<string, unknown>>;
+            };
+            manifest.presentation.sectionTitle = {
+                size: 'small',
+                align: 'center',
+                case: 'uppercase'
+            };
+            manifest.presentation.grid = { people: 'large', library: 'small' };
+            manifest.presentation.mediaCard.titleLines = 2;
+            manifest.presentation.navigation.tabs = 'pills';
+        });
+        const first = parseDraft(edited);
+        expect(first.issues).toEqual([]);
+        if (!first.valid) throw new Error('must import');
+        const again = parseDraft(serialiseDraft(first.draft));
+        expect(again.issues).toEqual([]);
+        const presentation = again.valid
+            ? again.draft.manifest.presentation
+            : undefined;
+        expect(presentation?.sectionTitle).toEqual({
+            size: 'small',
+            align: 'center',
+            case: 'uppercase'
+        });
+        expect(presentation?.grid).toEqual({
+            people: 'large',
+            library: 'small'
+        });
+        expect(presentation?.mediaCard?.titleLines).toBe(2);
+        expect(presentation?.navigation?.tabs).toBe('pills');
+    });
+
+    it('still imports a draft written before any of them existed', () => {
+        // `validText` is a Classic copy, and Classic declares none of the four.
+        const presentation = JSON.parse(validText).manifest.presentation;
+        expect(presentation.sectionTitle).toBeUndefined();
+        expect(presentation.grid).toBeUndefined();
+        expect(parseDraft(validText).issues).toEqual([]);
+    });
+
+    it.each([
+        ['an unknown title size', { sectionTitle: { size: 'huge' } }],
+        ['an unknown grid context', { grid: { posters: 'large' } }],
+        ['a title-line count as a string', { mediaCard: { titleLines: '2' } }],
+        ['four title lines', { mediaCard: { titleLines: 4 } }],
+        ['an unknown tab style', { navigation: { tabs: 'ribbon' } }]
+    ])('rejects %s rather than importing it', (_name, change) => {
+        const hostile = mutate((envelope) => {
+            const manifest = envelope.manifest as {
+                presentation: Record<string, Record<string, unknown>>;
+            };
+            for (const [group, values] of Object.entries(change)) {
+                manifest.presentation[group] = {
+                    ...manifest.presentation[group],
+                    ...values
+                };
+            }
+        });
+        expect(parseDraft(hostile).valid).toBe(false);
+    });
+});
+
 describe('malformed and hostile input is rejected, never partially accepted', () => {
     it('rejects truncated JSON', () => {
         expect(parseDraft(validText.slice(0, 80)).issues[0].code).toBe(

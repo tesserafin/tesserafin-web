@@ -22,3 +22,13 @@ declare module '*.css' {
 
 // Side-effect only CSS package (no type declarations, resolved by the bundler).
 declare module 'material-design-icons-iconfont';
+
+/*
+ * A theme manifest imported as the whole DOCUMENT (the Theme Studio's copy). The query makes it a
+ * module of its own, so the start-up bundle's import of the same file can keep only the keys it
+ * reads: see `themes/platform/manifests.ts`.
+ */
+declare module '*theme.json?document' {
+    const manifest: unknown;
+    export default manifest;
+}

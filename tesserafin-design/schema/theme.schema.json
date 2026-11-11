@@ -108,6 +108,8 @@
                 "surface": { "$ref": "#/$defs/surfaceVariant" },
                 "mediaCard": { "$ref": "#/$defs/mediaCardVariant" },
                 "navigation": { "$ref": "#/$defs/navigationVariant" },
+                "sectionTitle": { "$ref": "#/$defs/sectionTitleVariant" },
+                "grid": { "$ref": "#/$defs/gridVariant" },
                 "page": { "$ref": "#/$defs/pageRecipes" }
             }
         },
@@ -187,6 +189,8 @@
                 "presentation.surface",
                 "presentation.mediaCard",
                 "presentation.navigation",
+                "presentation.sectionTitle",
+                "presentation.grid",
                 "presentation.page.home",
                 "presentation.page.library",
                 "presentation.page.itemDetails",
@@ -218,7 +222,11 @@
                 "imageAspect": { "enum": ["poster", "backdrop", "square"] },
                 "titlePlacement": { "enum": ["below", "overlay"] },
                 "hoverEffect": { "enum": ["none", "lift", "zoom"] },
-                "progressStyle": { "enum": ["bar", "none"] }
+                "progressStyle": { "enum": ["bar", "none"] },
+                "titleLines": {
+                    "description": "Lines a card title may take before it is cut. The theme's default: a call site that states its own keeps it, and an overlay title never takes fewer than two.",
+                    "enum": [1, 2, 3]
+                }
             }
         },
         "navigationVariant": {
@@ -228,7 +236,35 @@
             "properties": {
                 "shell": { "enum": ["sidebar", "rail", "topbar"] },
                 "labels": { "enum": ["always", "active", "never"] },
-                "position": { "enum": ["start", "end"] }
+                "position": { "enum": ["start", "end"] },
+                "tabs": {
+                    "description": "How in-page tabs (Home, a library's destinations) are drawn. Same tabs, same order, same keyboard contract.",
+                    "enum": ["underline", "pills"]
+                }
+            }
+        },
+        "sectionTitleVariant": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "One recipe for every section heading of Home, Library and Item Details, in every state. It changes how a heading looks, never its level, its text or whether it exists. `auto` keeps the page's own scale, including the Item Details hero's.",
+            "properties": {
+                "size": { "enum": ["auto", "small", "medium", "large"] },
+                "weight": { "enum": ["auto", "regular", "medium", "bold"] },
+                "align": { "enum": ["start", "center"] },
+                "case": { "enum": ["none", "uppercase"] },
+                "spacing": { "enum": ["normal", "loose"] }
+            }
+        },
+        "gridItemSize": { "enum": ["small", "medium", "large"] },
+        "gridVariant": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Media grid item size by semantic context. It scales the grid's minimum column width within bounds, never sets a length, never changes what is listed, and never overrides the user's own density choice.",
+            "properties": {
+                "library": { "$ref": "#/$defs/gridItemSize" },
+                "people": { "$ref": "#/$defs/gridItemSize" },
+                "episodes": { "$ref": "#/$defs/gridItemSize" },
+                "chapters": { "$ref": "#/$defs/gridItemSize" }
             }
         },
         "pageRecipes": {

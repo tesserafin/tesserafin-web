@@ -1,7 +1,7 @@
 import React, { type FC, type PropsWithChildren } from 'react';
 
 import globalize from 'lib/globalize';
-import { EmptyState, ErrorState, LoadingState } from 'ui';
+import { EmptyState, ErrorState, LoadingState, SectionTitle } from 'ui';
 
 import './HomeSection.scss';
 
@@ -24,8 +24,9 @@ export interface HomeSectionProps {
     onEmptyAction?: () => void;
 }
 
+// The theme's section-title recipe in every one of the four states, loading and error included.
 const SectionHeading: FC<{ title: string }> = ({ title }) => (
-    <h2 className='rf-home-section__title'>{title}</h2>
+    <SectionTitle className='rf-home-section__title'>{title}</SectionTitle>
 );
 
 /**

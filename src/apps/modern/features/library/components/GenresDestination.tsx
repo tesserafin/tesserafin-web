@@ -86,6 +86,7 @@ export const GenresDestination: FC<GenresDestinationProps> = ({
 
     return (
         <MediaGrid
+            context='library'
             density={density}
             aria-label={globalize.translate('Genres')}
             // Genre cards carry a name, not a poster, so the poster-sized default column would

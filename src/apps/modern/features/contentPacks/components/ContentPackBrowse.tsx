@@ -97,7 +97,11 @@ const ContentPackItems: FC<ContentPackItemsProps> = ({
 
     return (
         <>
-            <MediaGrid density='comfortable' aria-label={label}>
+            <MediaGrid
+                context='library'
+                density='comfortable'
+                aria-label={label}
+            >
                 {toMediaCardPropsArray(items, apiClient, {
                     imageAspect,
                     preferThumb: false

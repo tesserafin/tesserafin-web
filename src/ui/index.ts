@@ -57,5 +57,7 @@ export type {
     SurfaceVariant
 } from './components/Surface/Surface';
 export { Surface } from './components/Surface/Surface';
+export type { SectionTitleProps } from './components/SectionTitle/SectionTitle';
+export { SectionTitle } from './components/SectionTitle/SectionTitle';
 export type { TabItem, TabsProps } from './components/Tabs/Tabs';
 export { Tabs } from './components/Tabs/Tabs';

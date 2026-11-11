@@ -34,23 +34,34 @@ import {
  */
 import { PUBLISHED_FAMILIES } from 'apps/modern/features/details/utils/itemDetailsRecipe';
 import {
+    GRID_CONTEXTS,
+    GRID_ITEM_SIZES,
     HOME_SECTIONS,
     HOME_SHELF_DENSITIES,
     ITEM_DETAILS_CONTROLS,
     ITEM_DETAILS_FACTS,
     ITEM_DETAILS_HEROES,
     ITEM_DETAILS_PEOPLE,
+    MEDIA_CARD_TITLE_LINES,
     NAVIGATION_LABELS,
     NAVIGATION_POSITIONS,
     NAVIGATION_SHELLS,
+    NAVIGATION_TABS,
     PAGE_BACKDROPS,
     PLATFORM_DEFAULT_PRESENTATION,
+    SECTION_TITLE_ALIGNS,
+    SECTION_TITLE_CASES,
+    SECTION_TITLE_SIZES,
+    SECTION_TITLE_SPACINGS,
+    SECTION_TITLE_WEIGHTS,
     WEB_RENDERER_CAPABILITIES,
     type HomeRecipe,
     type HomeSection,
     type ItemDetailsRecipe,
     type ItemDetailsSection,
+    type GridPresentation,
     type LibraryRecipe,
+    type SectionTitlePresentation,
     type ThemeCapability,
     type ThemePresentation
 } from 'themes/platform';
@@ -166,6 +177,30 @@ export const PresentationEditor: FC<PresentationEditorProps> = ({
                     options={['bar', 'none']}
                     onChange={(value) => setMediaCard('progressStyle', value)}
                 />
+                <Choice
+                    label='Title lines'
+                    value={String(
+                        presentation.mediaCard?.titleLines ??
+                            PLATFORM_DEFAULT_PRESENTATION.mediaCard.titleLines
+                    )}
+                    options={MEDIA_CARD_TITLE_LINES.map(String)}
+                    onChange={(value) =>
+                        onChange({
+                            ...presentation,
+                            mediaCard: {
+                                ...presentation.mediaCard,
+                                titleLines: Number(
+                                    value
+                                ) as (typeof MEDIA_CARD_TITLE_LINES)[number]
+                            }
+                        })
+                    }
+                />
+                <Scope>
+                    Title lines are the default for every card. A list that sets
+                    its own keeps it: search results always allow two. A title
+                    over the artwork never takes fewer than two.
+                </Scope>
             </Section>
 
             <Section title='Navigation'>
@@ -196,13 +231,39 @@ export const PresentationEditor: FC<PresentationEditorProps> = ({
                     options={NAVIGATION_POSITIONS}
                     onChange={(value) => setNavigation('position', value)}
                 />
+                <Choice
+                    label='Tabs'
+                    value={
+                        presentation.navigation?.tabs ??
+                        PLATFORM_DEFAULT_PRESENTATION.navigation.tabs
+                    }
+                    options={NAVIGATION_TABS}
+                    onChange={(value) => setNavigation('tabs', value)}
+                />
                 <Alert severity='info' variant='outlined'>
                     Navigation presentation changes how navigation looks, never
                     what it contains. Which destinations exist is authorization
                     and library state, and no theme can reach it. Sidebar and
                     rail apply on wide screens; a phone always uses the menu
-                    drawer, and labels and position apply to the column.
+                    drawer, and labels and position apply to the column. Tabs
+                    are Home's and each library's.
                 </Alert>
+            </Section>
+
+            <Section title='Section titles'>
+                <SectionTitleEditor
+                    recipe={presentation.sectionTitle}
+                    onChange={(sectionTitle) =>
+                        onChange({ ...presentation, sectionTitle })
+                    }
+                />
+            </Section>
+
+            <Section title='Grids'>
+                <GridEditor
+                    grid={presentation.grid}
+                    onChange={(grid) => onChange({ ...presentation, grid })}
+                />
             </Section>
 
             <Section title='Home composition'>
@@ -696,6 +757,84 @@ const ItemDetailsCompositionEditor: FC<ItemDetailsCompositionEditorProps> = ({
         </Stack>
     );
 };
+
+const TITLE_FIELDS = [
+    ['size', 'Title size', SECTION_TITLE_SIZES],
+    ['weight', 'Title weight', SECTION_TITLE_WEIGHTS],
+    ['align', 'Title alignment', SECTION_TITLE_ALIGNS],
+    ['case', 'Title case', SECTION_TITLE_CASES],
+    ['spacing', 'Title spacing', SECTION_TITLE_SPACINGS]
+] as const;
+
+/**
+ * THEME-A1's section-title recipe. The edited object is spread, never rebuilt, so a key this
+ * control does not show survives an edit — the defect the composition editors once had.
+ */
+const SectionTitleEditor: FC<{
+    recipe: SectionTitlePresentation | undefined;
+    onChange: (recipe: SectionTitlePresentation) => void;
+}> = ({ recipe, onChange }) => (
+    <>
+        {TITLE_FIELDS.map(([key, label, options]) => (
+            <Choice
+                key={key}
+                label={label}
+                value={
+                    recipe?.[key] ??
+                    PLATFORM_DEFAULT_PRESENTATION.sectionTitle[key]
+                }
+                options={options}
+                onChange={(value) => onChange({ ...recipe, [key]: value })}
+            />
+        ))}
+        <Scope>
+            Every section heading of Home, the libraries and Item Details,
+            including while a section loads or fails. A heading keeps its level
+            and its words. With auto, each page keeps its own scale, the Item
+            Details hero's included; any other value wins over it.
+        </Scope>
+    </>
+);
+
+/** THEME-A1's grid sizes, one control per semantic context the renderer draws. */
+const GridEditor: FC<{
+    grid: GridPresentation | undefined;
+    onChange: (grid: GridPresentation) => void;
+}> = ({ grid, onChange }) => (
+    <>
+        {GRID_CONTEXTS.map((context) => (
+            <Choice
+                key={context}
+                label={`${GRID_LABELS[context]} grid`}
+                value={
+                    grid?.[context] ??
+                    PLATFORM_DEFAULT_PRESENTATION.grid[context]
+                }
+                options={GRID_ITEM_SIZES}
+                onChange={(value) => onChange({ ...grid, [context]: value })}
+            />
+        ))}
+        <Scope>
+            Item size per kind of list. It scales the cards; it never changes
+            what is listed. The viewer's own compact toggle still applies on
+            top, and large waits for a wide enough screen.
+        </Scope>
+    </>
+);
+
+const GRID_LABELS = {
+    library: 'Library',
+    people: 'People',
+    episodes: 'Episodes',
+    chapters: 'Chapters'
+} as const;
+
+/** Where a group of settings applies, stated next to them rather than discovered after Apply. */
+const Scope: FC<{ children: React.ReactNode }> = ({ children }) => (
+    <Typography variant='body2' color='text.secondary'>
+        {children}
+    </Typography>
+);
 
 const Section: FC<{ title: string; children: React.ReactNode }> = ({
     title,

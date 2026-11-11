@@ -1,0 +1,54 @@
+/**
+ * SectionTitle (THEME-A1). Under `auto` no rule here matches, so each page keeps exactly the heading
+ * it drew — its own rule, or the browser's for the two unclassed group headings of Item Details.
+ * An explicit size or weight is declared directly, which beats a page's single-class rule, AND
+ * published as `--rf-section-title-*`, which the Item Details hero rules read with their own value
+ * as the fallback: that is how a deliberate choice also wins over the hero's heading scale. Every
+ * size is a step of the token type scale, in `rem`, so the recipe follows the user's zoom.
+ */
+
+.rf-section-title[data-rf-title-size='small'] {
+    --rf-section-title-size: var(--rf-typography-font-size-md, 1rem);
+    font-size: var(--rf-section-title-size);
+}
+
+.rf-section-title[data-rf-title-size='medium'] {
+    --rf-section-title-size: var(--rf-typography-font-size-lg, 1.25rem);
+    font-size: var(--rf-section-title-size);
+}
+
+.rf-section-title[data-rf-title-size='large'] {
+    --rf-section-title-size: var(--rf-typography-font-size-xl, 1.5rem);
+    font-size: var(--rf-section-title-size);
+}
+
+.rf-section-title[data-rf-title-weight='regular'] {
+    --rf-section-title-weight: var(--rf-typography-font-weight-regular, 400);
+    font-weight: var(--rf-section-title-weight);
+}
+
+.rf-section-title[data-rf-title-weight='medium'] {
+    --rf-section-title-weight: var(--rf-typography-font-weight-medium, 500);
+    font-weight: var(--rf-section-title-weight);
+}
+
+.rf-section-title[data-rf-title-weight='bold'] {
+    --rf-section-title-weight: var(--rf-typography-font-weight-bold, 700);
+    font-weight: var(--rf-section-title-weight);
+}
+
+/* `flex-grow` for a heading that shares a row with a "view all" link: centred in what is left. */
+.rf-section-title[data-rf-title-align='center'] {
+    flex-grow: 1;
+    text-align: center;
+}
+
+/* The DOM keeps the real words, so assistive technology and find-in-page read them unchanged. */
+.rf-section-title[data-rf-title-case='uppercase'] {
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.rf-section-title[data-rf-title-spacing='loose'] {
+    margin-block: var(--rf-spacing-md, 16px) var(--rf-spacing-xs, 4px);
+}

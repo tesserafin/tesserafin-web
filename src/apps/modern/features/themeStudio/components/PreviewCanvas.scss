@@ -174,3 +174,21 @@
         white-space: nowrap;
     }
 }
+
+/*
+ * Item Details' section heading as the details page draws it (`ItemDetailsView.scss` lives in the
+ * route's own chunk, which the Studio does not load). The `SectionTitle` primitive inside it is the
+ * real one, so an explicit recipe value wins here exactly as it does on the page.
+ */
+.rf-studio-preview__detail-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rf-spacing-sm, 8px);
+}
+
+.rf-studio-preview__section-title {
+    margin: 0;
+    color: var(--rf-color-text, #fff);
+    font-size: var(--rf-typography-font-size-lg, 1.25rem);
+    font-weight: var(--rf-typography-font-weight-medium, 500);
+}

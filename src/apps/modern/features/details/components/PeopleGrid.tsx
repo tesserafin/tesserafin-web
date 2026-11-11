@@ -39,7 +39,10 @@ const PeopleGrid: FC<PeopleGridProps> = ({
     layout = 'cards'
 }) => (
     <div className='rf-item-details__people' data-rf-people={layout}>
-        <MediaGrid minItemWidth={layout === 'portraits' ? '7.5rem' : undefined}>
+        <MediaGrid
+            context='people'
+            minItemWidth={layout === 'portraits' ? '7.5rem' : undefined}
+        >
             {people.map((person) => (
                 <MediaCard
                     key={person.Id ?? person.Name}

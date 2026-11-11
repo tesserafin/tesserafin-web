@@ -40,6 +40,7 @@ const ItemCollectionGrid: FC<ItemCollectionGridProps> = ({
     label
 }) => (
     <MediaGrid
+        context='episodes'
         aria-label={label}
         minItemWidth={aspect === 'backdrop' ? '260px' : undefined}
     >
