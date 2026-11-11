@@ -13,6 +13,8 @@ export type MediaShelfDensity = 'compact' | 'comfortable' | 'spacious';
 
 export interface MediaShelfProps {
     title: string;
+    /** `lang` of the title when it is not in the interface language (a theme text slot's fallback). */
+    titleLang?: string;
     /** Renders a "view all" link next to the title when set. */
     viewAllHref?: string;
     /** Label for the "view all" link; required together with `viewAllHref`. */
@@ -37,6 +39,7 @@ export interface MediaShelfProps {
  */
 export const MediaShelf: FC<MediaShelfProps> = ({
     title,
+    titleLang,
     viewAllHref,
     viewAllLabel,
     density = 'comfortable',
@@ -52,7 +55,11 @@ export const MediaShelf: FC<MediaShelfProps> = ({
     return (
         <section className={classes} data-rf-slot='media-shelf' id={id}>
             <div className='rf-media-shelf__header'>
-                <SectionTitle className='rf-media-shelf__title' id={headingId}>
+                <SectionTitle
+                    className='rf-media-shelf__title'
+                    id={headingId}
+                    lang={titleLang}
+                >
                     {title}
                 </SectionTitle>
                 {viewAllHref && viewAllLabel && (

@@ -30,7 +30,8 @@
 import {
     clearAppliedPresentation,
     saveAppliedPresentation
-} from 'themes/platform/localPresentation';
+} from 'themes/platform/localPresentationWrite';
+import { clearAppliedText, saveAppliedText } from 'themes/platform/localText';
 import { toCustomProperties } from 'ui/tokens/projectTokens';
 
 import type { ThemeDraft } from './draftFormat';
@@ -77,6 +78,8 @@ export function applyLocalThemeOverlay(
     // colour and type but not surfaces, cards or navigation — the Studio's presentation controls
     // would have been preview-only, which is exactly the half-delivered state to avoid.
     saveAppliedPresentation(draft.manifest.presentation);
+    // THEME-A2: the draft's wording, beside its presentation; cleared with it below.
+    saveAppliedText(draft.manifest.text?.slots);
 }
 
 /** Removes the overlay completely. The base theme is left exactly as it was. */
@@ -86,6 +89,7 @@ export function clearLocalThemeOverlay(doc: Document = document): void {
     // Cleared together with the stylesheet, so the tokens and the presentation can never describe
     // different themes.
     clearAppliedPresentation();
+    clearAppliedText();
 }
 
 /** The id currently overlaid, or `null`. */

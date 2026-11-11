@@ -15,7 +15,11 @@ import {
 import type { OfficialThemeSource } from './officialSources';
 import { setTokenValue } from './tokenModel';
 
-import type { ThemeManifest, ThemePresentation } from 'themes/platform';
+import type {
+    ThemeManifest,
+    ThemePresentation,
+    ThemeTextSlots
+} from 'themes/platform';
 
 /** Namespace every locally-authored theme lives in. Never `official.*`. */
 export const LOCAL_THEME_NAMESPACE = 'local';
@@ -86,6 +90,7 @@ export interface DraftHistory {
 export type DraftAction =
     | { type: 'set-token'; path: string; value: string | number }
     | { type: 'set-presentation'; presentation: ThemePresentation }
+    | { type: 'set-text'; slots: ThemeTextSlots }
     | { type: 'set-name'; name: string }
     | { type: 'undo' }
     | { type: 'redo' }
@@ -140,6 +145,12 @@ export function draftReducer(
                 }
             });
 
+        case 'set-text':
+            return commit(history, {
+                ...history.present,
+                manifest: withTextSlots(history.present.manifest, action.slots)
+            });
+
         case 'set-name':
             return commit(history, {
                 ...history.present,
@@ -176,6 +187,35 @@ export function draftReducer(
         default:
             return history;
     }
+}
+
+/**
+ * THEME-A2. Empty slots and empty slot maps are removed, so a reset text group disappears from the
+ * exported manifest instead of lingering as `{}`. A theme with text declares `text.slots` among its
+ * optional capabilities, so a renderer without it degrades to the application's wording knowingly.
+ */
+function withTextSlots(
+    manifest: ThemeManifest,
+    slots: ThemeTextSlots
+): ThemeManifest {
+    const kept = Object.fromEntries(
+        Object.entries(slots).filter(
+            ([, entry]) => Object.keys(entry).length > 0
+        )
+    );
+    const { text: _previous, ...rest } = manifest;
+    if (Object.keys(kept).length === 0) return rest;
+    const optional = manifest.capabilities?.optional ?? [];
+    return {
+        ...rest,
+        text: { slots: kept },
+        capabilities: {
+            ...manifest.capabilities,
+            optional: optional.includes('text.slots')
+                ? optional
+                : [...optional, 'text.slots']
+        }
+    };
 }
 
 export const canUndo = (history: DraftHistory) => history.past.length > 0;

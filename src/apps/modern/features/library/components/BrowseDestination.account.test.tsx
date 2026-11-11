@@ -22,7 +22,21 @@ vi.mock('hooks/useUserSettings', () => ({
     useUserSettings: () => ({ libraryPageSize: 100 })
 }));
 vi.mock('lib/globalize', () => ({
-    default: { translate: (key: string) => key }
+    default: {
+        getCurrentLocale: () => 'en-us',
+        translateWithLocale(key: string, ...args: unknown[]) {
+            // THEME-A2 `useSlotText`: the mocked text, as written in the mocked locale.
+            return {
+                text: (
+                    this as {
+                        translate: (k: string, ...a: unknown[]) => string;
+                    }
+                ).translate(key, ...args),
+                lang: 'en-us'
+            };
+        },
+        translate: (key: string) => key
+    }
 }));
 vi.mock('../api/useLibraryFilters', () => ({
     useLibraryFilters: () => ({ data: undefined, isPending: false })

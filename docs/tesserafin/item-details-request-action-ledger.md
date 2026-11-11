@@ -1925,6 +1925,7 @@ nothing imports any more.
 | `components/mediainfo/SecondaryMediaInfo` | `PURE` | — | renders item fields; issues nothing |
 | `components/mediainfo/usePrimaryMediaInfo` | `PURE` | — | derives display strings from the item |
 | `components/mediainfo/useSecondaryMediaInfo` | `PURE` | — | derives display strings from the item |
+| `hooks/useSlotText` | `PURE` | — | THEME-A2. Picks the words of a text slot: the applied Studio draft's override or the theme's (both already in PresentationContext), else globalize's translation. Reads no storage itself and issues nothing. |
 | `components/Page` | `UI` | — | the page shell |
 | `ui` | `UI` | — | the published design system: MediaCard, MediaGrid, EmptyState, ErrorState, LoadingState |
 | `lib/globalize` | `PURE` | — | translation |

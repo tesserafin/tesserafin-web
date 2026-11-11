@@ -151,7 +151,21 @@ vi.mock('components/pluginManager', () => ({
     }
 }));
 vi.mock('lib/globalize', () => ({
-    default: { translate: (key: string) => key, getCurrentLocale: () => 'fr' }
+    default: {
+        translateWithLocale(key: string, ...args: unknown[]) {
+            // THEME-A2 `useSlotText`: the mocked text, as written in the mocked locale.
+            return {
+                text: (
+                    this as {
+                        translate: (k: string, ...a: unknown[]) => string;
+                    }
+                ).translate(key, ...args),
+                lang: 'en-us'
+            };
+        },
+        translate: (key: string) => key,
+        getCurrentLocale: () => 'fr'
+    }
 }));
 vi.mock('components/layoutManager', () => ({
     default: { tv: false, mobile: false }

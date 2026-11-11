@@ -16,6 +16,8 @@ import React, { type FC, useCallback, useRef, useState } from 'react';
 import { useThemeStudio } from '../useThemeStudio';
 
 import { PresentationEditor } from './PresentationEditor';
+import { TextSlotsEditor } from './TextSlotsEditor';
+import type { ThemeTextSlots } from 'themes/platform/contract';
 import {
     PreviewCanvas,
     type PreviewProfile,
@@ -70,6 +72,12 @@ export const ThemeStudio: FC = () => {
         revert,
         discard
     } = useThemeStudio(mode);
+
+    // Stable, so the memoised text editor does not re-render on every token or recipe edit.
+    const onTextChange = useCallback(
+        (slots: ThemeTextSlots) => dispatch({ type: 'set-text', slots }),
+        [dispatch]
+    );
 
     const handleExport = useCallback(() => {
         const text = exportDraft();
@@ -307,6 +315,14 @@ export const ThemeStudio: FC = () => {
                                         presentation
                                     })
                                 }
+                            />
+                            <Divider />
+                            <Typography variant='h3' component='h3'>
+                                Texts
+                            </Typography>
+                            <TextSlotsEditor
+                                slots={state.draft.manifest.text?.slots}
+                                onChange={onTextChange}
                             />
                         </Stack>
                     </section>

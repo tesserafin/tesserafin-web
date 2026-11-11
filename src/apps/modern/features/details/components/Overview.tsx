@@ -2,7 +2,7 @@ import React, { useMemo, useState, type FC } from 'react';
 import DOMPurify from 'dompurify';
 import markdownIt from 'markdown-it';
 
-import globalize from 'lib/globalize';
+import { useSlotText } from 'hooks/useSlotText';
 
 /**
  * The overview.
@@ -15,6 +15,20 @@ import globalize from 'lib/globalize';
  */
 const Overview: FC<{ markdown: string }> = ({ markdown }) => {
     const [expanded, setExpanded] = useState(false);
+    // THEME-A2: both labels of the one toggle are slots, offered together in the Studio.
+    const expandLabel = useSlotText(
+        'details.overview.expand.label',
+        'ShowMore',
+        undefined,
+        'action'
+    );
+    const collapseLabel = useSlotText(
+        'details.overview.collapse.label',
+        'ShowLess',
+        undefined,
+        'action'
+    );
+    const label = expanded ? collapseLabel : expandLabel;
 
     const html = useMemo(
         () => DOMPurify.sanitize(markdownIt({ html: true }).render(markdown)),
@@ -35,8 +49,9 @@ const Overview: FC<{ markdown: string }> = ({ markdown }) => {
                 type='button'
                 className='rf-item-details__overview-toggle'
                 onClick={() => setExpanded(!expanded)}
+                lang={label.langAttribute}
             >
-                {globalize.translate(expanded ? 'ShowLess' : 'ShowMore')}
+                {label.text}
             </button>
         </>
     );

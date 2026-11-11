@@ -113,6 +113,14 @@
                 "page": { "$ref": "#/$defs/pageRecipes" }
             }
         },
+        "text": {
+            "type": "object",
+            "description": "Per-language wording for a closed set of semantic text slots (THEME-A2, docs/tesserafin/design-theme-text-slots.md). Plain text only; variables are named in braces and checked beyond this schema by the validator.",
+            "additionalProperties": false,
+            "properties": {
+                "slots": { "$ref": "#/$defs/textSlots" }
+            }
+        },
         "capabilities": {
             "type": "object",
             "description": "Capabilities this theme uses (RFC-0007 §5.2). `required` means the theme is not renderable without them and a renderer lacking one must refuse to activate the theme and say why. `optional` means the theme degrades gracefully — the renderer falls back to the platform default for that capability.",
@@ -179,6 +187,122 @@
             "description": "Package-relative path. No scheme, no protocol, no parent traversal — a theme can only name a file it ships.",
             "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*(/[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*)*$"
         },
+        "textSlots": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "The closed slot registry. A slot is listed only once a renderer surface reads it.",
+            "properties": {
+                "home.libraries.title": { "$ref": "#/$defs/textTitle" },
+                "home.continueWatching.title": { "$ref": "#/$defs/textTitle" },
+                "home.nextUp.title": { "$ref": "#/$defs/textTitle" },
+                "home.latestMedia.title": { "$ref": "#/$defs/textTitle" },
+                "library.suggestions.continueWatching.title": {
+                    "$ref": "#/$defs/textTitle"
+                },
+                "library.suggestions.nextUp.title": {
+                    "$ref": "#/$defs/textTitle"
+                },
+                "library.suggestions.upcomingEpisodes.title": {
+                    "$ref": "#/$defs/textTitle"
+                },
+                "details.schedule.title": { "$ref": "#/$defs/textTitle" },
+                "details.overview.expand.label": {
+                    "$ref": "#/$defs/textAction"
+                },
+                "details.overview.collapse.label": {
+                    "$ref": "#/$defs/textAction"
+                }
+            }
+        },
+        "textLocale": {
+            "description": "A supported interface locale, normalised as globalize normalises it (lower case, `_` read as `-`).",
+            "enum": [
+                "af",
+                "ar",
+                "be-by",
+                "bg-bg",
+                "bn-bd",
+                "ca",
+                "cs",
+                "cy",
+                "da",
+                "de",
+                "el",
+                "en-gb",
+                "en-us",
+                "eo",
+                "es",
+                "es-419",
+                "es-ar",
+                "es-do",
+                "es-mx",
+                "et",
+                "eu",
+                "fa",
+                "fi",
+                "fil",
+                "fr",
+                "fr-ca",
+                "gl",
+                "gsw",
+                "he",
+                "hi-in",
+                "hr",
+                "hu",
+                "id",
+                "it",
+                "ja",
+                "kk",
+                "ko",
+                "lt-lt",
+                "lv",
+                "mr",
+                "ms",
+                "nb",
+                "nl",
+                "nn",
+                "pl",
+                "pr",
+                "pt",
+                "pt-br",
+                "pt-pt",
+                "ro",
+                "ru",
+                "sk",
+                "sl-si",
+                "sq",
+                "sv",
+                "ta",
+                "th",
+                "tr",
+                "uk",
+                "ur-pk",
+                "vi",
+                "zh-cn",
+                "zh-hk",
+                "zh-tw"
+            ]
+        },
+        "textTitle": {
+            "type": "object",
+            "minProperties": 1,
+            "propertyNames": { "$ref": "#/$defs/textLocale" },
+            "additionalProperties": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+            }
+        },
+        "textAction": {
+            "type": "object",
+            "minProperties": 1,
+            "propertyNames": { "$ref": "#/$defs/textLocale" },
+            "additionalProperties": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+            }
+        },
         "capabilityName": {
             "type": "string",
             "description": "A capability defined by RFC-0007 §5.2. The list is closed: an unknown capability name is a validation error, not an ignored extension, so a theme cannot claim a capability the platform has never defined.",
@@ -194,6 +318,7 @@
                 "presentation.page.home",
                 "presentation.page.library",
                 "presentation.page.itemDetails",
+                "text.slots",
                 "source.web.css"
             ]
         },

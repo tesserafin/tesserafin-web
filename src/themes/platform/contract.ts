@@ -46,6 +46,7 @@ export const THEME_CAPABILITIES = [
     'presentation.page.home',
     'presentation.page.library',
     'presentation.page.itemDetails',
+    'text.slots',
     'source.web.css'
 ] as const;
 
@@ -90,7 +91,8 @@ export const WEB_RENDERER_CAPABILITIES: readonly ThemeCapability[] = [
     'presentation.grid',
     'presentation.page.home',
     'presentation.page.library',
-    'presentation.page.itemDetails'
+    'presentation.page.itemDetails',
+    'text.slots'
 ] as const;
 
 export type ThemeMode = 'light' | 'dark';
@@ -491,6 +493,35 @@ export interface ThemePresentation {
     page?: PageRecipes;
 }
 
+/**
+ * Per-language wording of a closed set of semantic text slots (THEME-A2,
+ * `docs/tesserafin/design-theme-text-slots.md`): `slots[<slot id>][<locale>] = <template>`.
+ *
+ * The slot ids and their metadata live in `themes/platform/textSlots.ts`, which only validation and
+ * the Theme Studio load. The application reads a slot by id with its own default key and variables,
+ * so the start-up bundle carries no registry.
+ */
+/** The closed slot vocabulary. A type only: the runtime list lives with the registry. */
+export type TextSlotId =
+    | 'home.libraries.title'
+    | 'home.continueWatching.title'
+    | 'home.nextUp.title'
+    | 'home.latestMedia.title'
+    | 'library.suggestions.continueWatching.title'
+    | 'library.suggestions.nextUp.title'
+    | 'library.suggestions.upcomingEpisodes.title'
+    | 'details.schedule.title'
+    | 'details.overview.expand.label'
+    | 'details.overview.collapse.label';
+
+export type ThemeTextSlots = Readonly<
+    Record<string, Readonly<Record<string, string>>>
+>;
+
+export interface ThemeText {
+    slots?: ThemeTextSlots;
+}
+
 export interface ThemeRendererDeclaration {
     supports?: readonly ThemeCapability[];
 }
@@ -529,6 +560,7 @@ export interface ThemeManifest {
     profiles?: Partial<Record<ThemeProfileName, ThemeTokensPartial>>;
     assets?: Partial<Record<ThemeAssetRole, string>>;
     presentation?: ThemePresentation;
+    text?: ThemeText;
     capabilities?: {
         required?: readonly ThemeCapability[];
         optional?: readonly ThemeCapability[];

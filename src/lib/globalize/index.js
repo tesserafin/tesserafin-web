@@ -258,6 +258,19 @@ export function translate(key) {
     return val;
 }
 
+/**
+ * `translate`, plus the locale the text is actually written in: the current culture when its
+ * dictionary holds the key, `en-us` when the lookup fell back. Lets a caller set `lang` on text that
+ * is not in the interface language (THEME-A2 §6). The lookup itself is `translate`'s, unchanged.
+ */
+export function translateWithLocale(key, ...args) {
+    const own = getDictionary(undefined, getCurrentLocale())?.[key];
+    return {
+        text: translate(key, ...args),
+        lang: own ? getCurrentLocale() : FALLBACK_CULTURE
+    };
+}
+
 export function translateHtml(html, module) {
     html = html.default || html;
 
@@ -305,6 +318,7 @@ Events.on(userSettings, 'change', function (e, name) {
 export default {
     translate,
     translateHtml,
+    translateWithLocale,
     loadStrings,
     defaultModule,
     getCurrentLocale,

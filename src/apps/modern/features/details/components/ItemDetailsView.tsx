@@ -8,6 +8,7 @@ import SecondaryMediaInfo from 'components/mediainfo/SecondaryMediaInfo';
 import usePrimaryMediaInfo from 'components/mediainfo/usePrimaryMediaInfo';
 import useSecondaryMediaInfo from 'components/mediainfo/useSecondaryMediaInfo';
 import { AppFeature } from 'constants/appFeature';
+import { useSlotText } from 'hooks/useSlotText';
 import globalize from 'lib/globalize';
 import datetime from 'scripts/datetime';
 import { detailsBanner } from 'scripts/settings/userSettings';
@@ -106,6 +107,10 @@ const ItemDetailsView: FC<ItemDetailsViewProps> = ({ item, user, params }) => {
     useUserDataRefresh(item, params.serverId, refresh);
 
     const tracks = useTrackSelection(item, (key) => globalize.translate(key));
+    const scheduleTitle = useSlotText(
+        'details.schedule.title',
+        'HeaderUpcomingOnTV'
+    );
     const actions = useItemActions({
         item,
         user,
@@ -581,7 +586,8 @@ const ItemDetailsView: FC<ItemDetailsViewProps> = ({ item, user, params }) => {
                         name='seriesScheduleSection'
                         column={column}
                         slot='schedule'
-                        heading={globalize.translate('HeaderUpcomingOnTV')}
+                        heading={scheduleTitle.text}
+                        headingLang={scheduleTitle.langAttribute}
                     >
                         <ScheduleList items={list(seriesSchedule.data)} />
                     </DetailSection>
