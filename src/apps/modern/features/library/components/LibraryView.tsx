@@ -214,7 +214,10 @@ const LibraryView: FC = () => {
         return (
             <Page id='libraryPage' className='mainAnimatedPage libraryPage'>
                 <div className='rf-library-view'>
-                    <LoadingState variant='block' />
+                    <LoadingState
+                        variant='block'
+                        label={globalize.translate('Loading')}
+                    />
                 </div>
             </Page>
         );
@@ -249,6 +252,7 @@ const LibraryView: FC = () => {
                     )}
                     {isRetryableLibraryFailure(failure) && (
                         <ErrorState
+                            title={globalize.translate('HeaderError')}
                             message={globalize.translate('ErrorDefault')}
                             retryLabel={globalize.translate('Retry')}
                             onRetry={onInfoRetry}

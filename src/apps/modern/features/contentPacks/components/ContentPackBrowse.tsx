@@ -27,6 +27,9 @@ import ContentPackDetailActions from './ContentPackDetailActions';
 /** One page of a pack. Matches the paging convention the library grid already uses. */
 export const CONTENT_PACK_PAGE_SIZE = 50;
 
+const pageLabel = (page: number, totalPages: number): string =>
+    globalize.translate('PaginationPageLabel', page, totalPages);
+
 const parsePage = (raw: string | null): number => {
     const parsed = Number.parseInt(raw ?? '1', 10);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
@@ -64,12 +67,18 @@ const ContentPackItems: FC<ContentPackItemsProps> = ({
     onNextPage
 }) => {
     if (itemsQuery.isPending) {
-        return <LoadingState variant='grid' />;
+        return (
+            <LoadingState
+                variant='grid'
+                label={globalize.translate('Loading')}
+            />
+        );
     }
 
     if (itemsQuery.isError) {
         return (
             <ErrorState
+                title={globalize.translate('HeaderError')}
                 message={globalize.translate('ErrorDefault')}
                 retryLabel={globalize.translate('Retry')}
                 onRetry={onRetry}
@@ -103,6 +112,7 @@ const ContentPackItems: FC<ContentPackItemsProps> = ({
                     totalPages={totalPages}
                     previousLabel={globalize.translate('Previous')}
                     nextLabel={globalize.translate('Next')}
+                    pageLabel={pageLabel}
                     aria-label={globalize.translate('Pagination')}
                     onPreviousPage={onPreviousPage}
                     onNextPage={onNextPage}
@@ -172,7 +182,12 @@ const ContentPackBrowse: FC = () => {
     }, [packQuery, itemsQuery]);
 
     if (packQuery.isPending) {
-        return <LoadingState variant='block' />;
+        return (
+            <LoadingState
+                variant='block'
+                label={globalize.translate('Loading')}
+            />
+        );
     }
 
     /*
@@ -191,6 +206,7 @@ const ContentPackBrowse: FC = () => {
     if (packQuery.isError) {
         return (
             <ErrorState
+                title={globalize.translate('HeaderError')}
                 message={globalize.translate('ErrorDefault')}
                 retryLabel={globalize.translate('Retry')}
                 onRetry={onRetry}

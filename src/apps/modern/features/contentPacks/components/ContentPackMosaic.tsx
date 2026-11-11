@@ -114,6 +114,7 @@ const ContentPackMosaic: FC = () => {
     } else if (packsQuery.isError) {
         body = (
             <ErrorState
+                title={globalize.translate('HeaderError')}
                 message={globalize.translate('ErrorDefault')}
                 retryLabel={globalize.translate('Retry')}
                 onRetry={onRetry}

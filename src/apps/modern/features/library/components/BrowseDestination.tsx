@@ -619,7 +619,14 @@ export const BrowseDestination: FC<BrowseDestinationProps> = ({
 
             <div ref={results} className='rf-library-view__results'>
                 {isContinuous ? (
-                    <Suspense fallback={<LoadingState variant='grid' />}>
+                    <Suspense
+                        fallback={
+                            <LoadingState
+                                variant='grid'
+                                label={globalize.translate('Loading')}
+                            />
+                        }
+                    >
                         <ContinuousLibraryGrid
                             key={`${recipe.layout}:${resultSet}`}
                             params={baseParams}
