@@ -1,6 +1,6 @@
 # Theme text slots (THEME-A2) — contract proposal
 
-- **Status**: Proposal, for review before any code
+- **Status**: Accepted for implementation (decisions of 2026-11-11 folded in, §9)
 - **Date**: 2026-11-11
 - **Scope**: lot A2 of the 2026-11-11 component and text customisation review
 - **Builds on**: RFC-0007 (Theme Platform v2), THEME-A1 (#273)
@@ -48,14 +48,14 @@ Each entry declares:
 | `defaultKey` | The application translation key used when nothing overrides the slot. |
 | `kind` | `title` (a heading) or `action` (a control's visible label). |
 | `variables` | Named variables, each `required` or optional (§4). |
-| `maxLength` | Hard limit in characters, after interpolation of the declared example values. |
+| `recommendedLength` | Advice shown in the Studio, never a rejection (§7). |
 | `surfaces` | The renderers that read the slot (`web` today). |
 
 ### 2.1 Initial slots
 
-Each key and call site below was checked against `main` at `7826db3b7c`.
+Each key and call site below was checked against `main` at `7826db3b7c`. The two synopsis labels are one toggle (`Overview.tsx`) and are offered together, so an author never customises "expand" without seeing "collapse".
 
-| Slot | Context | Default key (en / fr) | Kind | Variables | Max |
+| Slot | Context | Default key | Kind | Variables | Recommended |
 | --- | --- | --- | --- | --- | --- |
 | `home.libraries.title` | Home, "My media" shelf | `HeaderMyMedia` | title | none | 40 |
 | `home.continueWatching.title` | Home, resume shelf | `HeaderContinueWatching` | title | none | 40 |
@@ -66,6 +66,7 @@ Each key and call site below was checked against `main` at `7826db3b7c`.
 | `library.suggestions.upcomingEpisodes.title` | A library's Suggestions tab, announced episodes | `HeaderUpcoming` | title | none | 40 |
 | `details.schedule.title` | Item Details, upcoming TV airings | `HeaderUpcomingOnTV` | title | none | 40 |
 | `details.overview.expand.label` | Item Details, expand the synopsis | `ShowMore` | action | none | 30 |
+| `details.overview.collapse.label` | Item Details, collapse it again | `ShowLess` | action | none | 30 |
 
 Two keys are shared by Home and the library's Suggestions tab (`HeaderContinueWatching`, `NextUp`).
 They are **two slots**, so renaming Home's "Next up" does not rename the Suggestions shelf, and the
@@ -94,7 +95,7 @@ appearance, and it has its own capability:
       },
       "home.latestMedia.title": {
         "fr": "Nouveautés · {libraryName}",
-        "en": "New in {libraryName}"
+        "en-us": "New in {libraryName}"
       }
     }
   },
@@ -105,8 +106,9 @@ appearance, and it has its own capability:
 - The capability is `text.slots`. It is added to the closed vocabulary, and the Web renderer declares
   it only in the commit that first reads a slot.
 - A language key is a locale from `src/lib/globalize/locales.ts`, normalised the way globalize
-  normalises it: lower case, `_` read as `-` (`fr`, `fr-ca`, `nl`, `pt-br`). An unknown locale is a
-  validation error.
+  normalises it: lower case, `_` read as `-`. The keys are exactly the supported ones: `fr`,
+  `fr-ca`, `nl`, `en-us`, `en-gb`, `pt-br`, `es-419`… There is no bare `en`, because the
+  application has none. An unknown locale is a validation error.
 - A slot with no entry for a language says nothing for that language. There is no "default language"
   inside a theme (§5).
 
@@ -153,20 +155,30 @@ wins:
 
 1. **The locally applied text**, for C, then for L.
 2. **The active theme's text**, for C, then for L.
-3. **The application's translation** of `defaultKey`: today's globalize behaviour, C, then L, then
-   `en-us`.
+3. **The application's translation** of `defaultKey`, through globalize **unchanged**. Globalize loads
+   one dictionary for the culture (the file for C if it exists, otherwise for L, otherwise `en-us`).
+   It looks the key up there, then in `en-us`, then returns the key itself. It does **not** try C,
+   then L, then `en-us` key by key, and A2 does not change that. The explicit C-then-L chain of steps
+   1 and 2 belongs to overrides only.
 4. **The documented fallback**: the slot id itself.
 
 Step 4 is only reachable if the `en-us` key is missing. It is a defect, and a test catches it before
 release.
+
+**The resolver also reports the language of the text it returns:**
+- an override's own locale key, for steps 1 and 2;
+- for step 3, the culture of the dictionary that held the key, so `en-us` when globalize fell back.
+
+That language is part of the result, not something to recompute (§6).
 
 Three consequences are part of the contract, and each one is tested:
 
 - **An override never crosses languages.** With Dutch selected, a French override is ignored
   completely. The Dutch user sees the theme's Dutch text, or the application's Dutch translation, or,
   if Dutch has none, the application's own English fallback. They never see the French override. The
-  `en-us` fallback in step 3 applies to the application's strings only, never to a theme's or a
-  user's overrides.
+  `en-us` fallback in step 3 applies to the application's strings only, never to a theme's
+  overrides. An `en-us` override is an override like any other: it shows under `en-us`, not under
+  `nl`.
 - **Language reaches regions, not the reverse.** A `fr` override applies under `fr-ca`, and a more
   specific `fr-ca` override wins there. A `fr-ca` override never applies under plain `fr`.
 - **Switching language switches the text.** Resolution runs on the current culture every time.
@@ -185,8 +197,11 @@ the real error from validation, on import or in the Studio.
   announces a default title the page no longer shows.
 - **A label stays in the name.** Where an action's accessible name is longer than its visible label,
   the name must contain the resolved visible label (WCAG 2.5.3, Label in Name).
-- **Language of parts.** Resolved text is in the interface language by construction (§5), so the page
-  needs no `lang` attribute on slot text.
+- **Language of parts.** The resolved text is *usually* in the interface language, but not always.
+  An application fallback can show English inside a French interface: `HeaderUpcoming` was exactly
+  that before #272. The element that renders a slot therefore sets `lang` to the reported language
+  (§5) whenever it differs from the document's, so a screen reader pronounces it correctly. When the
+  two match, no attribute is added.
 - **Headings keep their level.** A slot changes words, never structure, as A1 does for appearance.
 
 ## 7. Validation
@@ -197,9 +212,14 @@ On import and in the Studio:
 - The validator checks the rest:
   - non-empty after trimming;
   - no control characters;
-  - `maxLength`;
+  - the **technical ceiling**: 120 Unicode code points for a title template, 80 for an action label.
+    It is counted on the template **before interpolation**, so a long library name can never
+    invalidate it;
   - required variables present, no unknown variable, no repeated variable;
   - braces balanced.
+
+The recommended lengths (40, 60 and 30) are **advice**. The Studio shows a warning past them and
+never rejects. The page lays out longer text by wrapping; headings are never truncated.
 
 Errors name the slot, the language and the rule, for example:
 
@@ -218,21 +238,27 @@ is not rejected.
   override are listed, so an author can see "French and Dutch set, others use the application text".
 - Variables are inserted as tokens, never typed by hand. A missing required variable is an error
   shown on the field before Apply.
-- **Reset** works per slot and per language, without touching the rest of the draft.
+- **Reset** works per slot and per language. It **removes** that language's entry from the slot, and
+  removes the slot when no language is left, so the value is inherited again. An empty string is
+  never a reset: it is invalid (§7), and the field shows the error instead.
 - The preview shows the slot in the same primitive the page uses (`SectionTitle`, the synopsis
   toggle), with sample data for variables.
 
-## 9. Open questions for review
+## 9. Decisions (review of 2026-11-11)
 
-1. **A user layer separate from the applied draft?** In this proposal the applied draft *is* the
-   user's local choice (§5 step 1). A per-user override store that survives switching themes would be
-   a fifth level, with its own UI. Proposal: not in A2.
-2. **Initial slot list.** Nine slots (§2.1). Is `details.overview.expand.label`, the one action, in
-   or out?
-3. **Sharing and sync** across devices: out of A2, its own decision.
-4. **State messages** (loading, empty, error): kept out, because they are functional messages. #272
-   made them correctly translated. Confirm they stay non-customisable.
-5. **Length limits**: 40 / 60 / 30 characters, as above?
+| Question | Decision |
+| --- | --- |
+| A user layer separate from the applied draft | **Out of A2.** The applied draft remains the local customisation. |
+| Initial slot list | Accepted, **plus `details.overview.collapse.label`**, offered with `expand.label`. |
+| Sharing and sync | Out of A2. |
+| Loading, empty and error messages | Their wording stays the application's in A2. Their appearance is themeable (A1). |
+| Length limits | 40 / 60 / 30 are **recommendations**. Hard ceiling: 120 code points per title template, 80 per action, before interpolation. |
+
+Corrections made after review:
+- Locale keys are the normalised supported ones (`en-us`, not `en`).
+- Application text keeps globalize's own lookup; the region-then-language chain is for overrides.
+- The resolver reports the displayed language, and `lang` is set when it differs.
+- Reset removes the entry; an empty string is invalid.
 
 ## 10. Acceptance, when implemented
 
@@ -241,6 +267,11 @@ is not rejected.
 - With a French override set and Dutch selected, the Dutch user sees the Dutch text, or the
   application's fallback when Dutch has none. They never see the French override.
 - `fr` applies under `fr-ca`; `fr-ca` does not apply under `fr`.
+- With French selected and a key missing from the French dictionary, the slot renders the `en-us`
+  text with `lang="en-us"`. With the key present, no `lang` attribute is added.
+- A 200-character library name in `home.latestMedia.title` renders, wrapped. The template stays valid.
+- Reset removes the language's entry, and the next level shows. Saving an empty field is refused
+  with a message.
 - An override of `home.latestMedia.title` without `{libraryName}` is rejected on import and in the
   Studio, and ignored at run time with the next level shown. Each library's shelf stays distinct.
 - An invalid local record degrades per slot and never blocks start-up.
