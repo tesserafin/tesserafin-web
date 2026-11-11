@@ -51,7 +51,7 @@ The header recipe changes how the header **looks and is arranged**. It never dec
 Out of scope:
 - **The admin dashboard header.** It reuses `OffsetAppBar`, but the recipe must not leak into it by
   that route.
-- **Public paths.** See §9, Q2.
+- **Public paths.** Unchanged in B; their customisation gets its own scope (§9).
 - **The legacy shells** (desktop-legacy, mobile-legacy, TV), which have their own header.
 - **Imported logo files.** `assets.roles` is defined but not bound, and there is no package format
   to carry a file (#117). Brand modes in B use the embedded mark only, and the Studio does not
