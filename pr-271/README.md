@@ -6,6 +6,22 @@ Classic: library column (sidebar), `backdrop` hero, facts as a table, `form` con
 
 Glass: floating top bar, `immersive` hero, inline facts, `pill` controls, people as portraits, overlay card titles, ambient backdrop.
 
+## With artwork loaded (added after review)
+
+The fixture items above carry no image tags, so the `immersive` band fell back to the poster layout.
+These captures give the film and the series a backdrop and a poster (synthetic artwork, served by the
+capture script). They also add the modern library at 390 px. Measured values are in
+`with-artwork/measurements.json`: hero mode, a backdrop actually painted, titles, grids.
+
+| Variant | movie desktop | series desktop | library desktop | movie mobile | series mobile | library mobile |
+| --- | --- | --- | --- | --- | --- | --- |
+| `glass` | ![](with-artwork/glass-movie-desktop.png) | ![](with-artwork/glass-series-desktop.png) | ![](with-artwork/glass-library-desktop.png) | <img src="with-artwork/glass-movie-mobile.png" width="180"> | <img src="with-artwork/glass-series-mobile.png" width="180"> | <img src="with-artwork/glass-library-mobile.png" width="180"> |
+| `classic` | ![](with-artwork/classic-movie-desktop.png) | ![](with-artwork/classic-series-desktop.png) | ![](with-artwork/classic-library-desktop.png) | <img src="with-artwork/classic-movie-mobile.png" width="180"> | <img src="with-artwork/classic-series-mobile.png" width="180"> | <img src="with-artwork/classic-library-mobile.png" width="180"> |
+
+Observation for this PR: under `immersive`, the first content section (here "Seasons") starts below
+the poster column. This leaves a tall empty band under a short synopsis on desktop. A1 does not
+change it.
+
 ## Item Details, desktop (1440 wide, full page)
 
 | | Classic | Glass |

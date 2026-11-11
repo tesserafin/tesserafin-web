@@ -1,0 +1,298 @@
+{
+  "glass-movie-desktop": {
+    "hero": "immersive",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [
+      "Cast & Crew 22.32px/700/start/none"
+    ],
+    "tabs": null,
+    "grids": [
+      "null=medium/11"
+    ],
+    "overflow": false
+  },
+  "glass-series-desktop": {
+    "hero": "immersive",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [
+      "Seasons 22.32px/700/start/none"
+    ],
+    "tabs": null,
+    "grids": [
+      "Seasons=medium/8"
+    ],
+    "overflow": false
+  },
+  "glass-library-desktop": {
+    "hero": null,
+    "backdropImages": 0,
+    "backdropBackgrounds": 0,
+    "titles": [],
+    "tabs": "rf-tabs rf-tabs--pills rf-library-view__destinations",
+    "grids": [
+      "Movies=medium/5"
+    ],
+    "overflow": false
+  },
+  "glass-movie-mobile": {
+    "hero": "immersive",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [
+      "Cast & Crew 22.32px/700/start/none"
+    ],
+    "tabs": null,
+    "grids": [
+      "null=medium/2"
+    ],
+    "overflow": false
+  },
+  "glass-series-mobile": {
+    "hero": "immersive",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [
+      "Seasons 22.32px/700/start/none"
+    ],
+    "tabs": null,
+    "grids": [
+      "Seasons=medium/2"
+    ],
+    "overflow": false
+  },
+  "glass-library-mobile": {
+    "hero": null,
+    "backdropImages": 0,
+    "backdropBackgrounds": 0,
+    "titles": [],
+    "tabs": "rf-tabs rf-tabs--pills rf-library-view__destinations",
+    "grids": [
+      "Movies=medium/1"
+    ],
+    "overflow": false
+  },
+  "glass-small-titles-movie-desktop": {
+    "hero": "immersive",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [
+      "Cast & Crew 14.88px/400/start/none"
+    ],
+    "tabs": null,
+    "grids": [
+      "null=medium/11"
+    ],
+    "overflow": false
+  },
+  "glass-small-titles-series-desktop": {
+    "hero": "immersive",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [
+      "Seasons 14.88px/400/start/none"
+    ],
+    "tabs": null,
+    "grids": [
+      "Seasons=medium/8"
+    ],
+    "overflow": false
+  },
+  "glass-small-titles-library-desktop": {
+    "hero": null,
+    "backdropImages": 0,
+    "backdropBackgrounds": 0,
+    "titles": [],
+    "tabs": "rf-tabs rf-tabs--pills rf-library-view__destinations",
+    "grids": [
+      "Movies=medium/5"
+    ],
+    "overflow": false
+  },
+  "glass-small-titles-movie-mobile": {
+    "hero": "immersive",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [
+      "Cast & Crew 14.88px/400/start/none"
+    ],
+    "tabs": null,
+    "grids": [
+      "null=medium/2"
+    ],
+    "overflow": false
+  },
+  "glass-small-titles-series-mobile": {
+    "hero": "immersive",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [
+      "Seasons 14.88px/400/start/none"
+    ],
+    "tabs": null,
+    "grids": [
+      "Seasons=medium/2"
+    ],
+    "overflow": false
+  },
+  "glass-small-titles-library-mobile": {
+    "hero": null,
+    "backdropImages": 0,
+    "backdropBackgrounds": 0,
+    "titles": [],
+    "tabs": "rf-tabs rf-tabs--pills rf-library-view__destinations",
+    "grids": [
+      "Movies=medium/1"
+    ],
+    "overflow": false
+  },
+  "classic-movie-desktop": {
+    "hero": "backdrop",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [
+      "Cast & Crew 17.2608px/500/start/none"
+    ],
+    "tabs": null,
+    "grids": [
+      "null=medium/6"
+    ],
+    "overflow": false
+  },
+  "classic-series-desktop": {
+    "hero": "backdrop",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [
+      "Seasons 17.2608px/500/start/none"
+    ],
+    "tabs": null,
+    "grids": [
+      "Seasons=medium/6"
+    ],
+    "overflow": false
+  },
+  "classic-library-desktop": {
+    "hero": null,
+    "backdropImages": 0,
+    "backdropBackgrounds": 0,
+    "titles": [],
+    "tabs": "rf-tabs rf-tabs--underline rf-library-view__destinations",
+    "grids": [
+      "Movies=medium/6"
+    ],
+    "overflow": false
+  },
+  "classic-movie-mobile": {
+    "hero": "backdrop",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [
+      "Cast & Crew 17.2608px/500/start/none"
+    ],
+    "tabs": null,
+    "grids": [
+      "null=medium/2"
+    ],
+    "overflow": false
+  },
+  "classic-series-mobile": {
+    "hero": "backdrop",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [
+      "Seasons 17.2608px/500/start/none"
+    ],
+    "tabs": null,
+    "grids": [
+      "Seasons=medium/2"
+    ],
+    "overflow": false
+  },
+  "classic-library-mobile": {
+    "hero": null,
+    "backdropImages": 0,
+    "backdropBackgrounds": 0,
+    "titles": [],
+    "tabs": "rf-tabs rf-tabs--underline rf-library-view__destinations",
+    "grids": [
+      "Movies=medium/2"
+    ],
+    "overflow": false
+  },
+  "classic-a1-movie-desktop": {
+    "hero": "backdrop",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [
+      "Cast & Crew 22.32px/500/center/uppercase"
+    ],
+    "tabs": null,
+    "grids": [
+      "null=large/5"
+    ],
+    "overflow": false
+  },
+  "classic-a1-series-desktop": {
+    "hero": "backdrop",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [
+      "Seasons 22.32px/500/center/uppercase"
+    ],
+    "tabs": null,
+    "grids": [
+      "Seasons=small/7"
+    ],
+    "overflow": false
+  },
+  "classic-a1-library-desktop": {
+    "hero": null,
+    "backdropImages": 0,
+    "backdropBackgrounds": 0,
+    "titles": [],
+    "tabs": "rf-tabs rf-tabs--pills rf-library-view__destinations",
+    "grids": [
+      "Movies=small/7"
+    ],
+    "overflow": false
+  },
+  "classic-a1-movie-mobile": {
+    "hero": "backdrop",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [
+      "Cast & Crew 22.32px/500/center/uppercase"
+    ],
+    "tabs": null,
+    "grids": [
+      "null=large/2"
+    ],
+    "overflow": false
+  },
+  "classic-a1-series-mobile": {
+    "hero": "backdrop",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [
+      "Seasons 22.32px/500/center/uppercase"
+    ],
+    "tabs": null,
+    "grids": [
+      "Seasons=small/2"
+    ],
+    "overflow": false
+  },
+  "classic-a1-library-mobile": {
+    "hero": null,
+    "backdropImages": 0,
+    "backdropBackgrounds": 0,
+    "titles": [],
+    "tabs": "rf-tabs rf-tabs--pills rf-library-view__destinations",
+    "grids": [
+      "Movies=small/2"
+    ],
+    "overflow": false
+  }
+}

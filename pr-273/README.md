@@ -36,10 +36,32 @@ No horizontal overflow at either width in any variant.
 | `classic` | ![](item-details/classic-movie-desktop.png) | ![](item-details/classic-series-desktop.png) | <img src="item-details/classic-movie-mobile.png" width="200"> |
 | `classic-a1` | ![](item-details/classic-a1-movie-desktop.png) | ![](item-details/classic-a1-series-desktop.png) | <img src="item-details/classic-a1-movie-mobile.png" width="200"> |
 
+## With artwork loaded, and the library at phone width (added after review)
+
+The film and the series now have a real backdrop, so `immersive` actually renders. These rows show
+the A1 keys on that render and the modern library at 390 px. Values are from
+`with-artwork/measurements.json`:
+
+| Variant | Section title | Grids (columns, desktop / mobile) | Tabs |
+| --- | --- | --- | --- |
+| `glass` | 22.3 px / 700 | people 11 / 2; library (backdrop cards) 5 / 1 | pills |
+| `glass-small-titles` | **14.9 px / 400 over the immersive band** | unchanged | pills |
+| `classic` | 17.3 px / 500 | people 6 / 2; episodes 6 / 2; library 6 / 2 | underline |
+| `classic-a1` | 22.3 px / 500, centred, uppercase | people **large 5** / 2; episodes **small 7** / 2; library **small 7** / 2 | **pills** |
+
+No horizontal overflow in any capture.
+
+| Variant | movie desktop | series desktop | library desktop | movie mobile | series mobile | library mobile |
+| --- | --- | --- | --- | --- | --- | --- |
+| `glass` | ![](with-artwork/glass-movie-desktop.png) | ![](with-artwork/glass-series-desktop.png) | ![](with-artwork/glass-library-desktop.png) | <img src="with-artwork/glass-movie-mobile.png" width="180"> | <img src="with-artwork/glass-series-mobile.png" width="180"> | <img src="with-artwork/glass-library-mobile.png" width="180"> |
+| `glass-small-titles` | ![](with-artwork/glass-small-titles-movie-desktop.png) | ![](with-artwork/glass-small-titles-series-desktop.png) | ![](with-artwork/glass-small-titles-library-desktop.png) | <img src="with-artwork/glass-small-titles-movie-mobile.png" width="180"> | <img src="with-artwork/glass-small-titles-series-mobile.png" width="180"> | <img src="with-artwork/glass-small-titles-library-mobile.png" width="180"> |
+| `classic` | ![](with-artwork/classic-movie-desktop.png) | ![](with-artwork/classic-series-desktop.png) | ![](with-artwork/classic-library-desktop.png) | <img src="with-artwork/classic-movie-mobile.png" width="180"> | <img src="with-artwork/classic-series-mobile.png" width="180"> | <img src="with-artwork/classic-library-mobile.png" width="180"> |
+| `classic-a1` | ![](with-artwork/classic-a1-movie-desktop.png) | ![](with-artwork/classic-a1-series-desktop.png) | ![](with-artwork/classic-a1-library-desktop.png) | <img src="with-artwork/classic-a1-movie-mobile.png" width="180"> | <img src="with-artwork/classic-a1-series-mobile.png" width="180"> | <img src="with-artwork/classic-a1-library-mobile.png" width="180"> |
+
 ## Theme Studio
 
 A Glass draft with "Title size: small" and "People grid: large", showing the new **Section titles** and **Grids** controls beside the preview. The preview now reads the draft, not the applied theme.
 
 ![Theme Studio](studio/studio-glass-controls.png)
 
-Not captured: the library at phone width, and TV. The mobile library would need a library fixture this capture script did not install.
+Not captured: TV.

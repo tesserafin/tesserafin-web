@@ -1,0 +1,134 @@
+{
+  "glass-movie-desktop": {
+    "hero": "immersive",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [],
+    "tabs": null,
+    "grids": [
+      "null=medium/11"
+    ],
+    "overflow": false
+  },
+  "glass-series-desktop": {
+    "hero": "immersive",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [],
+    "tabs": null,
+    "grids": [
+      "Seasons=medium/8"
+    ],
+    "overflow": false
+  },
+  "glass-library-desktop": {
+    "hero": null,
+    "backdropImages": 0,
+    "backdropBackgrounds": 0,
+    "titles": [],
+    "tabs": "rf-tabs rf-tabs--underline rf-library-view__destinations",
+    "grids": [
+      "Movies=medium/5"
+    ],
+    "overflow": false
+  },
+  "glass-movie-mobile": {
+    "hero": "immersive",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [],
+    "tabs": null,
+    "grids": [
+      "null=medium/2"
+    ],
+    "overflow": false
+  },
+  "glass-series-mobile": {
+    "hero": "immersive",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [],
+    "tabs": null,
+    "grids": [
+      "Seasons=medium/2"
+    ],
+    "overflow": false
+  },
+  "glass-library-mobile": {
+    "hero": null,
+    "backdropImages": 0,
+    "backdropBackgrounds": 0,
+    "titles": [],
+    "tabs": "rf-tabs rf-tabs--underline rf-library-view__destinations",
+    "grids": [
+      "Movies=medium/1"
+    ],
+    "overflow": false
+  },
+  "classic-movie-desktop": {
+    "hero": "backdrop",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [],
+    "tabs": null,
+    "grids": [
+      "null=medium/6"
+    ],
+    "overflow": false
+  },
+  "classic-series-desktop": {
+    "hero": "backdrop",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [],
+    "tabs": null,
+    "grids": [
+      "Seasons=medium/6"
+    ],
+    "overflow": false
+  },
+  "classic-library-desktop": {
+    "hero": null,
+    "backdropImages": 0,
+    "backdropBackgrounds": 0,
+    "titles": [],
+    "tabs": "rf-tabs rf-tabs--underline rf-library-view__destinations",
+    "grids": [
+      "Movies=medium/6"
+    ],
+    "overflow": false
+  },
+  "classic-movie-mobile": {
+    "hero": "backdrop",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [],
+    "tabs": null,
+    "grids": [
+      "null=medium/2"
+    ],
+    "overflow": false
+  },
+  "classic-series-mobile": {
+    "hero": "backdrop",
+    "backdropImages": 0,
+    "backdropBackgrounds": 1,
+    "titles": [],
+    "tabs": null,
+    "grids": [
+      "Seasons=medium/2"
+    ],
+    "overflow": false
+  },
+  "classic-library-mobile": {
+    "hero": null,
+    "backdropImages": 0,
+    "backdropBackgrounds": 0,
+    "titles": [],
+    "tabs": "rf-tabs rf-tabs--underline rf-library-view__destinations",
+    "grids": [
+      "Movies=medium/2"
+    ],
+    "overflow": false
+  }
+}
