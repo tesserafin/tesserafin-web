@@ -233,6 +233,12 @@
             "note": "renders the six metadata link lists"
         },
         {
+            "module": "elements/emby-button/LinkButton",
+            "classification": "OUTWARD_NAVIGATION",
+            "surface": "service.appRouter",
+            "note": "the fact-list links (THEME-IDENTITY-1): the same element ItemDetailsMetadataList rendered, now imported by MetadataLists.tsx, which lays the six lists out as one definition list; appRouter.show, or shell.openUrl for a target"
+        },
+        {
             "module": "@tanstack/react-query",
             "classification": "CACHE",
             "surface": null,

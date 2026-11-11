@@ -280,7 +280,27 @@
                     "additionalProperties": false,
                     "description": "The Item Details recipe. `hero` selects an artwork LAYOUT treatment — it never causes an extra request, never overrides the user's details-banner setting, never gives a Person or a Book a backdrop, and the poster is rendered under all three. `sections` orders and selects durable user-facing CONTENT FAMILIES. The enum widened from five to eleven names in #129 Step 2, when the route began reading the recipe: the original five are retained verbatim so every manifest valid before remains valid, and the six additions are the families the five could not name. None of these is a DOM identifier, a component name or an item type, and there is deliberately no name for the item's identity, its action bar, its track selectors, its user-data controls, its recording editor, a permission gate or a warning — those are fixed regions outside theme authority (RFC-0007 §6.1).",
                     "properties": {
-                        "hero": { "enum": ["backdrop", "poster", "minimal"] },
+                        "hero": {
+                            "description": "The artwork layout. `immersive` makes the item's backdrop a full-width lead band with the identity, facts and actions over its foot and the poster as an inset; it reads the backdrop `backdrop` reads, so it adds no request, and it falls back to the `poster` layout wherever the band cannot render (no backdrop, a Person or a Book, or the user's details banner turned off).",
+                            "enum": [
+                                "backdrop",
+                                "poster",
+                                "minimal",
+                                "immersive"
+                            ]
+                        },
+                        "controls": {
+                            "description": "How the fixed action bar and track selectors are dressed. `form`: rectangular buttons and labelled selector rows. `pill`: a large play pill, outlined secondary pills, round icon actions and one row of selector chips with the label inside. The same controls, order, labels, states and keyboard behaviour exist under both.",
+                            "enum": ["form", "pill"]
+                        },
+                        "people": {
+                            "description": "How cast and crew are drawn: `cards` (poster cards, name and role below) or `portraits` (round head-shots, name centred below). Same people, order and links.",
+                            "enum": ["cards", "portraits"]
+                        },
+                        "facts": {
+                            "description": "How the item's people, studio and genre lists are grouped. `table` gives each list a labelled row; `inline` runs the values together on one line under the title, keeping the labels for assistive technology. Neither changes which lists exist, their order, their links or their data.",
+                            "enum": ["table", "inline"]
+                        },
                         "backdrop": {
                             "description": "What stands behind the Item Details composition. `ambient` lays the poster the page already shows, blurred and dimmed, behind the page; it issues no request of its own and shows nothing for an item without a poster.",
                             "enum": ["none", "ambient"]

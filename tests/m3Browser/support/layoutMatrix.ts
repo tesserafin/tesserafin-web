@@ -98,7 +98,14 @@ const OPTION_LABEL: Record<string, string> = {
     [CONTENT_PACK_FIRST]: 'By content pack'
 };
 
-const MODERN_NAV = '.MuiToolbar-root';
+/*
+ * The modern wide-screen primary navigation: the destinations sit EITHER in the application bar
+ * (`navigation.shell: topbar`) OR in the persistent column (`sidebar` / `rail`, THEME-IDENTITY-1),
+ * never both. One `:is()` compound rather than a comma list, so a descendant combinator after it
+ * applies to both halves instead of only the last one.
+ */
+const MODERN_NAV =
+    ':is([data-rf-slot="app-topnav"], [data-rf-slot="app-sidenav"])';
 /** The modern phone drawer, which `ResponsiveDrawer` keeps mounted even while it is closed. */
 const MODERN_DRAWER = '.MuiDrawer-root .MuiListItemText-primary';
 /** `libraryMenu` fills exactly this container with the browsing destinations. */
@@ -149,23 +156,26 @@ export async function navLabels(
     layoutCase: LayoutCase
 ): Promise<string[]> {
     if (layoutCase.nav === 'modern-toolbar') {
-        const labels = await page.$$eval(`${MODERN_NAV} a`, (nodes) =>
-            nodes
-                .map((node) => {
-                    // `material-icons` renders its glyph as a LIGATURE, so the icon has to be
-                    // removed from a clone rather than matched away.
-                    const clone = node.cloneNode(true) as HTMLElement;
-                    for (const icon of clone.querySelectorAll(
-                        '.MuiButton-icon'
-                    ))
-                        icon.remove();
-                    return clone.textContent?.trim() ?? '';
-                })
-                .filter(Boolean)
+        // `Home` leads the column and is the column's way back, as the server-name button is the
+        // bar's: not a browsing destination, so not part of "where you can go".
+        const labels = await page.$$eval(
+            `${MODERN_NAV} a:not([href="#/home"])`,
+            (nodes) =>
+                nodes
+                    .map((node) => {
+                        // `material-icons` renders its glyph as a LIGATURE, so the icon has to be
+                        // removed from a clone rather than matched away.
+                        const clone = node.cloneNode(true) as HTMLElement;
+                        for (const icon of clone.querySelectorAll(
+                            '.MuiButton-icon'
+                        ))
+                            icon.remove();
+                        return clone.textContent?.trim() ?? '';
+                    })
+                    .filter(Boolean)
         );
-        // The first entry opens the toolbar and carries the server's name: identity, not a
-        // browsing destination.
-        return labels.slice(1);
+        // The server-name button is outside both navigation landmarks, so nothing to drop here.
+        return labels;
     }
 
     if (layoutCase.nav === 'modern-drawer') {

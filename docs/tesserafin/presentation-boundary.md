@@ -228,6 +228,22 @@ route carries:
 The Web renderer's `presentation.*` surface is now complete. What is left (§5) is `assets.roles`,
 `source.web.css` and one Home data source, and none of the three is a composition problem.
 
+**THEME-IDENTITY-1** used that surface to make the two official themes differ in structure rather
+than in palette, and found three places where the contract and the renderer had drifted apart:
+
+- `presentation.navigation.shell` was declared by both themes and read by no shell. `FloatingSidebar`
+  read it, and nothing mounted `FloatingSidebar`; every user saw the same application bar. The modern
+  shell now reads it (`AppLayout` → `AppSideNav`, `components/AppSideNav/sideNav.ts`).
+- `page.library.cardAspect: backdrop` drew 16:9 cards filled with the 2:3 poster. The library adapter
+  now picks the landscape art the item already advertises for a landscape card (the catalogue query
+  is unchanged, as `LibraryView.recipe.test.tsx` holds it).
+- Home's hero asked for landscape art and an episode with none of its own produced an empty slab; the
+  Home adapter now inherits the series backdrop, as `getCardImageUrl` does.
+
+It added two values to the vocabulary rather than any selector: `itemDetails.hero: immersive` and
+`itemDetails.facts`. Both are honoured by the route, edited by the Studio, validated by the schema
+and sanitised by the resolver.
+
 Taking the three in this order kept the `libraries/*` hybrid (§3.1) visible as a separate, later
 item rather than folding an unrelated `cardbuilder` migration into a composition change. None of
 the three bindings touched it.

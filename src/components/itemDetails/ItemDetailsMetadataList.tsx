@@ -138,3 +138,15 @@ function getMetadataItems(
 }
 
 export default ItemDetailsMetadataList;
+
+/*
+ * The data and link rules, shared with the modern Item Details route's fact list
+ * (`apps/modern/features/details/components/MetadataLists.tsx`), which lays the same lists out as a
+ * definition list it can compose as a table or as one line. One source for which people, studios
+ * and genres exist and where each one links: the layout may differ, the facts may not.
+ */
+export {
+    getLabel as getMetadataLabel,
+    getLink as getMetadataLink,
+    getMetadataItems
+};

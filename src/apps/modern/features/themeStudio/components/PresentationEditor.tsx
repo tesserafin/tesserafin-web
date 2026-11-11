@@ -36,7 +36,13 @@ import { PUBLISHED_FAMILIES } from 'apps/modern/features/details/utils/itemDetai
 import {
     HOME_SECTIONS,
     HOME_SHELF_DENSITIES,
+    ITEM_DETAILS_CONTROLS,
+    ITEM_DETAILS_FACTS,
     ITEM_DETAILS_HEROES,
+    ITEM_DETAILS_PEOPLE,
+    NAVIGATION_LABELS,
+    NAVIGATION_POSITIONS,
+    NAVIGATION_SHELLS,
     PAGE_BACKDROPS,
     PLATFORM_DEFAULT_PRESENTATION,
     WEB_RENDERER_CAPABILITIES,
@@ -165,26 +171,37 @@ export const PresentationEditor: FC<PresentationEditorProps> = ({
             <Section title='Navigation'>
                 <Choice
                     label='Shell'
-                    value={presentation.navigation?.shell ?? 'sidebar'}
-                    options={['sidebar', 'rail', 'topbar']}
+                    value={
+                        presentation.navigation?.shell ??
+                        PLATFORM_DEFAULT_PRESENTATION.navigation.shell
+                    }
+                    options={NAVIGATION_SHELLS}
                     onChange={(value) => setNavigation('shell', value)}
                 />
                 <Choice
                     label='Labels'
-                    value={presentation.navigation?.labels ?? 'always'}
-                    options={['always', 'active', 'never']}
+                    value={
+                        presentation.navigation?.labels ??
+                        PLATFORM_DEFAULT_PRESENTATION.navigation.labels
+                    }
+                    options={NAVIGATION_LABELS}
                     onChange={(value) => setNavigation('labels', value)}
                 />
                 <Choice
                     label='Position'
-                    value={presentation.navigation?.position ?? 'start'}
-                    options={['start', 'end']}
+                    value={
+                        presentation.navigation?.position ??
+                        PLATFORM_DEFAULT_PRESENTATION.navigation.position
+                    }
+                    options={NAVIGATION_POSITIONS}
                     onChange={(value) => setNavigation('position', value)}
                 />
                 <Alert severity='info' variant='outlined'>
                     Navigation presentation changes how navigation looks, never
                     what it contains. Which destinations exist is authorization
-                    and library state, and no theme can reach it.
+                    and library state, and no theme can reach it. Sidebar and
+                    rail apply on wide screens; a phone always uses the menu
+                    drawer, and labels and position apply to the column.
                 </Alert>
             </Section>
 
@@ -579,6 +596,48 @@ const ItemDetailsCompositionEditor: FC<ItemDetailsCompositionEditorProps> = ({
                         hero,
                         sections: selected,
                         backdrop: value as ItemDetailsRecipe['backdrop']
+                    })
+                }
+            />
+
+            <Choice
+                label='Facts (people, studios, genres)'
+                value={recipe?.facts ?? DEFAULT_ITEM_DETAILS.facts}
+                options={ITEM_DETAILS_FACTS}
+                onChange={(value) =>
+                    onChange({
+                        ...recipe,
+                        hero,
+                        sections: selected,
+                        facts: value as ItemDetailsRecipe['facts']
+                    })
+                }
+            />
+
+            <Choice
+                label='Controls (actions and track selectors)'
+                value={recipe?.controls ?? DEFAULT_ITEM_DETAILS.controls}
+                options={ITEM_DETAILS_CONTROLS}
+                onChange={(value) =>
+                    onChange({
+                        ...recipe,
+                        hero,
+                        sections: selected,
+                        controls: value as ItemDetailsRecipe['controls']
+                    })
+                }
+            />
+
+            <Choice
+                label='People (cast and crew)'
+                value={recipe?.people ?? DEFAULT_ITEM_DETAILS.people}
+                options={ITEM_DETAILS_PEOPLE}
+                onChange={(value) =>
+                    onChange({
+                        ...recipe,
+                        hero,
+                        sections: selected,
+                        people: value as ItemDetailsRecipe['people']
                     })
                 }
             />

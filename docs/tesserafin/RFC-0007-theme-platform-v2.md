@@ -151,6 +151,15 @@ would ever be safe again.
 never governs what navigation **contains**: which destinations exist is authorization and library
 state.
 
+The modern Web shell reads `shell` since THEME-IDENTITY-1. `topbar` keeps the destinations in the
+application bar; `sidebar` and `rail` move the same destinations into a persistent column beside the
+page, on wide screens only — below the `md` breakpoint every shell uses the menu drawer, because a
+persistent column on a phone costs the content it organises. The destinations are in exactly one
+place at any width. `labels` and `position` apply to the column. Binding `shell` corrected the
+platform default from `sidebar` to `topbar`, the bar every user had always seen: a default must
+reproduce current behaviour (the rule Home's and Item Details' defaults were corrected under), and
+a theme that wants the column — Tesserafin Classic — declares it.
+
 ### 4.7 Declarative composition recipes
 
 `presentation.page.home`, `.library` and `.itemDetails` order and select **published** sections. The
@@ -163,12 +172,34 @@ Library in #128, Item Details in #129 Step 2.
 
 #### The Item Details vocabulary
 
-`presentation.page.itemDetails` has two keys.
+`presentation.page.itemDetails` has six keys: `hero`, `backdrop`, `facts`, `controls`, `people` and `sections`.
 
-`hero` — `backdrop` | `poster` | `minimal` — selects an artwork **layout treatment**. It is not a
-data decision, and four things are true of it under every value: it causes no additional image or
-API request, it never overrides the reader's own backdrop setting, a `Person` and a `Book` never
-gain a backdrop, and the poster is rendered.
+`hero` — `backdrop` | `poster` | `minimal` | `immersive` — selects an artwork **layout treatment**.
+It is not a data decision, and four things are true of it under every value: it causes no additional
+image or API request, it never overrides the reader's own backdrop setting, a `Person` and a `Book`
+never gain a backdrop, and the poster is rendered.
+
+`immersive` (THEME-IDENTITY-1) makes the backdrop the page's lead: a full-width band with the
+identity, the facts, the actions and the track selectors set over its foot, and the poster as an
+inset. It reads the backdrop `backdrop` already reads. Because its geometry is built on the band, it
+is laid out as `poster` wherever the band cannot render — no backdrop artwork, a `Person` or a
+`Book`, or the reader's details banner turned off.
+
+`facts` — `table` | `inline` — groups the people, studio and genre lists. `table` gives each list a
+labelled row; `inline` runs the values together on one line, labels kept for assistive technology.
+Neither changes which lists exist, their order, their labels or their links. The default is `table`,
+which is what the route rendered before the key existed.
+
+`controls` — `form` | `pill` — dresses the FIXED action bar and track selectors. `form` is a
+labelled form (rectangular buttons, a label column beside each selector); `pill` is a player's
+controls (a large play pill with a play glyph, outlined secondary pills, round icon toggles, and one
+row of selector chips with the label inside each). It is a presentation of the fixed region, not a
+decision about it: the same controls, order, labels, states and keyboard behaviour exist under both,
+which is what keeps it inside RFC-0007 §6.1. Default `form`.
+
+`people` — `cards` | `portraits` — draws cast and crew as poster cards or as round head-shots with
+initials standing in for a missing picture. Same people, order, names, roles and links. Default
+`cards`.
 
 `sections` orders and selects **content families**:
 

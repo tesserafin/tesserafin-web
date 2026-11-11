@@ -1,0 +1,51 @@
+/**
+ * The destinations in the application bar (`navigation.shell: topbar`, the platform default).
+ *
+ * Keyed on the published vocabulary projected onto `<html>` (`data-rf-surface-*`) and on the
+ * elements this slice renders. Under an opaque surface the row reads as before: plain links in
+ * the bar. Under a glass surface the row is gathered into one floating, frosted group — the bar
+ * then stands over the page's own artwork, and the group is the one thing on it with a surface.
+ */
+
+@use '../../../../ui/styles/glass-surface' as glass;
+
+.rf-app-topnav {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 4px;
+    align-items: center;
+    min-width: 0;
+
+    a,
+    button {
+        text-transform: none;
+    }
+
+    a:focus-visible,
+    button:focus-visible {
+        outline: 2px solid var(--rf-color-focus, #4dabf7);
+        outline-offset: 2px;
+    }
+}
+
+:root[data-rf-surface-variant='glass'] .rf-app-topnav {
+    margin-inline-start: var(--rf-spacing-md, 16px);
+    padding: 2px 6px;
+    border-radius: 999px;
+
+    @include glass.rf-glass-surface;
+    box-shadow: var(--rf-elevation-level2, none);
+    outline: 1px solid var(--rf-color-divider, rgba(255, 255, 255, 0.12));
+    outline-offset: -1px;
+
+    a,
+    button {
+        border-radius: 999px;
+        padding-inline: 14px;
+    }
+
+    a[aria-current='page'] {
+        color: var(--rf-color-on-primary, #000);
+        background: var(--rf-color-primary, #4fd1ff);
+    }
+}

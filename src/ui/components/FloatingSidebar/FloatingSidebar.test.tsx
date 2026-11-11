@@ -260,7 +260,7 @@ describe('FloatingSidebar — theme presentation (RFC-0007 §4.6)', () => {
         const nav = container.querySelector(
             '[data-rf-slot="floating-sidebar"]'
         );
-        expect(nav?.getAttribute('data-rf-nav-shell')).toBe('sidebar');
+        expect(nav?.getAttribute('data-rf-nav-shell')).toBe('topbar');
         expect(nav?.getAttribute('data-rf-nav-labels')).toBe('always');
         expect(nav?.getAttribute('data-rf-nav-position')).toBe('start');
     });

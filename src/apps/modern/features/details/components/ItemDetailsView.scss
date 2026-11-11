@@ -12,6 +12,8 @@
  * stylesheet edit, and no rule here can turn a section name into something a theme targets.
  */
 
+@use '../../../../../ui/styles/glass-surface' as glass;
+
 .rf-item-details {
     position: relative;
     display: grid;
@@ -105,6 +107,127 @@
 }
 
 /*
+ * `immersive` (THEME-IDENTITY-1): the item's backdrop is the page's entrance. The band runs the
+ * full width at most of the first screen, and the identity, the facts, the actions and the track
+ * selectors are set over its foot rather than below it — the picture and the information are one
+ * block, where `backdrop` paints a faint band and then starts the page underneath it.
+ *
+ * Readability does not depend on the artwork: two scrims of the page BACKGROUND colour (opaque in
+ * every palette, light or dark) run under the text — one up from the foot, one in from the start
+ * edge where the text column sits. `resolveHeroLayout` only lets this treatment through when the
+ * item has a backdrop the user allows; otherwise the page is laid out as `poster`.
+ */
+.rf-item-details[data-rf-hero='immersive'] {
+    --rf-item-details-poster-width: 14rem;
+    --rf-item-details-backdrop-height: min(70vh, 40rem);
+
+    row-gap: var(--rf-spacing-lg, 24px);
+    padding-top:
+        max(
+            var(--rf-spacing-xl, 32px),
+            calc(var(--rf-item-details-backdrop-height) - 17rem)
+        );
+
+    .rf-item-details__backdrop {
+        background-position: center 25%;
+        mask-image: linear-gradient(to bottom, #000 60%, transparent);
+
+        &::after {
+            position: absolute;
+            inset: 0;
+            content: '';
+            background:
+                linear-gradient(
+                    to right,
+                    color-mix(in srgb, var(--rf-color-background, #101010) 82%, transparent) 0%,
+                    color-mix(in srgb, var(--rf-color-background, #101010) 45%, transparent) 45%,
+                    transparent 75%
+                ),
+                linear-gradient(
+                    to top,
+                    var(--rf-color-background, #101010) 0%,
+                    transparent 55%
+                );
+        }
+    }
+
+    .rf-item-details__poster {
+        box-shadow: var(--rf-elevation-level3, 0 12px 40px rgba(0, 0, 0, 0.5));
+    }
+}
+
+/*
+ * The fact lists — `presentation.page.itemDetails.facts` (THEME-IDENTITY-1). Both layouts carry
+ * the same `dt`/`dd` pairs and the same links; only the grouping differs.
+ */
+.rf-item-details__facts {
+    margin: 0;
+    font-size: var(--rf-typography-font-size-sm, 0.875rem);
+
+    dd {
+        margin: 0;
+    }
+}
+
+.rf-item-details__fact-link {
+    color: inherit;
+
+    &:focus-visible {
+        outline: 2px solid var(--rf-color-focus, #4dabf7);
+        outline-offset: 2px;
+    }
+}
+
+/* `table`: one labelled row per list, labels in a column of their own. */
+.rf-item-details__facts[data-rf-facts='table'] {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: var(--rf-spacing-xs, 4px) var(--rf-spacing-lg, 24px);
+    max-width: 44rem;
+
+    .rf-item-details__fact {
+        display: contents;
+    }
+
+    dt {
+        color: var(--rf-color-text-muted, rgb(255 255 255 / 70%));
+    }
+
+    dd {
+        font-weight: var(--rf-typography-font-weight-medium, 500);
+    }
+}
+
+/* `inline`: one line of values under the identity; the labels stay for assistive technology. */
+.rf-item-details__facts[data-rf-facts='inline'] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    row-gap: var(--rf-spacing-xs, 4px);
+    color: var(--rf-color-text, #fff);
+
+    .rf-item-details__fact {
+        display: flex;
+        align-items: baseline;
+    }
+
+    .rf-item-details__fact + .rf-item-details__fact::before {
+        padding-inline: var(--rf-spacing-sm, 8px);
+        color: var(--rf-color-text-muted, rgb(255 255 255 / 70%));
+        content: '·' / '';
+    }
+
+    dt {
+        position: absolute;
+        overflow: hidden;
+        width: 1px;
+        height: 1px;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+}
+
+/*
  * Sections.
  *
  * `hero` sits in the second column, beside the poster; `full` spans both. The legacy template made
@@ -159,6 +282,13 @@
         color: var(--rf-color-text-muted, rgb(255 255 255 / 70%));
         font-size: var(--rf-typography-font-size-sm, 0.875rem);
     }
+}
+
+/* `immersive` names the item at display size: the title is the caption of the picture above it. */
+.rf-item-details[data-rf-hero='immersive'] .rf-item-details__section[data-detail-section='nameContainer'] h1 {
+    font-size: calc(1.6 * var(--rf-typography-font-size-xxl, 2rem));
+    font-weight: var(--rf-typography-font-weight-bold, 700);
+    line-height: 1.05;
 }
 
 /*
@@ -419,6 +549,215 @@
         .rf-item-details__section[data-detail-section='nameContainer'] h1 {
             font-size: var(--rf-typography-font-size-xl, 1.5rem);
         }
+    }
+
+    /*
+     * On a phone the band is the screen's width at 16:10 and the identity block overlaps only its
+     * last few rem, so the actions and the tracks stay in the first screen.
+     */
+    .rf-item-details[data-rf-hero='immersive'] {
+        --rf-item-details-backdrop-height: 62vw;
+
+        padding-top: max(var(--rf-spacing-md, 16px), calc(62vw - 4rem));
+    }
+}
+
+/*
+ * `controls: pill` (THEME-IDENTITY-1): the fixed controls dressed as a player's rather than as a
+ * form. Same buttons and selects, same order, same labels and states; only their dress changes.
+ *
+ * The play action becomes the one large, filled pill on the page, with a play glyph drawn in CSS
+ * (no extra element, so the accessible name is still the label alone). Secondary actions are
+ * outlined pills, the played/favourite toggles round buttons on the theme's surface material, and
+ * the selectors one wrapping row of chips: the label sits inside each chip as a caption over its
+ * value, and the whole chip is the select's hit area.
+ */
+.rf-item-details[data-rf-controls='pill'] {
+    .rf-item-details__actions {
+        gap: var(--rf-spacing-sm, 8px) var(--rf-spacing-md, 16px);
+        margin-block: var(--rf-spacing-sm, 8px);
+    }
+
+    .rf-item-details__action {
+        height: 2.75rem;
+        padding: 0 var(--rf-spacing-lg, 24px);
+        background: transparent;
+        border-color: color-mix(in srgb, var(--rf-color-text, #fff) 35%, transparent);
+        border-radius: 999px;
+        font-size: var(--rf-typography-font-size-md, 1rem);
+        font-weight: var(--rf-typography-font-weight-medium, 500);
+
+        &:hover {
+            background: color-mix(in srgb, var(--rf-color-text, #fff) 10%, transparent);
+            border-color: var(--rf-color-text, #fff);
+        }
+    }
+
+    .rf-item-details__action[data-detail-action='btnPlay'] {
+        gap: var(--rf-spacing-sm, 8px);
+        height: 3.25rem;
+        padding: 0 var(--rf-spacing-xl, 32px) 0 var(--rf-spacing-lg, 24px);
+        color: var(--rf-color-on-primary, #000);
+        background: var(--rf-color-primary, #4dabf7);
+        border-color: transparent;
+        box-shadow: var(--rf-elevation-level2, none);
+        font-size: var(--rf-typography-font-size-lg, 1.25rem);
+
+        &::before {
+            width: 0.8em;
+            height: 0.95em;
+            content: '';
+            background: currentcolor;
+            clip-path: polygon(0 0, 100% 50%, 0 100%);
+        }
+    }
+
+    .rf-item-details__user-data {
+        justify-content: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: 50%;
+        outline: 1px solid var(--rf-color-divider, rgb(255 255 255 / 12%));
+        outline-offset: -1px;
+
+        @include glass.rf-glass-surface;
+    }
+
+    .rf-item-details__tracks {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--rf-spacing-sm, 8px);
+        max-width: 48rem;
+    }
+
+    .rf-item-details__track {
+        position: relative;
+        display: flex;
+        flex: 0 1 15rem;
+        min-width: 0;
+        border-radius: 14px;
+        outline: 1px solid var(--rf-color-divider, rgb(255 255 255 / 12%));
+        outline-offset: -1px;
+
+        @include glass.rf-glass-surface;
+
+        &:focus-within {
+            outline: 2px solid var(--rf-color-focus, #4dabf7);
+            outline-offset: 2px;
+        }
+
+        label {
+            position: absolute;
+            top: 7px;
+            left: 16px;
+            margin: 0;
+            font-size: var(--rf-typography-font-size-xs, 0.75rem);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+
+        select {
+            height: 3.25rem;
+            padding: 1.1rem 2.25rem 0 16px;
+            color: var(--rf-color-text, #fff);
+            background-color: transparent;
+            background-image:
+                linear-gradient(45deg, transparent 50%, currentcolor 50%),
+                linear-gradient(135deg, currentcolor 50%, transparent 50%);
+            background-position:
+                calc(100% - 20px) 58%,
+                calc(100% - 15px) 58%;
+            background-repeat: no-repeat;
+            background-size: 5px 5px;
+            border: 0;
+            border-radius: inherit;
+            font-size: var(--rf-typography-font-size-sm, 0.875rem);
+            text-overflow: ellipsis;
+            appearance: none;
+
+            &:focus-visible {
+                outline: none;
+            }
+        }
+    }
+
+    .rf-item-details__track[hidden] {
+        display: none;
+    }
+}
+
+/*
+ * The immersive treatment's rhythm: the synopsis reads as a lead paragraph and the page breathes
+ * between its sections, where `backdrop` keeps the catalogue's tight, even spacing.
+ */
+.rf-item-details[data-rf-hero='immersive'] .rf-item-details__section[data-detail-section='overview'] p {
+    max-width: 60ch;
+    font-size: var(--rf-typography-font-size-lg, 1.25rem);
+    line-height: 1.5;
+}
+
+.rf-item-details[data-rf-hero='immersive'] .rf-item-details__section[data-detail-slot='full'] {
+    margin-top: var(--rf-spacing-xl, 32px);
+}
+
+.rf-item-details[data-rf-hero='immersive'] .rf-item-details__section-title {
+    font-size: var(--rf-typography-font-size-xl, 1.5rem);
+    font-weight: var(--rf-typography-font-weight-bold, 700);
+}
+
+/*
+ * `people: portraits`: round head-shots with the name and role centred under them, no card
+ * surface. The overlay caption of an image-led theme is put back under the picture here: a name
+ * over a 7rem circle would cover the face it names.
+ */
+.rf-item-details__people[data-rf-people='portraits'] {
+    .rf-media-card {
+        background: none;
+        box-shadow: none;
+        backdrop-filter: none;
+        outline: none;
+    }
+
+    .rf-media-card:focus-visible {
+        outline: 2px solid var(--rf-color-focus, #4dabf7);
+        outline-offset: 2px;
+    }
+
+    .rf-media-card__image-wrap {
+        border-radius: 50%;
+    }
+
+    .rf-media-card .rf-media-card__text {
+        position: static;
+        align-items: center;
+        padding: var(--rf-spacing-sm, 8px) 0 0;
+        background: none;
+        text-align: center;
+    }
+
+    .rf-media-card .rf-media-card__title {
+        white-space: normal;
+    }
+}
+
+.rf-item-details__initials {
+    font-size: var(--rf-typography-font-size-xl, 1.5rem);
+    font-weight: var(--rf-typography-font-weight-medium, 500);
+    letter-spacing: 0.04em;
+}
+
+@media (width <= 60rem) {
+    .rf-item-details[data-rf-controls='pill'] .rf-item-details__track {
+        flex: 1 1 calc(50% - var(--rf-spacing-sm, 8px));
+    }
+
+    // Secondary pills shrink on a phone so the play pill keeps the lead and the selectors stay in
+    // the first screen; the play pill itself keeps its size (a higher-specificity rule above).
+    .rf-item-details[data-rf-controls='pill'] .rf-item-details__action {
+        height: 2.5rem;
+        padding: 0 var(--rf-spacing-md, 16px);
+        font-size: var(--rf-typography-font-size-sm, 0.875rem);
     }
 }
 

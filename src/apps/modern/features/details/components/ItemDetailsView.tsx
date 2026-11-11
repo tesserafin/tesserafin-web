@@ -247,7 +247,9 @@ const ItemDetailsView: FC<ItemDetailsViewProps> = ({ item, user, params }) => {
         itemSupportsBackdrop: hasBackdrop(item),
         // The user's own preference for their own client. It outranks the theme, and it defaults
         // to ON, so the platform default composes exactly what the pre-binding route rendered.
-        userWantsBackdrop: detailsBanner()
+        userWantsBackdrop: detailsBanner(),
+        itemHasBackdropImage:
+            ((item.BackdropImageTags ?? []) as string[]).length > 0
     });
 
     /**
@@ -375,7 +377,7 @@ const ItemDetailsView: FC<ItemDetailsViewProps> = ({ item, user, params }) => {
                     column={column}
                     slot='mediaInfo'
                 >
-                    <MetadataLists item={item} />
+                    <MetadataLists item={item} layout={recipe.facts} />
                 </DetailSection>
             </>
         ),
@@ -526,7 +528,11 @@ const ItemDetailsView: FC<ItemDetailsViewProps> = ({ item, user, params }) => {
                         slot='cast'
                         heading={globalize.translate(peopleHeadingKey(item))}
                     >
-                        <PeopleGrid people={cast} serverId={item.ServerId} />
+                        <PeopleGrid
+                            people={cast}
+                            serverId={item.ServerId}
+                            layout={recipe.people}
+                        />
                     </DetailSection>
                 ) : null}
 
@@ -540,6 +546,7 @@ const ItemDetailsView: FC<ItemDetailsViewProps> = ({ item, user, params }) => {
                         <PeopleGrid
                             people={guestCast}
                             serverId={item.ServerId}
+                            layout={recipe.people}
                         />
                     </DetailSection>
                 ) : null}
@@ -654,7 +661,11 @@ const ItemDetailsView: FC<ItemDetailsViewProps> = ({ item, user, params }) => {
     };
 
     return (
-        <div className='rf-item-details' data-rf-hero={hero.treatment}>
+        <div
+            className='rf-item-details'
+            data-rf-hero={hero.treatment}
+            data-rf-controls={recipe.controls}
+        >
             {/*
              * The item's own artwork. `MUST PRESERVE` #9: a poster is always rendered, and Person
              * and Book never get a backdrop. It carries no `data-detail-section` because the frozen

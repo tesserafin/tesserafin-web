@@ -17,23 +17,52 @@ import type { MediaCardProps } from 'ui';
  * re-implements only what a movies/tvshows grid card needs: `ImageApiClient` is re-imported
  * (type-only, no behavior duplicated) since `useApi().__legacyApiClient__` has the same shape either
  * way; the image-selection and href logic below are deliberately smaller than `/home`'s - no
- * thumb-preference, series-inherited image, or folder/library-tile href branches, since every item
- * in this grid is a leaf `Movie`/`Series` with its own primary image and its own details page.
+ * series-inherited image or folder/library-tile href branches, since every item in this grid is a
+ * leaf `Movie`/`Series` with its own artwork and its own details page.
  */
 export type { ImageApiClient };
 
+/**
+ * The artwork that FITS the card's shape, chosen from tags the catalogue response already carries.
+ *
+ * A `backdrop` card takes the item's landscape art — its `Thumb`, else its first `Backdrop` — and
+ * falls back to the poster only when the item has neither. Before THEME-IDENTITY-1 every shape got
+ * the poster, so a 16:9 card showed a band cut from the middle of a 2:3 image: the composition
+ * asked for a landscape card and the adapter filled it with a portrait. `/home` has always made
+ * this choice for its 16:9 shelves (`preferThumb`); this is the same rule.
+ *
+ * What it does not do is change a REQUEST to the API. The tags are fields of the item the route
+ * already fetched, the catalogue query is untouched (`LibraryView.recipe.test.tsx` holds its ledger
+ * byte-identical across recipes), and an image URL names artwork the server advertised for this
+ * item — the same class of choice as which `<img>` to draw, not a different question to the server.
+ */
+const selectImage = (
+    item: ItemDto,
+    imageAspect: MediaCardProps['imageAspect']
+): { type: ImageType; tag: string } | undefined => {
+    if (imageAspect === 'backdrop') {
+        const thumb = item.ImageTags?.Thumb;
+        if (thumb) return { type: ImageType.Thumb, tag: thumb };
+        const backdrop = item.BackdropImageTags?.[0];
+        if (backdrop) return { type: ImageType.Backdrop, tag: backdrop };
+    }
+    const primary = item.ImageTags?.Primary;
+    return primary ? { type: ImageType.Primary, tag: primary } : undefined;
+};
+
 const getItemImageUrl = (
     item: ItemDto,
-    apiClient: ImageApiClient | undefined
+    apiClient: ImageApiClient | undefined,
+    imageAspect: MediaCardProps['imageAspect']
 ): string | undefined => {
-    if (!apiClient) return undefined;
+    if (!apiClient || !item.Id) return undefined;
 
-    const tag = item.ImageTags?.Primary;
-    if (!item.Id || !tag) return undefined;
+    const image = selectImage(item, imageAspect);
+    if (!image) return undefined;
 
     return apiClient.getImageUrl(item.Id, {
-        type: ImageType.Primary,
-        tag,
+        type: image.type,
+        tag: image.tag,
         quality: 96
     });
 };
@@ -56,11 +85,9 @@ const getItemHref = (item: ItemDto, fallbackServerId?: string): string => {
  * defaulted: a call site that forgot it would silently render the platform default under every
  * theme, which is the "control that does nothing" failure the binding exists to avoid.
  *
- * Note what this does NOT do: {@link getItemImageUrl} asks for `ImageType.Primary` at
- * `quality: 96` whatever the aspect is, so changing `cardAspect` changes the CSS box a card draws
- * into and issues the byte-identical image request for the byte-identical media item. A theme
- * cropping a poster is presentation; a theme choosing a different image endpoint would be a theme
- * changing what the client asks the server for.
+ * The aspect also picks which of the item's advertised artworks fills the box ({@link selectImage}):
+ * landscape art for a `backdrop` card, the poster otherwise. The catalogue request is the same under
+ * every aspect.
  */
 export const toMediaCardProps = (
     item: ItemDto,
@@ -75,7 +102,7 @@ export const toMediaCardProps = (
     return {
         title: item.Name ?? '',
         subtitle: item.ProductionYear ? String(item.ProductionYear) : undefined,
-        imageUrl: getItemImageUrl(item, apiClient),
+        imageUrl: getItemImageUrl(item, apiClient, imageAspect),
         imageAspect,
         progressPercent: watch.progressPercent,
         played: watch.played,

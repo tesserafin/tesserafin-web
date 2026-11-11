@@ -1,9 +1,9 @@
 {
     "contractVersion": 2,
     "id": "official.glass",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "name": "Tesserafin Glass",
-    "description": "A frosted-glass experience: translucent surfaces, blur-backed panels, softened elevation.",
+    "description": "An artwork-led experience: a floating top bar, image-only cards, item pages that open on their backdrop, glass over real imagery.",
     "author": "Tesserafin Project",
     "license": "GPL-2.0-or-later",
     "compatibility": {
@@ -18,12 +18,12 @@
         },
         "mediaCard": {
             "imageAspect": "poster",
-            "titlePlacement": "below",
-            "hoverEffect": "lift",
+            "titlePlacement": "overlay",
+            "hoverEffect": "zoom",
             "progressStyle": "bar"
         },
         "navigation": {
-            "shell": "sidebar",
+            "shell": "topbar",
             "labels": "always",
             "position": "start"
         },
@@ -45,9 +45,13 @@
                 "filters": "drawer"
             },
             "itemDetails": {
-                "hero": "poster",
+                "hero": "immersive",
                 "backdrop": "ambient",
+                "facts": "inline",
+                "controls": "pill",
+                "people": "portraits",
                 "sections": [
+                    "mediaInfo",
                     "overview",
                     "cast",
                     "nextUp",
@@ -57,8 +61,7 @@
                     "extras",
                     "chapters",
                     "schedule",
-                    "related",
-                    "mediaInfo"
+                    "related"
                 ]
             }
         }

@@ -447,15 +447,55 @@ describe('composeItemDetails', () => {
 });
 
 describe('resolveHeroLayout — precedence', () => {
-    it('renders the backdrop only under the backdrop treatment', () => {
+    it('renders the backdrop only under the backdrop and immersive treatments', () => {
         for (const treatment of ITEM_DETAILS_HEROES) {
             const layout = resolveHeroLayout({
                 treatment,
                 itemSupportsBackdrop: true,
                 userWantsBackdrop: true
             });
-            expect(layout.backdrop, treatment).toBe(treatment === 'backdrop');
+            expect(layout.backdrop, treatment).toBe(
+                treatment === 'backdrop' || treatment === 'immersive'
+            );
         }
+    });
+
+    /*
+     * THEME-IDENTITY-1. `immersive` is a layout BUILT on the band: identity, facts and actions are
+     * set over its foot. Wherever the band cannot render, the page must not keep that geometry —
+     * a 40rem header over nothing — so it is laid out as `poster`, the treatment that leads with
+     * artwork every item has.
+     */
+    it.each([
+        ['the item may not have one', { itemSupportsBackdrop: false }],
+        ['the user turned the banner off', { userWantsBackdrop: false }],
+        ['the item has no backdrop artwork', { itemHasBackdropImage: false }]
+    ])('lays immersive out as poster when %s', (_, override) => {
+        const layout = resolveHeroLayout({
+            treatment: 'immersive',
+            itemSupportsBackdrop: true,
+            userWantsBackdrop: true,
+            itemHasBackdropImage: true,
+            ...override
+        });
+        expect(layout).toEqual({
+            treatment: 'poster',
+            backdrop: false,
+            logo: true
+        });
+    });
+
+    it('keeps the backdrop treatment unchanged for an item with no backdrop artwork', () => {
+        // Only `immersive` reads the new input: `backdrop` renders its (empty, masked) layer
+        // exactly as it did before, so the platform default page does not move.
+        expect(
+            resolveHeroLayout({
+                treatment: 'backdrop',
+                itemSupportsBackdrop: true,
+                userWantsBackdrop: true,
+                itemHasBackdropImage: false
+            })
+        ).toEqual({ treatment: 'backdrop', backdrop: true, logo: true });
     });
 
     it('lets the item outrank the theme', () => {

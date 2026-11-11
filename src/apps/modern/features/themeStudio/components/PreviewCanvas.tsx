@@ -299,7 +299,11 @@ export const PreviewCanvas: FC<PreviewCanvasProps> = ({
                             variant={presentation.surface.variant}
                             className='rf-studio-preview__facts'
                         >
-                            <dl>
+                            <dl
+                                data-rf-facts={
+                                    presentation.page.itemDetails.facts
+                                }
+                            >
                                 {PREVIEW_DETAIL.facts.map((fact) => (
                                     <div
                                         key={fact.label}

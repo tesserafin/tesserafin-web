@@ -152,3 +152,25 @@
     background-color: var(--rf-color-surface-variant);
     box-shadow: var(--rf-elevation-level2);
 }
+
+/* `itemDetails.facts: inline` (THEME-IDENTITY-1): the facts run together as one line of values. */
+.rf-studio-preview__facts dl[data-rf-facts='inline'] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--rf-spacing-xs) var(--rf-spacing-md);
+    margin: 0;
+
+    .rf-studio-preview__fact {
+        padding: 0;
+        border-bottom: 0;
+    }
+
+    dt {
+        position: absolute;
+        overflow: hidden;
+        width: 1px;
+        height: 1px;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+}

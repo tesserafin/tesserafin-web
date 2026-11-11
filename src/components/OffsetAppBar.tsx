@@ -18,6 +18,8 @@ interface OffsetAppBarProps extends AppBarProps {
     dense?: boolean;
     /** The elevation to apply when the user has scrolled. Defaults to 1. */
     elevation?: number;
+    /** Told the bar's measured height, for content that must sit under it (a sticky column). */
+    onHeightChange?: (height: number) => void;
 }
 
 /**
@@ -27,12 +29,17 @@ const OffsetAppBar: FC<PropsWithChildren<OffsetAppBarProps>> = ({
     children,
     dense = false,
     elevation = 1,
+    onHeightChange,
     ...props
 }) => {
     const appBarRef = useRef<HTMLHtmlElement>(null);
     const [height, setHeight] = useState(
         dense ? DENSE_APP_BAR_HEIGHT : DEFAULT_APP_BAR_HEIGHT
     );
+
+    useLayoutEffect(() => {
+        onHeightChange?.(height);
+    }, [height, onHeightChange]);
 
     const scrollTrigger = useScrollTrigger({
         disableHysteresis: true,

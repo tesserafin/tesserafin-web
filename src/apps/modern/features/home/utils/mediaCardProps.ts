@@ -67,6 +67,20 @@ const selectThumbImage = (item: BaseItemDto): ImageSelection | undefined => {
         };
     }
 
+    /*
+     * An episode rarely has landscape art of its own, and its series almost always does. Without
+     * this the episode fell through to the primary candidates: a 2:3 series poster cropped into a
+     * 16:9 card — or, on the Home hero, which asks for landscape art only, an empty grey slab
+     * (THEME-IDENTITY-1). `getCardImageUrl` inherits the parent backdrop the same way.
+     */
+    if (item.ParentBackdropItemId && item.ParentBackdropImageTags?.length) {
+        return {
+            itemId: item.ParentBackdropItemId,
+            type: ImageType.Backdrop,
+            tag: item.ParentBackdropImageTags[0] ?? ''
+        };
+    }
+
     return undefined;
 };
 

@@ -1916,6 +1916,7 @@ nothing imports any more.
 | `elements/emby-playstatebutton/PlayedButton` | `OUTWARD_MUTATION` | `sdk.userData` | markPlayedItem / markUnplayedItem through hooks/useFetchItems |
 | `elements/emby-ratingbutton/FavoriteButton` | `OUTWARD_MUTATION` | `sdk.userData` | markFavoriteItem / unmarkFavoriteItem through hooks/useFetchItems |
 | `components/itemDetails/ItemDetailsMetadataList` | `OUTWARD_NAVIGATION` | `service.appRouter` | renders the six metadata link lists |
+| `elements/emby-button/LinkButton` | `OUTWARD_NAVIGATION` | `service.appRouter` | the fact-list links (THEME-IDENTITY-1): the same element ItemDetailsMetadataList rendered, now imported by MetadataLists.tsx, which lays the six lists out as one definition list; appRouter.show, or shell.openUrl for a target |
 | `@tanstack/react-query` | `CACHE` | — | query keys and invalidation; issues nothing itself |
 | `components/apphost` | `CAPABILITY` | — | AppFeature gates for downloads and external links |
 | `components/layoutManager` | `CAPABILITY` | — | the TV-layout gate on external links |

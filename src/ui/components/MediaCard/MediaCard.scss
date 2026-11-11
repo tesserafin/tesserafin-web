@@ -206,13 +206,38 @@ button.rf-media-card[data-rf-hover='zoom']:hover .rf-media-card__image {
     position: absolute;
     inset-inline: 0;
     bottom: 0;
-    padding: var(--rf-spacing-sm, 8px);
+    z-index: 1;
+    padding: var(--rf-spacing-xl, 32px) var(--rf-spacing-sm, 8px) var(--rf-spacing-sm, 8px);
     background:
         linear-gradient(
             to top,
             var(--rf-color-surface, #202020),
             transparent
         );
+
+    /*
+     * The page BACKGROUND, not the surface: a glass surface is translucent by design, and a
+     * translucent scrim over a bright poster left the title unreadable (THEME-IDENTITY-1). The
+     * background is opaque in every official palette and follows light and dark alike.
+     */
+    background:
+        linear-gradient(
+            to top,
+            color-mix(in srgb, var(--rf-color-background, #101010) 92%, transparent) 0%,
+            color-mix(in srgb, var(--rf-color-background, #101010) 70%, transparent) 55%,
+            transparent 100%
+        );
+}
+
+// The progress bar stays on top of the scrim: it is state, and state is not decoration.
+.rf-media-card[data-rf-title-placement='overlay'] .rf-media-card__progress {
+    z-index: 2;
+}
+
+// With no artwork the overlaid caption already names the card; the centred placeholder title would
+// say it twice.
+.rf-media-card[data-rf-title-placement='overlay'] .rf-media-card__placeholder-title {
+    visibility: hidden;
 }
 
 /*
@@ -259,6 +284,17 @@ button.rf-media-card[data-rf-hover='zoom']:hover .rf-media-card__image {
 
 @media (prefers-reduced-motion: reduce) {
     .rf-media-card--composite:hover {
+        transform: none;
+    }
+
+    /*
+     * `hoverEffect: zoom` scales the ARTWORK, which the card-level rule above never reached: with
+     * the transition zeroed the picture still jumped to 106 % under the pointer. Glass uses `zoom`
+     * since THEME-IDENTITY-1, so the reduced-motion promise has to hold for it too.
+     */
+    a.rf-media-card[data-rf-hover='zoom']:hover .rf-media-card__image,
+    button.rf-media-card[data-rf-hover='zoom']:hover .rf-media-card__image,
+    .rf-media-card--composite[data-rf-hover='zoom']:hover .rf-media-card__image-wrap .rf-media-card__image {
         transform: none;
     }
 }
@@ -440,4 +476,15 @@ button.rf-media-card[data-rf-hover='zoom']:hover .rf-media-card__image {
     overflow-wrap: anywhere;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+}
+
+// Over the artwork the title has room for a second line, and a clipped title is the one thing an
+// image-led card cannot afford: there is no caption below to finish it.
+.rf-media-card[data-rf-title-placement='overlay'] .rf-media-card__title {
+    display: -webkit-box;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    text-shadow: 0 1px 2px color-mix(in srgb, var(--rf-color-background, #101010) 60%, transparent);
 }

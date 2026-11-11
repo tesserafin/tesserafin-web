@@ -42,6 +42,56 @@ describe('export / import round trip', () => {
     });
 });
 
+/*
+ * THEME-IDENTITY-1 added `itemDetails.facts` and the `immersive` hero, and made `navigation.shell`
+ * a layout input. A Glass-based draft carries all three; export/import must keep them, and an old
+ * draft that never heard of them must still import (backward compatibility).
+ */
+describe('export / import keeps the THEME-IDENTITY-1 keys', () => {
+    const glassDraft = createDraft(
+        requireSource('official.glass'),
+        'Glass copy',
+        'Local author'
+    );
+
+    it('round-trips immersive, inline facts and the topbar shell', () => {
+        const result = parseDraft(serialiseDraft(glassDraft));
+        expect(result.issues).toEqual([]);
+        const presentation = result.valid
+            ? result.draft.manifest.presentation
+            : undefined;
+        expect(presentation?.page?.itemDetails?.hero).toBe('immersive');
+        expect(presentation?.page?.itemDetails?.facts).toBe('inline');
+        expect(presentation?.navigation?.shell).toBe('topbar');
+        expect(presentation?.page?.itemDetails?.controls).toBe('pill');
+        expect(presentation?.page?.itemDetails?.people).toBe('portraits');
+    });
+
+    it('still imports a draft written before facts existed', () => {
+        const legacy = mutate((envelope) => {
+            const manifest = envelope.manifest as {
+                presentation?: {
+                    page?: { itemDetails?: Record<string, unknown> };
+                };
+            };
+            delete manifest.presentation?.page?.itemDetails?.facts;
+        });
+        expect(parseDraft(legacy).issues).toEqual([]);
+    });
+
+    it('rejects an unknown facts value rather than importing it', () => {
+        const hostile = mutate((envelope) => {
+            const manifest = envelope.manifest as {
+                presentation: {
+                    page: { itemDetails: Record<string, unknown> };
+                };
+            };
+            manifest.presentation.page.itemDetails.facts = 'chips';
+        });
+        expect(parseDraft(hostile).valid).toBe(false);
+    });
+});
+
 describe('malformed and hostile input is rejected, never partially accepted', () => {
     it('rejects truncated JSON', () => {
         expect(parseDraft(validText.slice(0, 80)).issues[0].code).toBe(
