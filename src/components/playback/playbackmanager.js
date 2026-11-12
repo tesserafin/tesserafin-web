@@ -35,6 +35,11 @@ import { PluginType } from 'constants/pluginType';
 import { TICKS_PER_SECOND } from 'constants/time';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
 import { brokerFor } from 'lib/playbackCredentials/broker';
+import {
+    isDirectPlayFilmCandidate,
+    newDirectPlayFilmPlaySessionId,
+    planDirectPlayFilm
+} from './directPlayFilm.ts';
 import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket';
 import { MediaError } from 'types/mediaError';
 import { getMediaError } from 'utils/mediaError';
@@ -3790,6 +3795,181 @@ export class PlaybackManager {
                 .catch(() => getSavedMaxStreamingBitrate(apiClient, mediaType));
         }
 
+        /**
+         * Consolidation step 1: plays a film through `Playback/Sessions` alone. Resolves to
+         * `{ kind: 'started', started }` when the server decided a direct play, to
+         * `{ kind: 'fallback' }` when it decided something this journey does not cover (its session
+         * already released), and to `{ kind: 'ended' }` when the attempt was refused, failed or was
+         * cancelled - never to the legacy chain in those cases.
+         */
+        async function playDirectPlayFilm(
+            player,
+            apiClient,
+            item,
+            mediaSourceId,
+            options,
+            playOptions,
+            maxBitrate,
+            onPlaybackStartedFn
+        ) {
+            self._directPlayFilmAbort?.abort();
+            const controller = new AbortController();
+            self._directPlayFilmAbort = controller;
+            const api = ServerConnections.getTesserafinApi(apiClient.serverId());
+
+            let outcome;
+            try {
+                outcome = await planDirectPlayFilm(
+                    {
+                        api,
+                        itemId: item.Id,
+                        userId: apiClient.getCurrentUserId(),
+                        mediaSourceId,
+                        playSessionId: newDirectPlayFilmPlaySessionId(),
+                        playbackAttemptId: playOptions.playbackAttemptId,
+                        startPositionTicks: playOptions.startPositionTicks || 0,
+                        maxBitrate,
+                        preferredAudioStreamIndex: options.audioStreamIndex,
+                        preferredSubtitleStreamIndex: options.subtitleStreamIndex
+                    },
+                    {
+                        mintMediaCapability: async (itemId, sourceId, playSessionId) =>
+                            (await brokerFor(apiClient)).mediaValue(
+                                itemId,
+                                sourceId,
+                                playSessionId
+                            ),
+                        signal: controller.signal
+                    }
+                );
+            } catch (err) {
+                loading.hide();
+                if (err?.failure !== 'cancelled') {
+                    // The error carries status and stage only: no URL, no credential.
+                    console.error(
+                        `[direct-play-film] playback of ${item.Id} ended: ${err?.failure ?? 'failed'} (${err?.message ?? ''})`
+                    );
+                    showPlaybackInfoErrorMessage(
+                        self,
+                        err?.failure === 'unauthenticated' || err?.failure === 'forbidden'
+                            ? 'PlaybackError.NotAllowed'
+                            : 'ErrorDefault'
+                    );
+                }
+                return { kind: 'ended' };
+            } finally {
+                if (self._directPlayFilmAbort === controller) {
+                    self._directPlayFilmAbort = null;
+                }
+            }
+
+            if (outcome.kind === 'notApplicable') {
+                return { kind: 'fallback' };
+            }
+
+            outcome.streamInfo.backdropUrl =
+                getItemBackdropImageUrl(apiClient, item, {}, true) || undefined;
+            return {
+                kind: 'started',
+                started: startPlayerWithStreamInfo(
+                    player,
+                    outcome.streamInfo,
+                    outcome.streamInfo.mediaSource,
+                    playOptions,
+                    maxBitrate,
+                    onPlaybackStartedFn,
+                    api
+                )
+            };
+        }
+
+        /**
+         * The start shared by the legacy chain and the direct-play film journey: hands `streamInfo`
+         * to the player, records it as this player's playback, and takes ownership of a
+         * `Playback/Sessions` session for teardown when `streamInfo.executionDecision` names one.
+         */
+        function startPlayerWithStreamInfo(
+            player,
+            streamInfo,
+            mediaSource,
+            playOptions,
+            maxBitrate,
+            onPlaybackStartedFn,
+            teardownApi
+        ) {
+            streamInfo.aspectRatio = playOptions.aspectRatio;
+            streamInfo.fullscreen = playOptions.fullscreen;
+
+            const playerData = getPlayerData(player);
+
+            playerData.isChangingStream = false;
+            playerData.maxStreamingBitrate = maxBitrate;
+            playerData.streamInfo = streamInfo;
+            // reefin #43: the retry path's only way back to this attempt's id.
+            // `changeStream()` is driven by a player error event, so it has no lexical
+            // access to the `playInternal()` frame that minted the id and must recover it
+            // from per-player state. Deliberately NOT on `streamInfo`: `changeStream()`
+            // replaces that object wholesale, which would drop the id on exactly the retry
+            // being correlated. `playerData` survives, so the id does too.
+            playerData.playbackAttemptId =
+                playOptions.playbackAttemptId;
+
+            // tesserafin#119: a new play request is a new incident. `playerData` is the
+            // player object itself and outlives the item, so this is reset here.
+            endSoftwareRecovery(playerData);
+            const startedPlayback = {
+                stopped: false,
+                pendingChange: null
+            };
+            playerData.playback = startedPlayback;
+            playerData.softwareRecoveryAttempted = false;
+            playerData.transcodeFailureTicks = 0;
+            player.lastPlaybackFailure = null;
+
+            // reefin #43: take ownership of the v2 session this streamInfo was built
+            // from, so the stop path can give it back with DELETE. A no-op unless the
+            // decision above actually came from v2 (flag on, POST succeeded) - legacy
+            // playback creates no tracker and registers no listener.
+            adoptPlaybackSessionForTeardown(playerData, teardownApi);
+
+            return player.play(streamInfo).then(
+                function () {
+                    loading.hide();
+                    onPlaybackStartedFn();
+                    onPlaybackStarted(
+                        player,
+                        playOptions,
+                        streamInfo,
+                        mediaSource
+                    );
+                },
+                function (err) {
+                    // Stopped or replaced while it was loading: not this playback's
+                    // start, nor its error, to report any more.
+                    if (playerData.playback !== startedPlayback) {
+                        return;
+                    }
+                    // TODO: Improve this because it will report playback start on a failure
+                    onPlaybackStartedFn();
+                    onPlaybackStarted(
+                        player,
+                        playOptions,
+                        streamInfo,
+                        mediaSource
+                    );
+                    setTimeout(function () {
+                        if (playerData.playback !== startedPlayback) {
+                            return;
+                        }
+                        onPlaybackError.call(player, err, {
+                            type: getMediaError(err),
+                            streamInfo
+                        });
+                    }, 100);
+                }
+            );
+        }
+
         function playAfterBitrateDetect(
             maxBitrate,
             item,
@@ -3933,14 +4113,7 @@ export class PlaybackManager {
                     mediaSourceId ||= item.Id;
                 }
 
-                return getPlaybackMediaSource(
-                    player,
-                    apiClient,
-                    deviceProfile,
-                    item,
-                    mediaSourceId,
-                    options
-                ).then(async (mediaSource) => {
+                const onLegacyMediaSource = async (mediaSource) => {
                     if (
                         trackOptions.DefaultSecondarySubtitleStreamIndex != null
                     ) {
@@ -4030,80 +4203,54 @@ export class PlaybackManager {
                         }
                     );
 
-                    streamInfo.aspectRatio = playOptions.aspectRatio;
-                    streamInfo.fullscreen = playOptions.fullscreen;
-
-                    const playerData = getPlayerData(player);
-
-                    playerData.isChangingStream = false;
-                    playerData.maxStreamingBitrate = maxBitrate;
-                    playerData.streamInfo = streamInfo;
-                    // reefin #43: the retry path's only way back to this attempt's id.
-                    // `changeStream()` is driven by a player error event, so it has no lexical
-                    // access to the `playInternal()` frame that minted the id and must recover it
-                    // from per-player state. Deliberately NOT on `streamInfo`: `changeStream()`
-                    // replaces that object wholesale, which would drop the id on exactly the retry
-                    // being correlated. `playerData` survives, so the id does too.
-                    playerData.playbackAttemptId =
-                        playOptions.playbackAttemptId;
-
-                    // tesserafin#119: a new play request is a new incident. `playerData` is the
-                    // player object itself and outlives the item, so this is reset here.
-                    endSoftwareRecovery(playerData);
-                    const startedPlayback = {
-                        stopped: false,
-                        pendingChange: null
-                    };
-                    playerData.playback = startedPlayback;
-                    playerData.softwareRecoveryAttempted = false;
-                    playerData.transcodeFailureTicks = 0;
-                    player.lastPlaybackFailure = null;
-
-                    // reefin #43: take ownership of the v2 session this streamInfo was built
-                    // from, so the stop path can give it back with DELETE. A no-op unless the
-                    // decision above actually came from v2 (flag on, POST succeeded) - legacy
-                    // playback creates no tracker and registers no listener.
-                    adoptPlaybackSessionForTeardown(
-                        playerData,
+                    return startPlayerWithStreamInfo(
+                        player,
+                        streamInfo,
+                        mediaSource,
+                        playOptions,
+                        maxBitrate,
+                        onPlaybackStartedFn,
                         ServerConnections.getApi(apiClient.serverId())
                     );
+                };
 
-                    return player.play(streamInfo).then(
-                        function () {
-                            loading.hide();
-                            onPlaybackStartedFn();
-                            onPlaybackStarted(
-                                player,
-                                playOptions,
-                                streamInfo,
-                                mediaSource
-                            );
-                        },
-                        function (err) {
-                            // Stopped or replaced while it was loading: not this playback's
-                            // start, nor its error, to report any more.
-                            if (playerData.playback !== startedPlayback) {
-                                return;
-                            }
-                            // TODO: Improve this because it will report playback start on a failure
-                            onPlaybackStartedFn();
-                            onPlaybackStarted(
-                                player,
-                                playOptions,
-                                streamInfo,
-                                mediaSource
-                            );
-                            setTimeout(function () {
-                                if (playerData.playback !== startedPlayback) {
-                                    return;
-                                }
-                                onPlaybackError.call(player, err, {
-                                    type: getMediaError(err),
-                                    streamInfo
-                                });
-                            }, 100);
-                        }
-                    );
+                const playLegacyChain = () =>
+                    getPlaybackMediaSource(
+                        player,
+                        apiClient,
+                        deviceProfile,
+                        item,
+                        mediaSourceId,
+                        options
+                    ).then(onLegacyMediaSource);
+
+                // Consolidation step 1: a film on the local HTML player is planned through
+                // Playback/Sessions alone (directPlayFilm.ts). Only a decision this journey does
+                // not cover (remux, transcode) continues with the legacy chain, and then without
+                // direct play, so a film never reaches the legacy direct-play path. A refusal or a
+                // failure ends the attempt.
+                if (!isDirectPlayFilmCandidate(item, player)) {
+                    return playLegacyChain();
+                }
+
+                return playDirectPlayFilm(
+                    player,
+                    apiClient,
+                    item,
+                    mediaSourceId,
+                    options,
+                    playOptions,
+                    maxBitrate,
+                    onPlaybackStartedFn
+                ).then((outcome) => {
+                    if (outcome.kind === 'started') {
+                        return outcome.started;
+                    }
+                    if (outcome.kind === 'ended') {
+                        return undefined;
+                    }
+                    options.enableDirectPlay = false;
+                    return playLegacyChain();
                 });
             });
         }
@@ -5969,6 +6116,8 @@ export class PlaybackManager {
     }
 
     stop(player) {
+        // A film still being planned through Playback/Sessions is cancelled; its session is released.
+        this._directPlayFilmAbort?.abort();
         player = player || this._currentPlayer;
         if (player) {
             if (enableLocalPlaylistManagement(player)) {
