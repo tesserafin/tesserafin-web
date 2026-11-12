@@ -51,6 +51,8 @@ function classify(url: string): string {
     if (/\/audio\/[^/]+\/universal/.test(u)) return 'universal-audio';
     if (/\/audio\/[^/]+\/stream/.test(u)) return 'direct-audio';
     if (/\/videos\/[^/]+\/stream/.test(u)) return 'direct-video';
+    // A film's direct play since consolidation step 1 (tesserafin#129): its session's file route.
+    if (/\/playback\/sessions\/[^/]+\/file/.test(u)) return 'session-file';
     if (/\/playback\/capabilities/.test(u)) return 'capability-mint';
     if (/\/websocket\/tickets/.test(u)) return 'ticket-mint';
     if (/\/playbackinfo/.test(u)) return 'playback-info';
@@ -71,6 +73,7 @@ function redact(url: string): string {
 
 const MEDIA_CLASSES = new Set([
     'direct-video',
+    'session-file',
     'direct-audio',
     'universal-audio',
     'hls-master',
@@ -257,7 +260,7 @@ test.describe('#153-A1 migrated credential trace', () => {
 
         // Range semantics survived: the direct video is still a partial response.
         const directVideo = media.filter(
-            (m) => m.routeClass === 'direct-video'
+            (m) => m.routeClass === 'direct-video' || m.routeClass === 'session-file'
         );
         if (directVideo.length > 0) {
             expect(

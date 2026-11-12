@@ -133,7 +133,7 @@ export function directPlayTextTracks(
             return {
                 path: `/Videos/${itemId}/${encodeURIComponent(mediaSource.Id ?? '')}/Subtitles/${stream.Index}/0/Stream.${format}`,
                 language: stream.Language || 'und',
-                isDefault: stream.Index === (defaultIndex ?? mediaSource.DefaultSubtitleStreamIndex),
+                isDefault: stream.Index === defaultIndex,
                 index: stream.Index as number,
                 format
             };
@@ -219,6 +219,7 @@ export async function planDirectPlayFilm(
 
     let sessionId: string;
     let method: string | undefined;
+    let selectedSubtitle: number | null = null;
     try {
         const { data } = await playback.createPlaybackSession({
             createPlaybackSessionRequest: {
@@ -241,6 +242,8 @@ export async function planDirectPlayFilm(
         }
         sessionId = data.Id;
         method = data.Method;
+        // The server's own subtitle choice (user preferences, forced/default flags) is the default track.
+        selectedSubtitle = data.SelectedStreams?.Subtitle?.Index ?? null;
     } catch (err) {
         // 422: no direct plan the declared capabilities allow - a decision, not a refusal.
         if (statusOf(err) === 422) {
@@ -308,7 +311,7 @@ export async function planDirectPlayFilm(
 
         const url = absoluteMediaUrl(api, stream.Url, capability);
         const textTracks: DirectPlayFilmTextTrack[] = [];
-        for (const track of directPlayTextTracks(params.itemId, mediaSource, params.preferredSubtitleStreamIndex)) {
+        for (const track of directPlayTextTracks(params.itemId, mediaSource, selectedSubtitle ?? params.preferredSubtitleStreamIndex ?? -1)) {
             const { path, ...rest } = track;
             const authorized = await deps.authorizeSubtitle(path, params.itemId, mediaSourceId, playSessionId);
             textTracks.push({ ...rest, url: `${api.basePath}${authorized}` });
@@ -325,7 +328,8 @@ export async function planDirectPlayFilm(
                 playMethod: 'DirectPlay',
                 playerStartPositionTicks: params.startPositionTicks ?? 0,
                 item,
-                mediaSource,
+                // The server's selected subtitle is the source's default (-1: none).
+                mediaSource: { ...mediaSource, DefaultSubtitleStreamIndex: selectedSubtitle ?? params.preferredSubtitleStreamIndex ?? -1 },
                 textTracks,
                 mediaType: 'Video',
                 liveStreamId: undefined,

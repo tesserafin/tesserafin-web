@@ -80,9 +80,11 @@ test.describe('#153-A1 direct-play video revocation', () => {
                 firstUrl = url;
                 redactedFirst = redact(url);
                 try {
-                    urlPlaySessionId = new URL(url).searchParams.get(
-                        'PlaySessionId'
-                    );
+                    // `/Videos/{id}/stream` names it `PlaySessionId`; the session file route,
+                    // `playSessionId` (its query binding). Same value either way.
+                    const params = new URL(url).searchParams;
+                    urlPlaySessionId =
+                        params.get('PlaySessionId') ?? params.get('playSessionId');
                 } catch {
                     urlPlaySessionId = null;
                 }

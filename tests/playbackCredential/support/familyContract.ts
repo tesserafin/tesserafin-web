@@ -46,6 +46,11 @@ export const FAMILY_CONTRACT: Record<string, FamilyEntry> = {
         owner: 'matrix.spec.ts',
         note: 'the rig seeds Smoke Test Movie; direct-play is its default path'
     },
+    'session-file': {
+        status: 'required',
+        owner: 'migratedTrace.spec.ts',
+        note: 'consolidation step 1: Smoke Test Movie (a film) direct-plays from /Playback/Sessions/{id}/File; direct-video stays required through the non-film items matrix.spec.ts plays'
+    },
     'universal-audio': {
         status: 'required',
         owner: 'matrix.spec.ts',

@@ -33,9 +33,9 @@ function fakeApi(answers: {
             if (typeof value === 'number') throw fail(value);
             return { data: value, status: 200 };
         };
-        if (method === 'POST' && url.endsWith('/Playback/Sessions')) return pick(answers.create, { Id: SESSION, Method: 'DirectPlay' });
+        if (method === 'POST' && url.endsWith('/Playback/Sessions')) return pick(answers.create, { Id: SESSION, Method: 'DirectPlay', SelectedStreams: { Subtitle: { Index: 2, Delivery: 'External' } } });
         if (method === 'GET' && url.includes('/Stream')) return pick(answers.stream, { Url: `/Playback/Sessions/${SESSION}/File?itemId=${ITEM}&mediaSourceId=${SOURCE}&playSessionId=ps`, MimeType: 'video/mp4', Container: 'mp4', Protocol: 'Http' });
-        if (method === 'GET' && url.includes(`/Items/${ITEM}`)) return pick(answers.item, { Id: ITEM, Name: 'Film', MediaSources: [{ Id: SOURCE, DefaultSubtitleStreamIndex: 2, MediaStreams: [
+        if (method === 'GET' && url.includes(`/Items/${ITEM}`)) return pick(answers.item, { Id: ITEM, Name: 'Film', MediaSources: [{ Id: SOURCE, MediaStreams: [
             { Index: 0, Type: 'Video' },
             { Index: 2, Type: 'Subtitle', Codec: 'subrip', IsTextSubtitleStream: true, IsExternal: true, Language: 'eng' },
             { Index: 3, Type: 'Subtitle', Codec: 'ass', IsTextSubtitleStream: true },
