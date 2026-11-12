@@ -260,7 +260,9 @@ test.describe('#153-A1 migrated credential trace', () => {
 
         // Range semantics survived: the direct video is still a partial response.
         const directVideo = media.filter(
-            (m) => m.routeClass === 'direct-video' || m.routeClass === 'session-file'
+            (m) =>
+                m.routeClass === 'direct-video' ||
+                m.routeClass === 'session-file'
         );
         if (directVideo.length > 0) {
             expect(

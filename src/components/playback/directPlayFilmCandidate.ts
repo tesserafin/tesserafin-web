@@ -22,13 +22,12 @@ export function isDirectPlayFilmCandidate(
     player: { id?: string; isLocalPlayer?: boolean } | null | undefined
 ): boolean {
     return (
-        !!item?.Id
-        && item.Type === 'Movie'
-        && item.MediaType === 'Video'
-        && (item.LocationType == null || item.LocationType === 'FileSystem')
-        && !item.IsPlaceHolder
-        && !!player?.isLocalPlayer
-        && player.id === 'htmlvideoplayer'
+        !!item?.Id &&
+        item.Type === 'Movie' &&
+        item.MediaType === 'Video' &&
+        (item.LocationType == null || item.LocationType === 'FileSystem') &&
+        !item.IsPlaceHolder &&
+        !!player?.isLocalPlayer &&
+        player.id === 'htmlvideoplayer'
     );
 }
-

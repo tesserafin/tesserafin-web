@@ -35,10 +35,15 @@ vi.mock('@jellyfin/sdk/lib/utils/api/media-info-api', () => ({
 }));
 
 vi.mock('scripts/playbackExecutionDecision', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('scripts/playbackExecutionDecision')>();
+    const actual =
+        await importOriginal<
+            typeof import('scripts/playbackExecutionDecision')
+        >();
     return {
         ...actual,
-        buildLegacyExecutionDecision: (...args: Parameters<typeof actual.buildLegacyExecutionDecision>) => {
+        buildLegacyExecutionDecision: (
+            ...args: Parameters<typeof actual.buildLegacyExecutionDecision>
+        ) => {
             legacyStreamInfoBuilt();
             return actual.buildLegacyExecutionDecision(...args);
         }
@@ -117,7 +122,8 @@ const apiClient = {
     appName: () => 'film',
     appVersion: () => '1.0.0',
     getCurrentUserId: () => USER_ID,
-    getCurrentUser: () => Promise.resolve({ Id: USER_ID, Configuration: {}, Policy: {} }),
+    getCurrentUser: () =>
+        Promise.resolve({ Id: USER_ID, Configuration: {}, Policy: {} }),
     getEndpointInfo: () => Promise.resolve({ IsInNetwork: true }),
     getSavedEndpointInfo: () => ({ IsInNetwork: true }),
     getItem: () => Promise.resolve(videoItem()),
@@ -143,7 +149,8 @@ const serverConnectionsMock = {
 };
 
 vi.mock('lib/jellyfin-apiclient', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('lib/jellyfin-apiclient')>();
+    const actual =
+        await importOriginal<typeof import('lib/jellyfin-apiclient')>();
     return { ...actual, ...serverConnectionsMock };
 });
 vi.mock('lib/jellyfin-apiclient/ServerConnections', () => ({
@@ -165,7 +172,9 @@ function mountManager() {
 describe('direct-play film journey', { timeout: 60000 }, () => {
     beforeEach(() => {
         postedPlaybackInfo.mockReset();
-        postedPlaybackInfo.mockImplementation(createPlaybackInfoResponder({ [VIDEO_ITEM_ID]: [videoSource()] }));
+        postedPlaybackInfo.mockImplementation(
+            createPlaybackInfoResponder({ [VIDEO_ITEM_ID]: [videoSource()] })
+        );
         legacyStreamInfoBuilt.mockReset();
         createSession.mockReset();
         deleteSession.mockReset();
@@ -179,14 +188,23 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
     });
 
     it('plays from the session file route without PlaybackInfo or createStreamInfo, and releases on stop', async () => {
-        createSession.mockResolvedValue({ data: { Id: SESSION_ID, Method: 'DirectPlay' } });
+        createSession.mockResolvedValue({
+            data: { Id: SESSION_ID, Method: 'DirectPlay' }
+        });
         const { manager, player } = mountManager();
 
         await manager.play({ items: [videoItem()], startPositionTicks: 0 });
-        await vi.waitFor(() => expect(player.played).toHaveLength(1), { timeout: 20000, interval: 10 });
+        await vi.waitFor(() => expect(player.played).toHaveLength(1), {
+            timeout: 20000,
+            interval: 10
+        });
 
-        const streamInfo = (player.played as Array<{ url: string; playMethod: string }>)[0];
-        expect(streamInfo.url).toContain(`/Playback/Sessions/${SESSION_ID}/File?`);
+        const streamInfo = (
+            player.played as Array<{ url: string; playMethod: string }>
+        )[0];
+        expect(streamInfo.url).toContain(
+            `/Playback/Sessions/${SESSION_ID}/File?`
+        );
         expect(streamInfo.url).toContain('playbackCapability=film-capability');
         expect(streamInfo.url).not.toMatch(/ApiKey|api_key/i);
         expect(streamInfo.playMethod).toBe('DirectPlay');
@@ -197,30 +215,55 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         await manager.stop(player);
         // A real player answers stop() with its `stopped` event; the release hangs off that event.
         Events.trigger(player, 'stopped', [{}]);
-        await vi.waitFor(() => expect(fetchCalls.filter((c) => c.method === 'DELETE')).toHaveLength(1), { timeout: 20000, interval: 10 });
-        expect(fetchCalls[0].url).toBe(`http://127.0.0.1:8096/Playback/Sessions/${SESSION_ID}`);
+        await vi.waitFor(
+            () =>
+                expect(
+                    fetchCalls.filter((c) => c.method === 'DELETE')
+                ).toHaveLength(1),
+            { timeout: 20000, interval: 10 }
+        );
+        expect(fetchCalls[0].url).toBe(
+            `http://127.0.0.1:8096/Playback/Sessions/${SESSION_ID}`
+        );
     });
 
     it('releases the session before the legacy chain when the server decides a transcode, then plays without direct play', async () => {
-        createSession.mockResolvedValue({ data: { Id: SESSION_ID, Method: 'Transcode' } });
+        createSession.mockResolvedValue({
+            data: { Id: SESSION_ID, Method: 'Transcode' }
+        });
         const { manager, player } = mountManager();
 
         await manager.play({ items: [videoItem()], startPositionTicks: 0 });
-        await vi.waitFor(() => expect(postedPlaybackInfo).toHaveBeenCalled(), { timeout: 20000, interval: 10 });
+        await vi.waitFor(() => expect(postedPlaybackInfo).toHaveBeenCalled(), {
+            timeout: 20000,
+            interval: 10
+        });
 
         expect(createSession).toHaveBeenCalledTimes(1);
         expect(deleteSession).toHaveBeenCalledTimes(1);
-        expect(deleteSession.mock.invocationCallOrder[0]).toBeLessThan(postedPlaybackInfo.mock.invocationCallOrder[0]);
-        expect(postedPlaybackInfo.mock.calls[0][0].playbackInfoDto.EnableDirectPlay).toBe(false);
-        await vi.waitFor(() => expect(player.played).toHaveLength(1), { timeout: 20000, interval: 10 });
+        expect(deleteSession.mock.invocationCallOrder[0]).toBeLessThan(
+            postedPlaybackInfo.mock.invocationCallOrder[0]
+        );
+        expect(
+            postedPlaybackInfo.mock.calls[0][0].playbackInfoDto.EnableDirectPlay
+        ).toBe(false);
+        await vi.waitFor(() => expect(player.played).toHaveLength(1), {
+            timeout: 20000,
+            interval: 10
+        });
     });
 
     it('ends the attempt on a refusal: no legacy chain, no playback', async () => {
-        createSession.mockRejectedValue(Object.assign(new Error('403'), { response: { status: 403 } }));
+        createSession.mockRejectedValue(
+            Object.assign(new Error('403'), { response: { status: 403 } })
+        );
         const { manager, player } = mountManager();
 
         await manager.play({ items: [videoItem()], startPositionTicks: 0 });
-        await vi.waitFor(() => expect(alerts).toHaveLength(1), { timeout: 20000, interval: 10 });
+        await vi.waitFor(() => expect(alerts).toHaveLength(1), {
+            timeout: 20000,
+            interval: 10
+        });
 
         expect(postedPlaybackInfo).not.toHaveBeenCalled();
         expect(legacyStreamInfoBuilt).not.toHaveBeenCalled();

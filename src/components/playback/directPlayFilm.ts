@@ -49,7 +49,10 @@ export function newDirectPlayFilmPlaySessionId(): string {
     return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-export { isDirectPlayFilmCandidate, type DirectPlayFilmCandidate } from './directPlayFilmCandidate';
+export {
+    isDirectPlayFilmCandidate,
+    type DirectPlayFilmCandidate
+} from './directPlayFilmCandidate';
 
 export interface DirectPlayFilmParams {
     api: TesserafinApi;
@@ -68,9 +71,18 @@ export interface DirectPlayFilmParams {
 
 export interface DirectPlayFilmDeps {
     /** Mints the `Media` capability for the file route (the existing credential broker). */
-    mintMediaCapability: (itemId: string, mediaSourceId: string, playSessionId: string) => Promise<string>;
+    mintMediaCapability: (
+        itemId: string,
+        mediaSourceId: string,
+        playSessionId: string
+    ) => Promise<string>;
     /** Adds the `Subtitles` capability to a server-relative subtitle url (the existing broker). */
-    authorizeSubtitle: (relativeUrl: string, itemId: string, mediaSourceId: string, playSessionId: string) => Promise<string>;
+    authorizeSubtitle: (
+        relativeUrl: string,
+        itemId: string,
+        mediaSourceId: string,
+        playSessionId: string
+    ) => Promise<string>;
     /** Aborted when the play request is replaced or cancelled. */
     signal?: AbortSignal;
     logger?: Pick<Console, 'debug' | 'warn'>;
@@ -126,7 +138,12 @@ export function directPlayTextTracks(
     defaultIndex: number | null | undefined
 ): Array<Omit<DirectPlayFilmTextTrack, 'url'> & { path: string }> {
     return (mediaSource.MediaStreams ?? [])
-        .filter((stream) => stream.Type === 'Subtitle' && stream.IsTextSubtitleStream && stream.Index != null)
+        .filter(
+            (stream) =>
+                stream.Type === 'Subtitle' &&
+                stream.IsTextSubtitleStream &&
+                stream.Index != null
+        )
         .map((stream) => {
             const codec = (stream.Codec ?? '').toLowerCase();
             const format = codec === 'ass' || codec === 'ssa' ? codec : 'vtt';
@@ -147,17 +164,31 @@ export interface DirectPlayFilmSession {
 }
 
 export type DirectPlayFilmOutcome =
-    | { kind: 'planned'; streamInfo: DirectPlayFilmStreamInfo; session: DirectPlayFilmSession }
+    | {
+          kind: 'planned';
+          streamInfo: DirectPlayFilmStreamInfo;
+          session: DirectPlayFilmSession;
+      }
     | { kind: 'notApplicable'; reason: string };
 
-export type DirectPlayFilmFailure = 'unauthenticated' | 'forbidden' | 'notFound' | 'cancelled' | 'failed';
+export type DirectPlayFilmFailure =
+    | 'unauthenticated'
+    | 'forbidden'
+    | 'notFound'
+    | 'cancelled'
+    | 'failed';
 
 export class DirectPlayFilmError extends Error {
     readonly failure: DirectPlayFilmFailure;
     readonly status: number | undefined;
     readonly detail: unknown;
 
-    constructor(failure: DirectPlayFilmFailure, message: string, status?: number, detail?: unknown) {
+    constructor(
+        failure: DirectPlayFilmFailure,
+        message: string,
+        status?: number,
+        detail?: unknown
+    ) {
         super(message);
         this.detail = detail;
         this.name = 'DirectPlayFilmError';
@@ -169,28 +200,51 @@ export class DirectPlayFilmError extends Error {
 const statusOf = (err: unknown): number | undefined =>
     (err as AxiosError | undefined)?.response?.status;
 
-function classify(stage: string, err: unknown, signal?: AbortSignal): DirectPlayFilmError {
+function classify(
+    stage: string,
+    err: unknown,
+    signal?: AbortSignal
+): DirectPlayFilmError {
     if (err instanceof DirectPlayFilmError) return err;
     if (signal?.aborted) {
-        return new DirectPlayFilmError('cancelled', `${stage}: cancelled`, undefined, err);
+        return new DirectPlayFilmError(
+            'cancelled',
+            `${stage}: cancelled`,
+            undefined,
+            err
+        );
     }
     const status = statusOf(err);
+    const byStatus: Record<number, DirectPlayFilmFailure> = {
+        401: 'unauthenticated',
+        403: 'forbidden',
+        404: 'notFound'
+    };
     const failure: DirectPlayFilmFailure =
-        status === 401 ? 'unauthenticated'
-            : status === 403 ? 'forbidden'
-                : status === 404 ? 'notFound'
-                    : 'failed';
-    return new DirectPlayFilmError(failure, `${stage}: ${status ?? 'no response'}`, status, err);
+        (status !== undefined && byStatus[status]) || 'failed';
+    return new DirectPlayFilmError(
+        failure,
+        `${stage}: ${status ?? 'no response'}`,
+        status,
+        err
+    );
 }
 
-function throwIfCancelled(signal: AbortSignal | undefined, stage: string): void {
+function throwIfCancelled(
+    signal: AbortSignal | undefined,
+    stage: string
+): void {
     if (signal?.aborted) {
         throw new DirectPlayFilmError('cancelled', `${stage}: cancelled`);
     }
 }
 
 /** The descriptor URL is server-relative; the capability goes in the query, never a durable token. */
-function absoluteMediaUrl(api: TesserafinApi, relative: string, capability: string): string {
+function absoluteMediaUrl(
+    api: TesserafinApi,
+    relative: string,
+    capability: string
+): string {
     const separator = relative.includes('?') ? '&' : '?';
     return `${api.basePath}${relative.startsWith('/') ? '' : '/'}${relative}${separator}playbackCapability=${encodeURIComponent(capability)}`;
 }
@@ -211,8 +265,13 @@ export async function planDirectPlayFilm(
     const logger = deps.logger ?? console;
     const api = params.api;
     const signal = deps.signal;
-    const playSessionId = params.playSessionId ?? newDirectPlayFilmPlaySessionId();
-    const playback = new PlaybackApi(api.configuration, undefined, api.axiosInstance);
+    const playSessionId =
+        params.playSessionId ?? newDirectPlayFilmPlaySessionId();
+    const playback = new PlaybackApi(
+        api.configuration,
+        undefined,
+        api.axiosInstance
+    );
     const requestOptions = { signal };
 
     throwIfCancelled(signal, 'start');
@@ -221,24 +280,34 @@ export async function planDirectPlayFilm(
     let method: string | undefined;
     let selectedSubtitle: number | null = null;
     try {
-        const { data } = await playback.createPlaybackSession({
-            createPlaybackSessionRequest: {
-                ItemId: params.itemId,
-                UserId: params.userId,
-                MediaSourceId: params.mediaSourceId ?? undefined,
-                PlaySessionId: playSessionId,
-                PlaybackAttemptId: params.playbackAttemptId,
-                Capabilities: buildClientCapabilities(params.capabilityInputs),
-                Constraints: buildPlaybackConstraints({
-                    startTimeTicks: params.startPositionTicks ?? 0,
-                    maxBitrate: params.maxBitrate ?? null,
-                    preferredAudioStreamIndex: params.preferredAudioStreamIndex ?? null,
-                    preferredSubtitleStreamIndex: params.preferredSubtitleStreamIndex ?? null
-                })
-            }
-        }, requestOptions);
+        const { data } = await playback.createPlaybackSession(
+            {
+                createPlaybackSessionRequest: {
+                    ItemId: params.itemId,
+                    UserId: params.userId,
+                    MediaSourceId: params.mediaSourceId ?? undefined,
+                    PlaySessionId: playSessionId,
+                    PlaybackAttemptId: params.playbackAttemptId,
+                    Capabilities: buildClientCapabilities(
+                        params.capabilityInputs
+                    ),
+                    Constraints: buildPlaybackConstraints({
+                        startTimeTicks: params.startPositionTicks ?? 0,
+                        maxBitrate: params.maxBitrate ?? null,
+                        preferredAudioStreamIndex:
+                            params.preferredAudioStreamIndex ?? null,
+                        preferredSubtitleStreamIndex:
+                            params.preferredSubtitleStreamIndex ?? null
+                    })
+                }
+            },
+            requestOptions
+        );
         if (!data.Id) {
-            throw new DirectPlayFilmError('failed', 'POST Playback/Sessions: no session id');
+            throw new DirectPlayFilmError(
+                'failed',
+                'POST Playback/Sessions: no session id'
+            );
         }
         sessionId = data.Id;
         method = data.Method;
@@ -272,7 +341,10 @@ export async function planDirectPlayFilm(
         try {
             await release();
         } catch (releaseError) {
-            logger.warn(`${LOG_PREFIX} session ${sessionId} could not be released after an abandoned start`, releaseError);
+            logger.warn(
+                `${LOG_PREFIX} session ${sessionId} could not be released after an abandoned start`,
+                releaseError
+            );
         }
         throw reason;
     };
@@ -281,45 +353,84 @@ export async function planDirectPlayFilm(
         try {
             await release();
         } catch (releaseError) {
-            logger.warn(`${LOG_PREFIX} session ${sessionId} (${method ?? 'no method'}) could not be released before falling back`, releaseError);
+            logger.warn(
+                `${LOG_PREFIX} session ${sessionId} (${method ?? 'no method'}) could not be released before falling back`,
+                releaseError
+            );
         }
         if (signal?.aborted) {
             throw new DirectPlayFilmError('cancelled', 'decision: cancelled');
         }
-        return { kind: 'notApplicable', reason: `server decided ${method ?? 'nothing'}` };
+        return {
+            kind: 'notApplicable',
+            reason: `server decided ${method ?? 'nothing'}`
+        };
     }
 
     try {
         throwIfCancelled(signal, 'decision');
-        const { data: descriptor } = await playback.getPlaybackSessionStream({ id: sessionId }, requestOptions);
+        const { data: descriptor } = await playback.getPlaybackSessionStream(
+            { id: sessionId },
+            requestOptions
+        );
         const stream = descriptor as PlaybackSessionStreamDescriptor;
         const mediaSourceId = stream.Url ? mediaSourceIdOf(stream.Url) : null;
         if (!stream.Url || !mediaSourceId) {
-            throw new DirectPlayFilmError('failed', 'GET .../Stream: descriptor names no file');
+            throw new DirectPlayFilmError(
+                'failed',
+                'GET .../Stream: descriptor names no file'
+            );
         }
 
-        const library = new LibraryApi(api.configuration, undefined, api.axiosInstance);
-        const { data: item } = await library.getItem({ itemId: params.itemId, userId: params.userId }, requestOptions);
-        const mediaSource = item.MediaSources?.find((source) => source.Id === mediaSourceId);
+        const library = new LibraryApi(
+            api.configuration,
+            undefined,
+            api.axiosInstance
+        );
+        const { data: item } = await library.getItem(
+            { itemId: params.itemId, userId: params.userId },
+            requestOptions
+        );
+        const mediaSource = item.MediaSources?.find(
+            (source) => source.Id === mediaSourceId
+        );
         if (!mediaSource) {
-            throw new DirectPlayFilmError('notFound', `item ${params.itemId} has no media source ${mediaSourceId}`);
+            throw new DirectPlayFilmError(
+                'notFound',
+                `item ${params.itemId} has no media source ${mediaSourceId}`
+            );
         }
 
         throwIfCancelled(signal, 'capability');
-        const capability = await deps.mintMediaCapability(params.itemId, mediaSourceId, playSessionId);
+        const capability = await deps.mintMediaCapability(
+            params.itemId,
+            mediaSourceId,
+            playSessionId
+        );
         throwIfCancelled(signal, 'capability');
 
         const url = absoluteMediaUrl(api, stream.Url, capability);
         const textTracks: DirectPlayFilmTextTrack[] = [];
         const trackPaths = new Map<number, string>();
-        for (const track of directPlayTextTracks(params.itemId, mediaSource, selectedSubtitle ?? params.preferredSubtitleStreamIndex ?? -1)) {
+        for (const track of directPlayTextTracks(
+            params.itemId,
+            mediaSource,
+            selectedSubtitle ?? params.preferredSubtitleStreamIndex ?? -1
+        )) {
             const { path, ...rest } = track;
             trackPaths.set(rest.index, path);
-            const authorized = await deps.authorizeSubtitle(path, params.itemId, mediaSourceId, playSessionId);
+            const authorized = await deps.authorizeSubtitle(
+                path,
+                params.itemId,
+                mediaSourceId,
+                playSessionId
+            );
             textTracks.push({ ...rest, url: `${api.basePath}${authorized}` });
         }
         throwIfCancelled(signal, 'subtitles');
-        logger.debug(`${LOG_PREFIX} item ${params.itemId}: direct play from session ${sessionId}`);
+        logger.debug(
+            `${LOG_PREFIX} item ${params.itemId}: direct play from session ${sessionId}`
+        );
         return {
             kind: 'planned',
             session,
@@ -333,14 +444,26 @@ export async function planDirectPlayFilm(
                 // The server's selected subtitle is the source's default (-1: none).
                 mediaSource: {
                     ...mediaSource,
-                    DefaultSubtitleStreamIndex: selectedSubtitle ?? params.preferredSubtitleStreamIndex ?? -1,
+                    DefaultSubtitleStreamIndex:
+                        selectedSubtitle ??
+                        params.preferredSubtitleStreamIndex ??
+                        -1,
                     // The player reads a text track's delivery off the stream itself, as
                     // PlaybackInfo used to set it: External, at the subtitle route (the player
                     // adds the Subtitles capability through playbackManager.getSubtitleUrl).
-                    MediaStreams: (mediaSource.MediaStreams ?? []).map((stream) => {
-                        const track = trackPaths.get(stream.Index ?? -1);
-                        return track ? { ...stream, DeliveryMethod: 'External', DeliveryUrl: track, IsExternalUrl: false } : stream;
-                    })
+                    MediaStreams: (mediaSource.MediaStreams ?? []).map(
+                        (stream) => {
+                            const track = trackPaths.get(stream.Index ?? -1);
+                            return track
+                                ? {
+                                      ...stream,
+                                      DeliveryMethod: 'External',
+                                      DeliveryUrl: track,
+                                      IsExternalUrl: false
+                                  }
+                                : stream;
+                        }
+                    )
                 },
                 textTracks,
                 mediaType: 'Video',

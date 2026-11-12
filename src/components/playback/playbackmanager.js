@@ -3811,7 +3811,7 @@ export class PlaybackManager {
          * already released), and to `{ kind: 'ended' }` when the attempt was refused, failed or was
          * cancelled - never to the legacy chain in those cases.
          */
-        async function playDirectPlayFilm(
+        async function playDirectPlayFilm({
             player,
             apiClient,
             item,
@@ -3820,11 +3820,13 @@ export class PlaybackManager {
             playOptions,
             maxBitrate,
             onPlaybackStartedFn
-        ) {
+        }) {
             self._directPlayFilmAbort?.abort();
             const controller = new AbortController();
             self._directPlayFilmAbort = controller;
-            const api = ServerConnections.getTesserafinApi(apiClient.serverId());
+            const api = ServerConnections.getTesserafinApi(
+                apiClient.serverId()
+            );
 
             let outcome;
             try {
@@ -3839,16 +3841,26 @@ export class PlaybackManager {
                         startPositionTicks: playOptions.startPositionTicks || 0,
                         maxBitrate,
                         preferredAudioStreamIndex: options.audioStreamIndex,
-                        preferredSubtitleStreamIndex: options.subtitleStreamIndex
+                        preferredSubtitleStreamIndex:
+                            options.subtitleStreamIndex
                     },
                     {
-                        mintMediaCapability: async (itemId, sourceId, playSessionId) =>
+                        mintMediaCapability: async (
+                            itemId,
+                            sourceId,
+                            playSessionId
+                        ) =>
                             (await brokerFor(apiClient)).mediaValue(
                                 itemId,
                                 sourceId,
                                 playSessionId
                             ),
-                        authorizeSubtitle: async (path, itemId, sourceId, playSessionId) =>
+                        authorizeSubtitle: async (
+                            path,
+                            itemId,
+                            sourceId,
+                            playSessionId
+                        ) =>
                             (await brokerFor(apiClient)).rewriteSubtitle(
                                 path,
                                 itemId,
@@ -3867,7 +3879,8 @@ export class PlaybackManager {
                     );
                     showPlaybackInfoErrorMessage(
                         self,
-                        err?.failure === 'unauthenticated' || err?.failure === 'forbidden'
+                        err?.failure === 'unauthenticated' ||
+                            err?.failure === 'forbidden'
                             ? 'PlaybackError.NotAllowed'
                             : 'ErrorDefault'
                     );
@@ -3927,8 +3940,7 @@ export class PlaybackManager {
             // from per-player state. Deliberately NOT on `streamInfo`: `changeStream()`
             // replaces that object wholesale, which would drop the id on exactly the retry
             // being correlated. `playerData` survives, so the id does too.
-            playerData.playbackAttemptId =
-                playOptions.playbackAttemptId;
+            playerData.playbackAttemptId = playOptions.playbackAttemptId;
 
             // tesserafin#119: a new play request is a new incident. `playerData` is the
             // player object itself and outlives the item, so this is reset here.
@@ -4249,7 +4261,7 @@ export class PlaybackManager {
                     return playLegacyChain();
                 }
 
-                return playDirectPlayFilm(
+                return playDirectPlayFilm({
                     player,
                     apiClient,
                     item,
@@ -4258,7 +4270,7 @@ export class PlaybackManager {
                     playOptions,
                     maxBitrate,
                     onPlaybackStartedFn
-                ).then((outcome) => {
+                }).then((outcome) => {
                     if (outcome.kind === 'started') {
                         return outcome.started;
                     }

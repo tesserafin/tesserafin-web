@@ -22,8 +22,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const baselinePath = path.join(root, 'scripts', 'legacy-sdk-imports-baseline.json');
-const LEGACY = /(?:\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*|^\s*import\s+)['"](?:@jellyfin\/sdk|jellyfin-apiclient)(?:\/[^'"]*)?['"]/m;
+const baselinePath = path.join(
+    root,
+    'scripts',
+    'legacy-sdk-imports-baseline.json'
+);
+const LEGACY =
+    /(?:\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*|^\s*import\s+)['"](?:@jellyfin\/sdk|jellyfin-apiclient)(?:\/[^'"]*)?['"]/m;
 const EXTENSIONS = new Set(['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs']);
 
 export function measure(sourceRoot = path.join(root, 'src')) {
@@ -33,7 +38,10 @@ export function measure(sourceRoot = path.join(root, 'src')) {
             const full = path.join(dir, name);
             if (statSync(full).isDirectory()) {
                 if (name !== 'node_modules') walk(full);
-            } else if (EXTENSIONS.has(path.extname(name)) && LEGACY.test(readFileSync(full, 'utf8'))) {
+            } else if (
+                EXTENSIONS.has(path.extname(name)) &&
+                LEGACY.test(readFileSync(full, 'utf8'))
+            ) {
                 found.push(path.relative(root, full).split(path.sep).join('/'));
             }
         }
@@ -46,22 +54,41 @@ export function compare(measured, baseline) {
     const allowed = new Set(baseline);
     const current = new Set(measured);
     return [
-        ...measured.filter((file) => !allowed.has(file)).map((file) => `NEW  ${file} - import the generated Tesserafin SDK instead; the baseline only shrinks.`),
-        ...baseline.filter((file) => !current.has(file)).map((file) => `GONE ${file} - delete it from scripts/legacy-sdk-imports-baseline.json in this change.`)
+        ...measured
+            .filter((file) => !allowed.has(file))
+            .map(
+                (file) =>
+                    `NEW  ${file} - import the generated Tesserafin SDK instead; the baseline only shrinks.`
+            ),
+        ...baseline
+            .filter((file) => !current.has(file))
+            .map(
+                (file) =>
+                    `GONE ${file} - delete it from scripts/legacy-sdk-imports-baseline.json in this change.`
+            )
     ];
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (
+    process.argv[1] &&
+    path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
     const measured = measure();
     if (process.argv.includes('--write')) {
-        process.stdout.write(JSON.stringify({ files: measured }, null, 4) + '\n');
+        process.stdout.write(
+            JSON.stringify({ files: measured }, null, 4) + '\n'
+        );
         process.exit(0);
     }
     const baseline = JSON.parse(readFileSync(baselinePath, 'utf8')).files;
     const failures = compare(measured, baseline);
     if (failures.length > 0) {
-        console.error(`verify:legacy-sdk-imports - FAIL (${failures.length})\n${failures.join('\n')}`);
+        console.error(
+            `verify:legacy-sdk-imports - FAIL (${failures.length})\n${failures.join('\n')}`
+        );
         process.exit(1);
     }
-    console.log(`verify:legacy-sdk-imports - OK: ${measured.length} file(s) import a legacy API client, all named in the baseline.`);
+    console.log(
+        `verify:legacy-sdk-imports - OK: ${measured.length} file(s) import a legacy API client, all named in the baseline.`
+    );
 }

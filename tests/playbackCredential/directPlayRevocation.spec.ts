@@ -75,7 +75,12 @@ test.describe('#153-A1 direct-play video revocation', () => {
             const url = response.url();
             // A film's direct play is served by its Playback/Sessions file route since consolidation
             // step 1 (tesserafin#129); other direct plays still use /Videos/{id}/stream.
-            if (!/\/videos\/[^/]+\/stream|\/playback\/sessions\/[^/]+\/file/i.test(url)) return;
+            if (
+                !/\/videos\/[^/]+\/stream|\/playback\/sessions\/[^/]+\/file/i.test(
+                    url
+                )
+            )
+                return;
             if (firstUrl === null) {
                 firstUrl = url;
                 redactedFirst = redact(url);
@@ -84,7 +89,8 @@ test.describe('#153-A1 direct-play video revocation', () => {
                     // `playSessionId` (its query binding). Same value either way.
                     const params = new URL(url).searchParams;
                     urlPlaySessionId =
-                        params.get('PlaySessionId') ?? params.get('playSessionId');
+                        params.get('PlaySessionId') ??
+                        params.get('playSessionId');
                 } catch {
                     urlPlaySessionId = null;
                 }
