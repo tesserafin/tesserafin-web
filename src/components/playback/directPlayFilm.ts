@@ -301,7 +301,10 @@ export async function planDirectPlayFilm(
                     })
                 }
             },
-            requestOptions
+            // Deliberately NOT cancellable: once the server may have created the session, only
+            // its id lets this client release it. A cancellation that arrives during the POST is
+            // honoured as soon as the answer is in (below), by releasing what was created.
+            {}
         );
         if (!data.Id) {
             throw new DirectPlayFilmError(
@@ -318,7 +321,7 @@ export async function planDirectPlayFilm(
         if (statusOf(err) === 422) {
             return { kind: 'notApplicable', reason: 'no viable plan' };
         }
-        throw classify('POST Playback/Sessions', err, signal);
+        throw classify('POST Playback/Sessions', err);
     }
 
     let released = false;
@@ -349,17 +352,27 @@ export async function planDirectPlayFilm(
         throw reason;
     };
 
+    if (signal?.aborted) {
+        return abandon(
+            new DirectPlayFilmError(
+                'cancelled',
+                'POST Playback/Sessions: cancelled'
+            )
+        );
+    }
+
     if (method !== 'DirectPlay') {
+        // The existing chain may only start once this session is gone: a release that failed
+        // ends the attempt instead of risking two live sessions for one playback.
         try {
             await release();
         } catch (releaseError) {
-            logger.warn(
-                `${LOG_PREFIX} session ${sessionId} (${method ?? 'no method'}) could not be released before falling back`,
+            throw new DirectPlayFilmError(
+                'failed',
+                `session ${sessionId} (${method ?? 'no method'}) could not be released before falling back`,
+                statusOf(releaseError),
                 releaseError
             );
-        }
-        if (signal?.aborted) {
-            throw new DirectPlayFilmError('cancelled', 'decision: cancelled');
         }
         return {
             kind: 'notApplicable',

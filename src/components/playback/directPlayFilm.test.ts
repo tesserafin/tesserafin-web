@@ -28,66 +28,80 @@ function fakeApi(answers: {
     const calls: Call[] = [];
     const fail = (status: number) =>
         Object.assign(new Error(`HTTP ${status}`), { response: { status } });
-    const request = vi.fn(async (config: { method?: string; url?: string }) => {
-        const method = (config.method ?? 'GET').toUpperCase();
-        const url = config.url ?? '';
-        calls.push({ method, url });
-        const pick = (fn: (() => unknown) | undefined, fallback: unknown) => {
-            const value = fn ? fn() : fallback;
-            if (typeof value === 'number') throw fail(value);
-            return { data: value, status: 200 };
-        };
-        if (method === 'POST' && url.endsWith('/Playback/Sessions'))
-            return pick(answers.create, {
-                Id: SESSION,
-                Method: 'DirectPlay',
-                SelectedStreams: {
-                    Subtitle: { Index: 2, Delivery: 'External' }
-                }
-            });
-        if (method === 'GET' && url.includes('/Stream'))
-            return pick(answers.stream, {
-                Url: `/Playback/Sessions/${SESSION}/File?itemId=${ITEM}&mediaSourceId=${SOURCE}&playSessionId=ps`,
-                MimeType: 'video/mp4',
-                Container: 'mp4',
-                Protocol: 'Http'
-            });
-        if (method === 'GET' && url.includes(`/Items/${ITEM}`))
-            return pick(answers.item, {
-                Id: ITEM,
-                Name: 'Film',
-                MediaSources: [
-                    {
-                        Id: SOURCE,
-                        MediaStreams: [
-                            { Index: 0, Type: 'Video' },
-                            {
-                                Index: 2,
-                                Type: 'Subtitle',
-                                Codec: 'subrip',
-                                IsTextSubtitleStream: true,
-                                IsExternal: true,
-                                Language: 'eng'
-                            },
-                            {
-                                Index: 3,
-                                Type: 'Subtitle',
-                                Codec: 'ass',
-                                IsTextSubtitleStream: true
-                            },
-                            {
-                                Index: 4,
-                                Type: 'Subtitle',
-                                Codec: 'PGSSUB',
-                                IsTextSubtitleStream: false
-                            }
-                        ]
+    const request = vi.fn(
+        async (config: {
+            method?: string;
+            url?: string;
+            signal?: AbortSignal;
+        }) => {
+            const method = (config.method ?? 'GET').toUpperCase();
+            const url = config.url ?? '';
+            calls.push({ method, url });
+            const pick = (
+                fn: (() => unknown) | undefined,
+                fallback: unknown
+            ) => {
+                const value = fn ? fn() : fallback;
+                // Like axios: a response that arrives after its signal aborted is discarded.
+                if (config.signal?.aborted)
+                    throw Object.assign(new Error('canceled'), {
+                        code: 'ERR_CANCELED'
+                    });
+                if (typeof value === 'number') throw fail(value);
+                return { data: value, status: 200 };
+            };
+            if (method === 'POST' && url.endsWith('/Playback/Sessions'))
+                return pick(answers.create, {
+                    Id: SESSION,
+                    Method: 'DirectPlay',
+                    SelectedStreams: {
+                        Subtitle: { Index: 2, Delivery: 'External' }
                     }
-                ]
-            });
-        if (method === 'DELETE') return pick(answers.del, undefined);
-        throw new Error(`unexpected ${method} ${url}`);
-    });
+                });
+            if (method === 'GET' && url.includes('/Stream'))
+                return pick(answers.stream, {
+                    Url: `/Playback/Sessions/${SESSION}/File?itemId=${ITEM}&mediaSourceId=${SOURCE}&playSessionId=ps`,
+                    MimeType: 'video/mp4',
+                    Container: 'mp4',
+                    Protocol: 'Http'
+                });
+            if (method === 'GET' && url.includes(`/Items/${ITEM}`))
+                return pick(answers.item, {
+                    Id: ITEM,
+                    Name: 'Film',
+                    MediaSources: [
+                        {
+                            Id: SOURCE,
+                            MediaStreams: [
+                                { Index: 0, Type: 'Video' },
+                                {
+                                    Index: 2,
+                                    Type: 'Subtitle',
+                                    Codec: 'subrip',
+                                    IsTextSubtitleStream: true,
+                                    IsExternal: true,
+                                    Language: 'eng'
+                                },
+                                {
+                                    Index: 3,
+                                    Type: 'Subtitle',
+                                    Codec: 'ass',
+                                    IsTextSubtitleStream: true
+                                },
+                                {
+                                    Index: 4,
+                                    Type: 'Subtitle',
+                                    Codec: 'PGSSUB',
+                                    IsTextSubtitleStream: false
+                                }
+                            ]
+                        }
+                    ]
+                });
+            if (method === 'DELETE') return pick(answers.del, undefined);
+            throw new Error(`unexpected ${method} ${url}`);
+        }
+    );
     const api = {
         basePath: 'http://server:8096',
         configuration: {
@@ -327,6 +341,62 @@ describe('planDirectPlayFilm', () => {
             })
         ).rejects.toMatchObject({ failure: 'cancelled' });
         expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
+    });
+});
+
+describe('planDirectPlayFilm review fixes (#404)', () => {
+    it('releases a session the server created while the start was being cancelled', async () => {
+        const controller = new AbortController();
+        const { api, calls } = fakeApi({
+            create: () => {
+                // The answer arrives after the user cancelled: the session exists server-side.
+                controller.abort();
+                return { Id: SESSION, Method: 'DirectPlay' };
+            }
+        });
+        await expect(
+            planDirectPlayFilm(params(api), {
+                mintMediaCapability: vi.fn(),
+                authorizeSubtitle: subtitle,
+                signal: controller.signal,
+                logger: quiet
+            })
+        ).rejects.toMatchObject({ failure: 'cancelled' });
+        expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
+        expect(calls.some((c) => c.url.includes('/Stream'))).toBe(false);
+    });
+
+    it('does not fall back when the declined session could not be released', async () => {
+        const { api, calls } = fakeApi({
+            create: () => ({ Id: SESSION, Method: 'Transcode' }),
+            del: () => 500
+        });
+        await expect(
+            planDirectPlayFilm(params(api), {
+                mintMediaCapability: vi.fn(),
+                authorizeSubtitle: subtitle,
+                logger: quiet
+            })
+        ).rejects.toMatchObject({
+            name: 'DirectPlayFilmError',
+            failure: 'failed',
+            status: 500
+        });
+        expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
+    });
+
+    it('still falls back when the declined session is already gone (404)', async () => {
+        const { api } = fakeApi({
+            create: () => ({ Id: SESSION, Method: 'Transcode' }),
+            del: () => 404
+        });
+        await expect(
+            planDirectPlayFilm(params(api), {
+                mintMediaCapability: vi.fn(),
+                authorizeSubtitle: subtitle,
+                logger: quiet
+            })
+        ).resolves.toMatchObject({ kind: 'notApplicable' });
     });
 });
 
