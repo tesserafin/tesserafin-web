@@ -126,7 +126,7 @@
         },
         {
             "path": "api/playback-api.ts",
-            "sha256": "11a1465071d95d5f6b4304ceb81dff2e05ca8fa9383332349da995abcbb53d40"
+            "sha256": "4d847927a42c2339501a57619f76a2ef9b2eba56fd6999f6c214f9e407e7b527"
         },
         {
             "path": "api/playback-credentials-api.ts",

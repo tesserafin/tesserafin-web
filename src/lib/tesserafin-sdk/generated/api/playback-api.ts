@@ -112,6 +112,64 @@ export const PlaybackApiAxiosParamCreator = function (configuration?: Configurat
         },
         /**
          * 
+         * @summary Serves the source file of a session decided as a direct play, with HTTP range support.
+         * @param {string} id The session.
+         * @param {string} itemId The item the session plays; must match the session.
+         * @param {string} mediaSourceId The media source the session\&#39;s plan selected; must match it.
+         * @param {string} playSessionId The session\&#39;s play session id; must match it.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getPlaybackSessionFile: async (id: string, itemId: string, mediaSourceId: string, playSessionId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('getPlaybackSessionFile', 'id', id)
+            // verify required parameter 'itemId' is not null or undefined
+            assertParamExists('getPlaybackSessionFile', 'itemId', itemId)
+            // verify required parameter 'mediaSourceId' is not null or undefined
+            assertParamExists('getPlaybackSessionFile', 'mediaSourceId', mediaSourceId)
+            // verify required parameter 'playSessionId' is not null or undefined
+            assertParamExists('getPlaybackSessionFile', 'playSessionId', playSessionId)
+            const localVarPath = `/Playback/Sessions/{id}/File`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication CustomAuthentication required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+            if (itemId !== undefined) {
+                localVarQueryParameter['itemId'] = itemId;
+            }
+
+            if (mediaSourceId !== undefined) {
+                localVarQueryParameter['mediaSourceId'] = mediaSourceId;
+            }
+
+            if (playSessionId !== undefined) {
+                localVarQueryParameter['playSessionId'] = playSessionId;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary PR117 (docs/pr116d-url-contract-design.md §2): resolves the executable URL for a session already planned via M:Tesserafin.Api.Controllers.PlaybackSessionsController.CreatePlaybackSession(Tesserafin.Api.Models.PlaybackSessionDtos.CreatePlaybackSessionRequest)/M:Tesserafin.Api.Controllers.PlaybackSessionsController.ReplacePlaybackSession(Tesserafin.Controller.MediaEncoding.PlaybackSessionId,Tesserafin.Api.Models.PlaybackSessionDtos.ReplacePlaybackSessionRequest). A read, not a decision (§2.2): re-projects `session.Plan`/`session.Request` that already exist, re-evaluating the kill switch/stop-threshold guard/plan resolution at THIS call (§3.1) - the same live-wiring decision the legacy `PlaybackInfo` path makes on every request, never cached from the original `POST`/`PUT`.
          * @param {string} id The session to resolve a stream URL for.
          * @param {number} [startTimeTicks] The position, in ticks, playback should start from - a property of the moment a client asks to read, not of the session\&#39;s own planning decision (§2.2, option (i)).
@@ -139,6 +197,64 @@ export const PlaybackApiAxiosParamCreator = function (configuration?: Configurat
 
             if (startTimeTicks !== undefined) {
                 localVarQueryParameter['startTimeTicks'] = startTimeTicks;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Serves the source file of a session decided as a direct play, with HTTP range support.
+         * @param {string} id The session.
+         * @param {string} itemId The item the session plays; must match the session.
+         * @param {string} mediaSourceId The media source the session\&#39;s plan selected; must match it.
+         * @param {string} playSessionId The session\&#39;s play session id; must match it.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        headPlaybackSessionFile: async (id: string, itemId: string, mediaSourceId: string, playSessionId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('headPlaybackSessionFile', 'id', id)
+            // verify required parameter 'itemId' is not null or undefined
+            assertParamExists('headPlaybackSessionFile', 'itemId', itemId)
+            // verify required parameter 'mediaSourceId' is not null or undefined
+            assertParamExists('headPlaybackSessionFile', 'mediaSourceId', mediaSourceId)
+            // verify required parameter 'playSessionId' is not null or undefined
+            assertParamExists('headPlaybackSessionFile', 'playSessionId', playSessionId)
+            const localVarPath = `/Playback/Sessions/{id}/File`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'HEAD', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication CustomAuthentication required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+            if (itemId !== undefined) {
+                localVarQueryParameter['itemId'] = itemId;
+            }
+
+            if (mediaSourceId !== undefined) {
+                localVarQueryParameter['mediaSourceId'] = mediaSourceId;
+            }
+
+            if (playSessionId !== undefined) {
+                localVarQueryParameter['playSessionId'] = playSessionId;
             }
 
 
@@ -231,6 +347,22 @@ export const PlaybackApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary Serves the source file of a session decided as a direct play, with HTTP range support.
+         * @param {string} id The session.
+         * @param {string} itemId The item the session plays; must match the session.
+         * @param {string} mediaSourceId The media source the session\&#39;s plan selected; must match it.
+         * @param {string} playSessionId The session\&#39;s play session id; must match it.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getPlaybackSessionFile(id: string, itemId: string, mediaSourceId: string, playSessionId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getPlaybackSessionFile(id, itemId, mediaSourceId, playSessionId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PlaybackApi.getPlaybackSessionFile']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary PR117 (docs/pr116d-url-contract-design.md §2): resolves the executable URL for a session already planned via M:Tesserafin.Api.Controllers.PlaybackSessionsController.CreatePlaybackSession(Tesserafin.Api.Models.PlaybackSessionDtos.CreatePlaybackSessionRequest)/M:Tesserafin.Api.Controllers.PlaybackSessionsController.ReplacePlaybackSession(Tesserafin.Controller.MediaEncoding.PlaybackSessionId,Tesserafin.Api.Models.PlaybackSessionDtos.ReplacePlaybackSessionRequest). A read, not a decision (§2.2): re-projects `session.Plan`/`session.Request` that already exist, re-evaluating the kill switch/stop-threshold guard/plan resolution at THIS call (§3.1) - the same live-wiring decision the legacy `PlaybackInfo` path makes on every request, never cached from the original `POST`/`PUT`.
          * @param {string} id The session to resolve a stream URL for.
          * @param {number} [startTimeTicks] The position, in ticks, playback should start from - a property of the moment a client asks to read, not of the session\&#39;s own planning decision (§2.2, option (i)).
@@ -241,6 +373,22 @@ export const PlaybackApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getPlaybackSessionStream(id, startTimeTicks, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['PlaybackApi.getPlaybackSessionStream']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Serves the source file of a session decided as a direct play, with HTTP range support.
+         * @param {string} id The session.
+         * @param {string} itemId The item the session plays; must match the session.
+         * @param {string} mediaSourceId The media source the session\&#39;s plan selected; must match it.
+         * @param {string} playSessionId The session\&#39;s play session id; must match it.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async headPlaybackSessionFile(id: string, itemId: string, mediaSourceId: string, playSessionId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.headPlaybackSessionFile(id, itemId, mediaSourceId, playSessionId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['PlaybackApi.headPlaybackSessionFile']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -289,6 +437,16 @@ export const PlaybackApiFactory = function (configuration?: Configuration, baseP
         },
         /**
          * 
+         * @summary Serves the source file of a session decided as a direct play, with HTTP range support.
+         * @param {PlaybackApiGetPlaybackSessionFileRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getPlaybackSessionFile(requestParameters: PlaybackApiGetPlaybackSessionFileRequest, options?: RawAxiosRequestConfig): AxiosPromise<File> {
+            return localVarFp.getPlaybackSessionFile(requestParameters.id, requestParameters.itemId, requestParameters.mediaSourceId, requestParameters.playSessionId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary PR117 (docs/pr116d-url-contract-design.md §2): resolves the executable URL for a session already planned via M:Tesserafin.Api.Controllers.PlaybackSessionsController.CreatePlaybackSession(Tesserafin.Api.Models.PlaybackSessionDtos.CreatePlaybackSessionRequest)/M:Tesserafin.Api.Controllers.PlaybackSessionsController.ReplacePlaybackSession(Tesserafin.Controller.MediaEncoding.PlaybackSessionId,Tesserafin.Api.Models.PlaybackSessionDtos.ReplacePlaybackSessionRequest). A read, not a decision (§2.2): re-projects `session.Plan`/`session.Request` that already exist, re-evaluating the kill switch/stop-threshold guard/plan resolution at THIS call (§3.1) - the same live-wiring decision the legacy `PlaybackInfo` path makes on every request, never cached from the original `POST`/`PUT`.
          * @param {PlaybackApiGetPlaybackSessionStreamRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -296,6 +454,16 @@ export const PlaybackApiFactory = function (configuration?: Configuration, baseP
          */
         getPlaybackSessionStream(requestParameters: PlaybackApiGetPlaybackSessionStreamRequest, options?: RawAxiosRequestConfig): AxiosPromise<PlaybackSessionStreamDescriptor> {
             return localVarFp.getPlaybackSessionStream(requestParameters.id, requestParameters.startTimeTicks, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Serves the source file of a session decided as a direct play, with HTTP range support.
+         * @param {PlaybackApiHeadPlaybackSessionFileRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        headPlaybackSessionFile(requestParameters: PlaybackApiHeadPlaybackSessionFileRequest, options?: RawAxiosRequestConfig): AxiosPromise<File> {
+            return localVarFp.headPlaybackSessionFile(requestParameters.id, requestParameters.itemId, requestParameters.mediaSourceId, requestParameters.playSessionId, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -338,6 +506,16 @@ export interface PlaybackApiInterface {
 
     /**
      * 
+     * @summary Serves the source file of a session decided as a direct play, with HTTP range support.
+     * @param {PlaybackApiGetPlaybackSessionFileRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PlaybackApiInterface
+     */
+    getPlaybackSessionFile(requestParameters: PlaybackApiGetPlaybackSessionFileRequest, options?: RawAxiosRequestConfig): AxiosPromise<File>;
+
+    /**
+     * 
      * @summary PR117 (docs/pr116d-url-contract-design.md §2): resolves the executable URL for a session already planned via M:Tesserafin.Api.Controllers.PlaybackSessionsController.CreatePlaybackSession(Tesserafin.Api.Models.PlaybackSessionDtos.CreatePlaybackSessionRequest)/M:Tesserafin.Api.Controllers.PlaybackSessionsController.ReplacePlaybackSession(Tesserafin.Controller.MediaEncoding.PlaybackSessionId,Tesserafin.Api.Models.PlaybackSessionDtos.ReplacePlaybackSessionRequest). A read, not a decision (§2.2): re-projects `session.Plan`/`session.Request` that already exist, re-evaluating the kill switch/stop-threshold guard/plan resolution at THIS call (§3.1) - the same live-wiring decision the legacy `PlaybackInfo` path makes on every request, never cached from the original `POST`/`PUT`.
      * @param {PlaybackApiGetPlaybackSessionStreamRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -345,6 +523,16 @@ export interface PlaybackApiInterface {
      * @memberof PlaybackApiInterface
      */
     getPlaybackSessionStream(requestParameters: PlaybackApiGetPlaybackSessionStreamRequest, options?: RawAxiosRequestConfig): AxiosPromise<PlaybackSessionStreamDescriptor>;
+
+    /**
+     * 
+     * @summary Serves the source file of a session decided as a direct play, with HTTP range support.
+     * @param {PlaybackApiHeadPlaybackSessionFileRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PlaybackApiInterface
+     */
+    headPlaybackSessionFile(requestParameters: PlaybackApiHeadPlaybackSessionFileRequest, options?: RawAxiosRequestConfig): AxiosPromise<File>;
 
     /**
      * 
@@ -387,6 +575,41 @@ export interface PlaybackApiDeletePlaybackSessionRequest {
 }
 
 /**
+ * Request parameters for getPlaybackSessionFile operation in PlaybackApi.
+ * @export
+ * @interface PlaybackApiGetPlaybackSessionFileRequest
+ */
+export interface PlaybackApiGetPlaybackSessionFileRequest {
+    /**
+     * The session.
+     * @type {string}
+     * @memberof PlaybackApiGetPlaybackSessionFile
+     */
+    readonly id: string
+
+    /**
+     * The item the session plays; must match the session.
+     * @type {string}
+     * @memberof PlaybackApiGetPlaybackSessionFile
+     */
+    readonly itemId: string
+
+    /**
+     * The media source the session\&#39;s plan selected; must match it.
+     * @type {string}
+     * @memberof PlaybackApiGetPlaybackSessionFile
+     */
+    readonly mediaSourceId: string
+
+    /**
+     * The session\&#39;s play session id; must match it.
+     * @type {string}
+     * @memberof PlaybackApiGetPlaybackSessionFile
+     */
+    readonly playSessionId: string
+}
+
+/**
  * Request parameters for getPlaybackSessionStream operation in PlaybackApi.
  * @export
  * @interface PlaybackApiGetPlaybackSessionStreamRequest
@@ -405,6 +628,41 @@ export interface PlaybackApiGetPlaybackSessionStreamRequest {
      * @memberof PlaybackApiGetPlaybackSessionStream
      */
     readonly startTimeTicks?: number
+}
+
+/**
+ * Request parameters for headPlaybackSessionFile operation in PlaybackApi.
+ * @export
+ * @interface PlaybackApiHeadPlaybackSessionFileRequest
+ */
+export interface PlaybackApiHeadPlaybackSessionFileRequest {
+    /**
+     * The session.
+     * @type {string}
+     * @memberof PlaybackApiHeadPlaybackSessionFile
+     */
+    readonly id: string
+
+    /**
+     * The item the session plays; must match the session.
+     * @type {string}
+     * @memberof PlaybackApiHeadPlaybackSessionFile
+     */
+    readonly itemId: string
+
+    /**
+     * The media source the session\&#39;s plan selected; must match it.
+     * @type {string}
+     * @memberof PlaybackApiHeadPlaybackSessionFile
+     */
+    readonly mediaSourceId: string
+
+    /**
+     * The session\&#39;s play session id; must match it.
+     * @type {string}
+     * @memberof PlaybackApiHeadPlaybackSessionFile
+     */
+    readonly playSessionId: string
 }
 
 /**
@@ -461,6 +719,18 @@ export class PlaybackApi extends BaseAPI implements PlaybackApiInterface {
 
     /**
      * 
+     * @summary Serves the source file of a session decided as a direct play, with HTTP range support.
+     * @param {PlaybackApiGetPlaybackSessionFileRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PlaybackApi
+     */
+    public getPlaybackSessionFile(requestParameters: PlaybackApiGetPlaybackSessionFileRequest, options?: RawAxiosRequestConfig) {
+        return PlaybackApiFp(this.configuration).getPlaybackSessionFile(requestParameters.id, requestParameters.itemId, requestParameters.mediaSourceId, requestParameters.playSessionId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @summary PR117 (docs/pr116d-url-contract-design.md §2): resolves the executable URL for a session already planned via M:Tesserafin.Api.Controllers.PlaybackSessionsController.CreatePlaybackSession(Tesserafin.Api.Models.PlaybackSessionDtos.CreatePlaybackSessionRequest)/M:Tesserafin.Api.Controllers.PlaybackSessionsController.ReplacePlaybackSession(Tesserafin.Controller.MediaEncoding.PlaybackSessionId,Tesserafin.Api.Models.PlaybackSessionDtos.ReplacePlaybackSessionRequest). A read, not a decision (§2.2): re-projects `session.Plan`/`session.Request` that already exist, re-evaluating the kill switch/stop-threshold guard/plan resolution at THIS call (§3.1) - the same live-wiring decision the legacy `PlaybackInfo` path makes on every request, never cached from the original `POST`/`PUT`.
      * @param {PlaybackApiGetPlaybackSessionStreamRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -469,6 +739,18 @@ export class PlaybackApi extends BaseAPI implements PlaybackApiInterface {
      */
     public getPlaybackSessionStream(requestParameters: PlaybackApiGetPlaybackSessionStreamRequest, options?: RawAxiosRequestConfig) {
         return PlaybackApiFp(this.configuration).getPlaybackSessionStream(requestParameters.id, requestParameters.startTimeTicks, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Serves the source file of a session decided as a direct play, with HTTP range support.
+     * @param {PlaybackApiHeadPlaybackSessionFileRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PlaybackApi
+     */
+    public headPlaybackSessionFile(requestParameters: PlaybackApiHeadPlaybackSessionFileRequest, options?: RawAxiosRequestConfig) {
+        return PlaybackApiFp(this.configuration).headPlaybackSessionFile(requestParameters.id, requestParameters.itemId, requestParameters.mediaSourceId, requestParameters.playSessionId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
