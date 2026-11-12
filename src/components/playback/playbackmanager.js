@@ -35,11 +35,7 @@ import { PluginType } from 'constants/pluginType';
 import { TICKS_PER_SECOND } from 'constants/time';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
 import { brokerFor } from 'lib/playbackCredentials/broker';
-import {
-    isDirectPlayFilmCandidate,
-    newDirectPlayFilmPlaySessionId,
-    planDirectPlayFilm
-} from './directPlayFilm.ts';
+import { isDirectPlayFilmCandidate } from './directPlayFilmCandidate.ts';
 import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket';
 import { MediaError } from 'types/mediaError';
 import { getMediaError } from 'utils/mediaError';
@@ -408,6 +404,19 @@ let startingPlaySession = new Date().getTime();
  * synthetic value is safe there; a route that does name one (the transcoding url) reads the
  * server's own value instead of calling this.
  */
+/**
+ * The direct-play film journey, loaded on first use (it brings the generated Playback/Library API
+ * clients). The cached promise holds the function, not the module namespace, so export mangling
+ * still applies to the chunk.
+ */
+let planDirectPlayFilmLoader;
+function loadPlanDirectPlayFilm() {
+    planDirectPlayFilmLoader ??= import('./directPlayFilm.ts').then(
+        (module) => module.planDirectPlayFilm
+    );
+    return planDirectPlayFilmLoader;
+}
+
 function playSessionIdFor(requestOptions) {
     return requestOptions?.playSessionId || String(++startingPlaySession);
 }
@@ -3819,13 +3828,13 @@ export class PlaybackManager {
 
             let outcome;
             try {
+                const planDirectPlayFilm = await loadPlanDirectPlayFilm();
                 outcome = await planDirectPlayFilm(
                     {
                         api,
                         itemId: item.Id,
                         userId: apiClient.getCurrentUserId(),
                         mediaSourceId,
-                        playSessionId: newDirectPlayFilmPlaySessionId(),
                         playbackAttemptId: playOptions.playbackAttemptId,
                         startPositionTicks: playOptions.startPositionTicks || 0,
                         maxBitrate,

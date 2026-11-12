@@ -49,40 +49,15 @@ export function newDirectPlayFilmPlaySessionId(): string {
     return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-/** The item fields that decide whether this journey owns a playback. */
-export interface DirectPlayFilmCandidate {
-    Id?: string | null;
-    Type?: string | null;
-    MediaType?: string | null;
-    LocationType?: string | null;
-    IsPlaceHolder?: boolean | null;
-}
-
-/**
- * Whether this journey owns the playback of `item` on `player`: a film, on the server, played by the
- * local HTML video player (not a cast or remote target, which plan for themselves).
- */
-export function isDirectPlayFilmCandidate(
-    item: DirectPlayFilmCandidate | null | undefined,
-    player: { id?: string; isLocalPlayer?: boolean } | null | undefined
-): boolean {
-    return (
-        !!item?.Id
-        && item.Type === 'Movie'
-        && item.MediaType === 'Video'
-        && (item.LocationType == null || item.LocationType === 'FileSystem')
-        && !item.IsPlaceHolder
-        && !!player?.isLocalPlayer
-        && player.id === 'htmlvideoplayer'
-    );
-}
+export { isDirectPlayFilmCandidate, type DirectPlayFilmCandidate } from './directPlayFilmCandidate';
 
 export interface DirectPlayFilmParams {
     api: TesserafinApi;
     itemId: string;
     userId: string;
     mediaSourceId?: string | null;
-    playSessionId: string;
+    /** Defaults to {@link newDirectPlayFilmPlaySessionId}. */
+    playSessionId?: string;
     playbackAttemptId?: string;
     startPositionTicks?: number;
     maxBitrate?: number | null;
@@ -236,6 +211,7 @@ export async function planDirectPlayFilm(
     const logger = deps.logger ?? console;
     const api = params.api;
     const signal = deps.signal;
+    const playSessionId = params.playSessionId ?? newDirectPlayFilmPlaySessionId();
     const playback = new PlaybackApi(api.configuration, undefined, api.axiosInstance);
     const requestOptions = { signal };
 
@@ -249,7 +225,7 @@ export async function planDirectPlayFilm(
                 ItemId: params.itemId,
                 UserId: params.userId,
                 MediaSourceId: params.mediaSourceId ?? undefined,
-                PlaySessionId: params.playSessionId,
+                PlaySessionId: playSessionId,
                 PlaybackAttemptId: params.playbackAttemptId,
                 Capabilities: buildClientCapabilities(params.capabilityInputs),
                 Constraints: buildPlaybackConstraints({
@@ -327,14 +303,14 @@ export async function planDirectPlayFilm(
         }
 
         throwIfCancelled(signal, 'capability');
-        const capability = await deps.mintMediaCapability(params.itemId, mediaSourceId, params.playSessionId);
+        const capability = await deps.mintMediaCapability(params.itemId, mediaSourceId, playSessionId);
         throwIfCancelled(signal, 'capability');
 
         const url = absoluteMediaUrl(api, stream.Url, capability);
         const textTracks: DirectPlayFilmTextTrack[] = [];
         for (const track of directPlayTextTracks(params.itemId, mediaSource, params.preferredSubtitleStreamIndex)) {
             const { path, ...rest } = track;
-            const authorized = await deps.authorizeSubtitle(path, params.itemId, mediaSourceId, params.playSessionId);
+            const authorized = await deps.authorizeSubtitle(path, params.itemId, mediaSourceId, playSessionId);
             textTracks.push({ ...rest, url: `${api.basePath}${authorized}` });
         }
         throwIfCancelled(signal, 'subtitles');
@@ -353,7 +329,7 @@ export async function planDirectPlayFilm(
                 textTracks,
                 mediaType: 'Video',
                 liveStreamId: undefined,
-                playSessionId: params.playSessionId,
+                playSessionId: playSessionId,
                 title: item.Name,
                 executionDecision: {
                     source: 'v2',
@@ -361,7 +337,7 @@ export async function planDirectPlayFilm(
                     playMethod: 'DirectPlay',
                     mimeType: stream.MimeType ?? undefined,
                     transcodingOffsetTicks: 0,
-                    playSessionId: params.playSessionId,
+                    playSessionId: playSessionId,
                     playbackSessionId: sessionId,
                     protocol: stream.Protocol ?? undefined,
                     container: stream.Container ?? undefined,
