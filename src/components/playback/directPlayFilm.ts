@@ -311,8 +311,10 @@ export async function planDirectPlayFilm(
 
         const url = absoluteMediaUrl(api, stream.Url, capability);
         const textTracks: DirectPlayFilmTextTrack[] = [];
+        const trackPaths = new Map<number, string>();
         for (const track of directPlayTextTracks(params.itemId, mediaSource, selectedSubtitle ?? params.preferredSubtitleStreamIndex ?? -1)) {
             const { path, ...rest } = track;
+            trackPaths.set(rest.index, path);
             const authorized = await deps.authorizeSubtitle(path, params.itemId, mediaSourceId, playSessionId);
             textTracks.push({ ...rest, url: `${api.basePath}${authorized}` });
         }
@@ -329,7 +331,17 @@ export async function planDirectPlayFilm(
                 playerStartPositionTicks: params.startPositionTicks ?? 0,
                 item,
                 // The server's selected subtitle is the source's default (-1: none).
-                mediaSource: { ...mediaSource, DefaultSubtitleStreamIndex: selectedSubtitle ?? params.preferredSubtitleStreamIndex ?? -1 },
+                mediaSource: {
+                    ...mediaSource,
+                    DefaultSubtitleStreamIndex: selectedSubtitle ?? params.preferredSubtitleStreamIndex ?? -1,
+                    // The player reads a text track's delivery off the stream itself, as
+                    // PlaybackInfo used to set it: External, at the subtitle route (the player
+                    // adds the Subtitles capability through playbackManager.getSubtitleUrl).
+                    MediaStreams: (mediaSource.MediaStreams ?? []).map((stream) => {
+                        const track = trackPaths.get(stream.Index ?? -1);
+                        return track ? { ...stream, DeliveryMethod: 'External', DeliveryUrl: track, IsExternalUrl: false } : stream;
+                    })
+                },
                 textTracks,
                 mediaType: 'Video',
                 liveStreamId: undefined,

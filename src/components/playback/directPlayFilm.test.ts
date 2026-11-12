@@ -79,6 +79,9 @@ describe('planDirectPlayFilm', () => {
         expect(outcome.streamInfo.playSessionId).toBe('ps');
         expect(outcome.streamInfo.executionDecision).toMatchObject({ source: 'v2', playbackSessionId: SESSION, playMethod: 'DirectPlay' });
         expect(mint).toHaveBeenCalledWith(ITEM, SOURCE, 'ps');
+        expect(outcome.streamInfo.mediaSource.DefaultSubtitleStreamIndex).toBe(2);
+        expect(outcome.streamInfo.mediaSource.MediaStreams?.[1]).toMatchObject({ DeliveryMethod: 'External', DeliveryUrl: `/Videos/${ITEM}/${SOURCE}/Subtitles/2/0/Stream.vtt` });
+        expect(outcome.streamInfo.mediaSource.MediaStreams?.[3]?.DeliveryMethod).toBeUndefined();
         expect(outcome.streamInfo.textTracks).toEqual([
             { url: `http://server:8096/Videos/${ITEM}/${SOURCE}/Subtitles/2/0/Stream.vtt?playbackCapability=SUB`, language: 'eng', isDefault: true, index: 2, format: 'vtt' },
             { url: `http://server:8096/Videos/${ITEM}/${SOURCE}/Subtitles/3/0/Stream.ass?playbackCapability=SUB`, language: 'und', isDefault: false, index: 3, format: 'ass' }
