@@ -154,7 +154,8 @@ export function watchMedia(page: Page): () => MediaBytes {
     let transcodeUrls = 0;
     page.on('response', (response) => {
         const url = response.url();
-        if (!/\/Videos\/|\/Audio\/|hls1\/|master\.m3u8|main\.m3u8/i.test(url))
+        // `/Playback/Sessions/{id}/File`: a film's direct play since consolidation step 1.
+        if (!/\/Videos\/|\/Audio\/|\/Playback\/Sessions\/[^/]+\/File|hls1\/|master\.m3u8|main\.m3u8/i.test(url))
             return;
         requests += 1;
         if (/master\.m3u8|hls1\/|main\.m3u8|\/live\.m3u8/i.test(url))
