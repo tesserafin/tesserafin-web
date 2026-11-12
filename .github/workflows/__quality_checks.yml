@@ -75,6 +75,9 @@ jobs:
           # #185 Group C: exercise the real boundary gate against exact and
           # misleading clone URLs, including distinct fetch/push URLs.
           - test:no-runtime-jellyfin-origin
+          # tesserafin#129 consolidation: files importing @jellyfin/sdk or
+          # jellyfin-apiclient may only become fewer (named baseline).
+          - verify:legacy-sdk-imports
           # Guards the epubjs-scoped `@xmldom/xmldom` override: the pin sits
           # above the range EPUB.js declares, so the compatibility it depends on
           # has to be re-proven on every change rather than once, at the moment
