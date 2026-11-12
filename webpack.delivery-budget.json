@@ -36,7 +36,7 @@
     },
     "budgets": {
         "initial": {
-            "rawJsBytes": 1926144,
+            "rawJsBytes": 1927168,
             "rawCssBytes": 172032,
             "rawBytes": 2098176,
             "gzipBytes": 535552,

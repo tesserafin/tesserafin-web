@@ -345,6 +345,25 @@ describe('planDirectPlayFilm', () => {
 });
 
 describe('planDirectPlayFilm review fixes (#404)', () => {
+    it('does not fall back if the start is cancelled while deleting the declined session', async () => {
+        const controller = new AbortController();
+        const { api, calls } = fakeApi({
+            create: () => ({ Id: SESSION, Method: 'Transcode' }),
+            del: () => {
+                controller.abort();
+            }
+        });
+        await expect(
+            planDirectPlayFilm(params(api), {
+                mintMediaCapability: vi.fn(),
+                authorizeSubtitle: subtitle,
+                signal: controller.signal,
+                logger: quiet
+            })
+        ).rejects.toMatchObject({ failure: 'cancelled' });
+        expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
+    });
+
     it('releases a session the server created while the start was being cancelled', async () => {
         const controller = new AbortController();
         const { api, calls } = fakeApi({

@@ -374,6 +374,7 @@ export async function planDirectPlayFilm(
                 releaseError
             );
         }
+        throwIfCancelled(signal, 'release before fallback');
         return {
             kind: 'notApplicable',
             reason: `server decided ${method ?? 'nothing'}`
