@@ -94,6 +94,8 @@ export interface DirectPlayFilmParams {
 export interface DirectPlayFilmDeps {
     /** Mints the `Media` capability for the file route (the existing credential broker). */
     mintMediaCapability: (itemId: string, mediaSourceId: string, playSessionId: string) => Promise<string>;
+    /** Adds the `Subtitles` capability to a server-relative subtitle url (the existing broker). */
+    authorizeSubtitle: (relativeUrl: string, itemId: string, mediaSourceId: string, playSessionId: string) => Promise<string>;
     /** Aborted when the play request is replaced or cancelled. */
     signal?: AbortSignal;
     logger?: Pick<Console, 'debug' | 'warn'>;
@@ -109,7 +111,7 @@ export interface DirectPlayFilmStreamInfo {
     playerStartPositionTicks: number;
     item: BaseItemDto;
     mediaSource: MediaSourceInfo;
-    textTracks: never[];
+    textTracks: DirectPlayFilmTextTrack[];
     mediaType: 'Video';
     liveStreamId: undefined;
     playSessionId: string;
@@ -126,6 +128,41 @@ export interface DirectPlayFilmStreamInfo {
         container: string | undefined;
         retry: PlaybackRetryMetadata;
     };
+}
+
+export interface DirectPlayFilmTextTrack {
+    url: string;
+    language: string;
+    isDefault: boolean;
+    index: number;
+    format: string;
+}
+
+/**
+ * The text subtitle tracks the player offers for a direct-played file, each served by the
+ * subtitle route of this item and media source: the same tracks the legacy chain offered, without
+ * the `PlaybackInfo` decision that used to name them. ASS/SSA keep their format for the player's
+ * renderer; every other text format is delivered as WebVTT. Image subtitles cannot accompany a
+ * direct play and are not offered.
+ */
+export function directPlayTextTracks(
+    itemId: string,
+    mediaSource: MediaSourceInfo,
+    defaultIndex: number | null | undefined
+): Array<Omit<DirectPlayFilmTextTrack, 'url'> & { path: string }> {
+    return (mediaSource.MediaStreams ?? [])
+        .filter((stream) => stream.Type === 'Subtitle' && stream.IsTextSubtitleStream && stream.Index != null)
+        .map((stream) => {
+            const codec = (stream.Codec ?? '').toLowerCase();
+            const format = codec === 'ass' || codec === 'ssa' ? codec : 'vtt';
+            return {
+                path: `/Videos/${itemId}/${encodeURIComponent(mediaSource.Id ?? '')}/Subtitles/${stream.Index}/0/Stream.${format}`,
+                language: stream.Language || 'und',
+                isDefault: stream.Index === (defaultIndex ?? mediaSource.DefaultSubtitleStreamIndex),
+                index: stream.Index as number,
+                format
+            };
+        });
 }
 
 export interface DirectPlayFilmSession {
@@ -294,6 +331,13 @@ export async function planDirectPlayFilm(
         throwIfCancelled(signal, 'capability');
 
         const url = absoluteMediaUrl(api, stream.Url, capability);
+        const textTracks: DirectPlayFilmTextTrack[] = [];
+        for (const track of directPlayTextTracks(params.itemId, mediaSource, params.preferredSubtitleStreamIndex)) {
+            const { path, ...rest } = track;
+            const authorized = await deps.authorizeSubtitle(path, params.itemId, mediaSourceId, params.playSessionId);
+            textTracks.push({ ...rest, url: `${api.basePath}${authorized}` });
+        }
+        throwIfCancelled(signal, 'subtitles');
         logger.debug(`${LOG_PREFIX} item ${params.itemId}: direct play from session ${sessionId}`);
         return {
             kind: 'planned',
@@ -306,7 +350,7 @@ export async function planDirectPlayFilm(
                 playerStartPositionTicks: params.startPositionTicks ?? 0,
                 item,
                 mediaSource,
-                textTracks: [],
+                textTracks,
                 mediaType: 'Video',
                 liveStreamId: undefined,
                 playSessionId: params.playSessionId,

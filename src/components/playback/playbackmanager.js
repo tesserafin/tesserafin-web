@@ -3839,6 +3839,13 @@ export class PlaybackManager {
                                 sourceId,
                                 playSessionId
                             ),
+                        authorizeSubtitle: async (path, itemId, sourceId, playSessionId) =>
+                            (await brokerFor(apiClient)).rewriteSubtitle(
+                                path,
+                                itemId,
+                                sourceId,
+                                playSessionId
+                            ),
                         signal: controller.signal
                     }
                 );
