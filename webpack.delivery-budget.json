@@ -38,13 +38,13 @@
         "initial": {
             "rawJsBytes": 1926144,
             "rawCssBytes": 172032,
-            "rawBytes": 2097152,
+            "rawBytes": 2098176,
             "gzipBytes": 535552,
             "brotliBytes": 451584,
             "assetCount": 21
         },
         "startup": {
-            "rawBytes": 3191808,
+            "rawBytes": 3192832,
             "gzipBytes": 896000,
             "brotliBytes": 564224,
             "assetCount": 41
