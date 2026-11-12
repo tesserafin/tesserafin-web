@@ -17,7 +17,7 @@
  * `--write` prints the measured list instead of checking it (for writing a baseline that only
  * removes entries).
  */
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -34,9 +34,15 @@ const EXTENSIONS = new Set(['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs']);
 export function measure(sourceRoot = path.join(root, 'src')) {
     const found = [];
     const walk = (dir) => {
-        for (const name of readdirSync(dir)) {
+        for (const entry of readdirSync(dir, { withFileTypes: true })) {
+            const name = entry.name;
             const full = path.join(dir, name);
-            if (statSync(full).isDirectory()) {
+            if (entry.isSymbolicLink()) {
+                throw new Error(
+                    `Legacy SDK import scan refuses a symlink: ${full}`
+                );
+            }
+            if (entry.isDirectory()) {
                 if (name !== 'node_modules') walk(full);
             } else if (
                 EXTENSIONS.has(path.extname(name)) &&
