@@ -20,7 +20,7 @@ import type { PlaybackDecisionStreamingProtocol } from './playback-decision-stre
 import type { PlaybackLiveFallbackReason } from './playback-live-fallback-reason';
 
 /**
- * PR117 (docs/pr116d-url-contract-design.md §2.2): the companion, client-facing descriptor of the executable URL for a session already planned via `Playback/Sessions` - returned only from `GET Playback/Sessions/{id}/Stream`, never composed into Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackSessionListItem or Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackDiagnosticDetail (design doc §1.4: those two reach the admin-elevated, cross-user diagnostics surface, and a URL there would leak the access token Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackSessionStreamDescriptor.Url carries to any administrator browsing another user\'s session).
+ * PR117 (docs/pr116d-url-contract-design.md §2.2): the companion, client-facing descriptor of the executable URL for a session already planned via `Playback/Sessions` - returned only from `GET Playback/Sessions/{id}/Stream`, never composed into Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackSessionListItem or Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackDiagnosticDetail (design doc §1.4: those two reach the admin-elevated, cross-user diagnostics surface). Neither URL carries a credential: the client authenticates each request for the resource with its own session or a playback capability.
  * @export
  * @interface PlaybackSessionStreamDescriptor
  */
@@ -62,7 +62,7 @@ export interface PlaybackSessionStreamDescriptor {
      */
     'SubtitleUrl'?: string | null;
     /**
-     * The executable URL, resolved at call time - direct output of `StreamInfo.ToUrl(null, accessToken, null)`, relative (the client already knows its own `baseUrl`, same posture as the legacy `TranscodingUrl`).
+     * The executable URL, resolved at call time - without any credential, relative (the client already knows its own `baseUrl`, same posture as the legacy `TranscodingUrl`).
      * @type {string}
      * @memberof PlaybackSessionStreamDescriptor
      */

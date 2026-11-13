@@ -1282,7 +1282,7 @@
         },
         {
             "path": "models/playback-session-stream-descriptor.ts",
-            "sha256": "5b896e289412c5ee716f8328188ec445c1c3c86941b78fc444c9407946381054"
+            "sha256": "cfcc66140f17e166a7928dd54cbab0c9fa874eab19a9bce67ebbc5b7697a69bb"
         },
         {
             "path": "models/playback-shadow-options.ts",
