@@ -17,7 +17,7 @@
  *   * A film the server decides to transcode releases its session before the legacy chain plays it,
  *     so one session at most is alive, and it still plays.
  *
- * `createStreamInfo` cannot be observed from a browser; `directPlayFilmPlayback.test.ts` asserts it
+ * `createStreamInfo` cannot be observed from a browser; `sessionVideoPlayback.test.ts` asserts it
  * at the playback manager. OUTPUT SAFETY: urls are kept in memory; reports carry paths and status
  * codes, never a query value.
  */

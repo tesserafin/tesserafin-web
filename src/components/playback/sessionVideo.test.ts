@@ -3,11 +3,11 @@ import { describe, expect, it, vi } from 'vitest';
 import type { TesserafinApi } from 'lib/tesserafin-sdk/client';
 
 import {
-    DirectPlayFilmError,
-    isDirectPlayFilmCandidate,
-    newDirectPlayFilmPlaySessionId,
-    planDirectPlayFilm
-} from './directPlayFilm';
+    SessionVideoError,
+    isSessionVideoCandidate,
+    newSessionVideoPlaySessionId,
+    planSessionVideo
+} from './sessionVideo';
 
 const ITEM = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 const SOURCE = ITEM;
@@ -125,11 +125,11 @@ const subtitle = vi.fn(
     async (path: string) => `${path}?playbackCapability=SUB`
 );
 
-describe('isDirectPlayFilmCandidate', () => {
+describe('isSessionVideoCandidate', () => {
     const html = { id: 'htmlvideoplayer', isLocalPlayer: true };
-    it('owns a film on the local html player only', () => {
+    it('owns local films and episodes on the HTML player', () => {
         expect(
-            isDirectPlayFilmCandidate(
+            isSessionVideoCandidate(
                 {
                     Id: ITEM,
                     Type: 'Movie',
@@ -140,13 +140,13 @@ describe('isDirectPlayFilmCandidate', () => {
             )
         ).toBe(true);
         expect(
-            isDirectPlayFilmCandidate(
+            isSessionVideoCandidate(
                 { Id: ITEM, Type: 'Episode', MediaType: 'Video' },
                 html
             )
-        ).toBe(false);
+        ).toBe(true);
         expect(
-            isDirectPlayFilmCandidate(
+            isSessionVideoCandidate(
                 {
                     Id: ITEM,
                     Type: 'Movie',
@@ -157,25 +157,46 @@ describe('isDirectPlayFilmCandidate', () => {
             )
         ).toBe(false);
         expect(
-            isDirectPlayFilmCandidate(
+            isSessionVideoCandidate(
                 { Id: ITEM, Type: 'Movie', MediaType: 'Video' },
                 { id: 'chromecast', isLocalPlayer: false }
             )
         ).toBe(false);
         expect(
-            isDirectPlayFilmCandidate(
+            isSessionVideoCandidate(
                 { Id: ITEM, Type: 'TvChannel', MediaType: 'Video' },
                 html
             )
         ).toBe(false);
     });
+    it.each(['Movie', 'Episode'])(
+        'rejects remote, placeholder and cast %s items',
+        (Type) => {
+            const item = { Id: ITEM, Type, MediaType: 'Video' };
+            expect(
+                isSessionVideoCandidate(
+                    { ...item, LocationType: 'Remote' },
+                    html
+                )
+            ).toBe(false);
+            expect(
+                isSessionVideoCandidate({ ...item, IsPlaceHolder: true }, html)
+            ).toBe(false);
+            expect(
+                isSessionVideoCandidate(item, {
+                    id: 'chromecast',
+                    isLocalPlayer: false
+                })
+            ).toBe(false);
+        }
+    );
 });
 
-describe('planDirectPlayFilm', () => {
+describe('planSessionVideo', () => {
     it('plans a direct play from the session descriptor alone, with a capability and no durable token', async () => {
         const { api, calls } = fakeApi({});
         const mint = vi.fn(async () => 'CAP');
-        const outcome = await planDirectPlayFilm(params(api), {
+        const outcome = await planSessionVideo(params(api), {
             mintMediaCapability: mint,
             authorizeSubtitle: subtitle,
             logger: quiet
@@ -247,7 +268,7 @@ describe('planDirectPlayFilm', () => {
             })
         });
         const mint = vi.fn(async () => 'CAP');
-        const outcome = await planDirectPlayFilm(
+        const outcome = await planSessionVideo(
             { ...params(api), startPositionTicks: 50_000_000 },
             {
                 mintMediaCapability: mint,
@@ -303,7 +324,7 @@ describe('planDirectPlayFilm', () => {
             })
         });
         const mint = vi.fn(async () => 'CAP');
-        const outcome = await planDirectPlayFilm(params(api), {
+        const outcome = await planSessionVideo(params(api), {
             mintMediaCapability: mint,
             authorizeSubtitle: subtitle,
             logger: quiet
@@ -325,7 +346,7 @@ describe('planDirectPlayFilm', () => {
             })
         });
         await expect(
-            planDirectPlayFilm(params(api), {
+            planSessionVideo(params(api), {
                 mintMediaCapability: vi.fn(async () => 'CAP'),
                 authorizeSubtitle: subtitle,
                 logger: quiet
@@ -339,7 +360,7 @@ describe('planDirectPlayFilm', () => {
             create: () => ({ Id: SESSION, Method: 'Transcode' }),
             stream: () => ({ Url: '/Videos/film/master.m3u8', Protocol: 'Hls' })
         });
-        const outcome = await planDirectPlayFilm(params(api), {
+        const outcome = await planSessionVideo(params(api), {
             mintMediaCapability: vi.fn(),
             authorizeSubtitle: subtitle,
             logger: quiet
@@ -354,7 +375,7 @@ describe('planDirectPlayFilm', () => {
 
     it('falls back without a session to release when no direct plan is viable (422)', async () => {
         const { api, calls } = fakeApi({ create: () => 422 });
-        const outcome = await planDirectPlayFilm(params(api), {
+        const outcome = await planSessionVideo(params(api), {
             mintMediaCapability: vi.fn(),
             authorizeSubtitle: subtitle,
             logger: quiet
@@ -374,13 +395,13 @@ describe('planDirectPlayFilm', () => {
         async (status, failure) => {
             const { api } = fakeApi({ create: () => status });
             await expect(
-                planDirectPlayFilm(params(api), {
+                planSessionVideo(params(api), {
                     mintMediaCapability: vi.fn(),
                     authorizeSubtitle: subtitle,
                     logger: quiet
                 })
             ).rejects.toMatchObject({
-                name: 'DirectPlayFilmError',
+                name: 'SessionVideoError',
                 failure,
                 status
             });
@@ -390,7 +411,7 @@ describe('planDirectPlayFilm', () => {
     it('releases the session and keeps the original error when the descriptor is refused', async () => {
         const { api, calls } = fakeApi({ stream: () => 403 });
         await expect(
-            planDirectPlayFilm(params(api), {
+            planSessionVideo(params(api), {
                 mintMediaCapability: vi.fn(),
                 authorizeSubtitle: subtitle,
                 logger: quiet
@@ -403,7 +424,7 @@ describe('planDirectPlayFilm', () => {
         const { api } = fakeApi({ stream: () => 401, del: () => 500 });
         const logger = { debug: vi.fn(), warn: vi.fn() };
         await expect(
-            planDirectPlayFilm(params(api), {
+            planSessionVideo(params(api), {
                 mintMediaCapability: vi.fn(),
                 authorizeSubtitle: subtitle,
                 logger
@@ -418,14 +439,14 @@ describe('planDirectPlayFilm', () => {
             response: { status: 403 }
         });
         await expect(
-            planDirectPlayFilm(params(api), {
+            planSessionVideo(params(api), {
                 mintMediaCapability: vi.fn(async () => {
                     throw brokerError;
                 }),
                 authorizeSubtitle: subtitle,
                 logger: quiet
             })
-        ).rejects.toBeInstanceOf(DirectPlayFilmError);
+        ).rejects.toBeInstanceOf(SessionVideoError);
         expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
     });
 
@@ -437,7 +458,7 @@ describe('planDirectPlayFilm', () => {
             return 'CAP';
         });
         await expect(
-            planDirectPlayFilm(params(api), {
+            planSessionVideo(params(api), {
                 mintMediaCapability: mint,
                 authorizeSubtitle: subtitle,
                 signal: controller.signal,
@@ -448,7 +469,7 @@ describe('planDirectPlayFilm', () => {
     });
 });
 
-describe('planDirectPlayFilm review fixes (#404)', () => {
+describe('planSessionVideo review fixes (#404)', () => {
     it('does not fall back if the start is cancelled while deleting the declined session', async () => {
         const controller = new AbortController();
         const { api, calls } = fakeApi({
@@ -462,7 +483,7 @@ describe('planDirectPlayFilm review fixes (#404)', () => {
             }
         });
         await expect(
-            planDirectPlayFilm(params(api), {
+            planSessionVideo(params(api), {
                 mintMediaCapability: vi.fn(),
                 authorizeSubtitle: subtitle,
                 signal: controller.signal,
@@ -482,7 +503,7 @@ describe('planDirectPlayFilm review fixes (#404)', () => {
             }
         });
         await expect(
-            planDirectPlayFilm(params(api), {
+            planSessionVideo(params(api), {
                 mintMediaCapability: vi.fn(),
                 authorizeSubtitle: subtitle,
                 signal: controller.signal,
@@ -503,13 +524,13 @@ describe('planDirectPlayFilm review fixes (#404)', () => {
             del: () => 500
         });
         await expect(
-            planDirectPlayFilm(params(api), {
+            planSessionVideo(params(api), {
                 mintMediaCapability: vi.fn(),
                 authorizeSubtitle: subtitle,
                 logger: quiet
             })
         ).rejects.toMatchObject({
-            name: 'DirectPlayFilmError',
+            name: 'SessionVideoError',
             failure: 'failed',
             status: 500
         });
@@ -526,7 +547,7 @@ describe('planDirectPlayFilm review fixes (#404)', () => {
             del: () => 404
         });
         await expect(
-            planDirectPlayFilm(params(api), {
+            planSessionVideo(params(api), {
                 mintMediaCapability: vi.fn(),
                 authorizeSubtitle: subtitle,
                 logger: quiet
@@ -535,10 +556,10 @@ describe('planDirectPlayFilm review fixes (#404)', () => {
     });
 });
 
-describe('newDirectPlayFilmPlaySessionId', () => {
+describe('newSessionVideoPlaySessionId', () => {
     it('is 128 random bits in hex', () => {
-        const a = newDirectPlayFilmPlaySessionId();
+        const a = newSessionVideoPlaySessionId();
         expect(a).toMatch(/^[0-9a-f]{32}$/);
-        expect(newDirectPlayFilmPlaySessionId()).not.toBe(a);
+        expect(newSessionVideoPlaySessionId()).not.toBe(a);
     });
 });

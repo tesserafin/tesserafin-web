@@ -1,5 +1,5 @@
 /**
- * Consolidation step 1, film journeys (server `docs/playback-path-inventory.md` §4 and §5): a film
+ * Consolidation step 1, film journeys (server `docs/playback-path-inventory.md` §4 and §5): a film or episode
  * read from a local file plays through `Playback/Sessions` alone, as a direct play, remux or supported SDR transcode.
  *
  * The chain is `POST Playback/Sessions` → `GET .../Stream` → a route the session owns (its file
@@ -15,8 +15,8 @@
  *  - `notApplicable`: the server decided something it does not serve from this session
  *    (an unsupported transformation or protocol, or no viable plan). The session it created is
  *    released first, then the caller continues with the existing chain - with direct play
- *    disabled, so the old direct-play path of a film cannot come back that way.
- *  - a thrown {@link DirectPlayFilmError}: authentication, authorization, a vanished session or any
+ *    disabled, so the old direct-play path of a film or episode cannot come back that way.
+ *  - a thrown {@link SessionVideoError}: authentication, authorization, a vanished session or any
  *    other failure ends the attempt. It never falls back. When releasing the session also fails, the
  *    original error is the one thrown.
  */
@@ -39,30 +39,30 @@ import {
     type PlaybackCapabilityInputs
 } from 'scripts/tesserafinPlaybackCapabilities';
 
-const LOG_PREFIX = '[direct-play-film]';
+const LOG_PREFIX = '[session-video]';
 
 /**
  * A play session id for the file route and every `/Sessions/Playing*` report of this playback:
  * 128 random bits, hex. `crypto.getRandomValues` exists outside secure contexts too (a LAN server
  * over plain HTTP), unlike `crypto.randomUUID`.
  */
-export function newDirectPlayFilmPlaySessionId(): string {
+export function newSessionVideoPlaySessionId(): string {
     const bytes = new Uint8Array(16);
     crypto.getRandomValues(bytes);
     return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 export {
-    isDirectPlayFilmCandidate,
-    type DirectPlayFilmCandidate
-} from './directPlayFilmCandidate';
+    isSessionVideoCandidate,
+    type SessionVideoCandidate
+} from './sessionVideoCandidate';
 
-export interface DirectPlayFilmParams {
+export interface SessionVideoParams {
     api: TesserafinApi;
     itemId: string;
     userId: string;
     mediaSourceId?: string | null;
-    /** Defaults to {@link newDirectPlayFilmPlaySessionId}. */
+    /** Defaults to {@link newSessionVideoPlaySessionId}. */
     playSessionId?: string;
     playbackAttemptId?: string;
     startPositionTicks?: number;
@@ -77,7 +77,7 @@ export interface DirectPlayFilmParams {
     capabilityInputs?: PlaybackCapabilityInputs;
 }
 
-export interface DirectPlayFilmDeps {
+export interface SessionVideoDeps {
     /** Mints the `Media` capability for the file route (the existing credential broker). */
     mintMediaCapability: (
         itemId: string,
@@ -102,19 +102,19 @@ export interface DirectPlayFilmDeps {
  * output with one audio rendition), even though nothing is re-encoded. The server's decision
  * itself is `executionDecision.method`.
  */
-export type FilmPlayerMethod = 'DirectPlay' | 'Transcode';
+export type SessionVideoPlayerMethod = 'DirectPlay' | 'Transcode';
 
 /** What the player is handed: the same fields the legacy player contract reads, built from the
  * session's descriptor only. */
-export interface DirectPlayFilmStreamInfo {
+export interface SessionVideoStreamInfo {
     url: string;
     mimeType: string | undefined;
     transcodingOffsetTicks: 0;
-    playMethod: FilmPlayerMethod;
+    playMethod: SessionVideoPlayerMethod;
     playerStartPositionTicks: number;
     item: BaseItemDto;
     mediaSource: MediaSourceInfo;
-    textTracks: DirectPlayFilmTextTrack[];
+    textTracks: SessionVideoTextTrack[];
     mediaType: 'Video';
     liveStreamId: undefined;
     playSessionId: string;
@@ -126,7 +126,7 @@ export interface DirectPlayFilmStreamInfo {
         /** The server's decision. */
         method: 'DirectPlay' | 'Remux' | 'Transcode';
         url: string;
-        playMethod: FilmPlayerMethod;
+        playMethod: SessionVideoPlayerMethod;
         mimeType: string | undefined;
         transcodingOffsetTicks: 0;
         playSessionId: string;
@@ -137,7 +137,7 @@ export interface DirectPlayFilmStreamInfo {
     };
 }
 
-export interface DirectPlayFilmTextTrack {
+export interface SessionVideoTextTrack {
     url: string;
     language: string;
     isDefault: boolean;
@@ -156,7 +156,7 @@ export function directPlayTextTracks(
     itemId: string,
     mediaSource: MediaSourceInfo,
     defaultIndex: number | null | undefined
-): Array<Omit<DirectPlayFilmTextTrack, 'url'> & { path: string }> {
+): Array<Omit<SessionVideoTextTrack, 'url'> & { path: string }> {
     return (mediaSource.MediaStreams ?? [])
         .filter(
             (stream) =>
@@ -177,41 +177,41 @@ export function directPlayTextTracks(
         });
 }
 
-export interface DirectPlayFilmSession {
+export interface SessionVideoSession {
     id: string;
     /** DELETE the session. Idempotent; rejects only if the server could not be reached or refused. */
     release: () => Promise<void>;
 }
 
-export type DirectPlayFilmOutcome =
+export type SessionVideoOutcome =
     | {
           kind: 'planned';
-          streamInfo: DirectPlayFilmStreamInfo;
-          session: DirectPlayFilmSession;
+          streamInfo: SessionVideoStreamInfo;
+          session: SessionVideoSession;
       }
     | { kind: 'notApplicable'; reason: string };
 
-export type DirectPlayFilmFailure =
+export type SessionVideoFailure =
     | 'unauthenticated'
     | 'forbidden'
     | 'notFound'
     | 'cancelled'
     | 'failed';
 
-export class DirectPlayFilmError extends Error {
-    readonly failure: DirectPlayFilmFailure;
+export class SessionVideoError extends Error {
+    readonly failure: SessionVideoFailure;
     readonly status: number | undefined;
     readonly detail: unknown;
 
     constructor(
-        failure: DirectPlayFilmFailure,
+        failure: SessionVideoFailure,
         message: string,
         status?: number,
         detail?: unknown
     ) {
         super(message);
         this.detail = detail;
-        this.name = 'DirectPlayFilmError';
+        this.name = 'SessionVideoError';
         this.failure = failure;
         this.status = status;
     }
@@ -224,10 +224,10 @@ function classify(
     stage: string,
     err: unknown,
     signal?: AbortSignal
-): DirectPlayFilmError {
-    if (err instanceof DirectPlayFilmError) return err;
+): SessionVideoError {
+    if (err instanceof SessionVideoError) return err;
     if (signal?.aborted) {
-        return new DirectPlayFilmError(
+        return new SessionVideoError(
             'cancelled',
             `${stage}: cancelled`,
             undefined,
@@ -235,14 +235,14 @@ function classify(
         );
     }
     const status = statusOf(err);
-    const byStatus: Record<number, DirectPlayFilmFailure> = {
+    const byStatus: Record<number, SessionVideoFailure> = {
         401: 'unauthenticated',
         403: 'forbidden',
         404: 'notFound'
     };
-    const failure: DirectPlayFilmFailure =
+    const failure: SessionVideoFailure =
         (status !== undefined && byStatus[status]) || 'failed';
-    return new DirectPlayFilmError(
+    return new SessionVideoError(
         failure,
         `${stage}: ${status ?? 'no response'}`,
         status,
@@ -255,7 +255,7 @@ function throwIfCancelled(
     stage: string
 ): void {
     if (signal?.aborted) {
-        throw new DirectPlayFilmError('cancelled', `${stage}: cancelled`);
+        throw new SessionVideoError('cancelled', `${stage}: cancelled`);
     }
 }
 
@@ -297,18 +297,18 @@ function sessionRouteOf(
 }
 
 /**
- * Plans the playback of a film through `Playback/Sessions` alone. See the module comment for the
+ * Plans the playback of a film or episode through `Playback/Sessions` alone. See the module comment for the
  * three outcomes.
  */
-export async function planDirectPlayFilm(
-    params: DirectPlayFilmParams,
-    deps: DirectPlayFilmDeps
-): Promise<DirectPlayFilmOutcome> {
+export async function planSessionVideo(
+    params: SessionVideoParams,
+    deps: SessionVideoDeps
+): Promise<SessionVideoOutcome> {
     const logger = deps.logger ?? console;
     const api = params.api;
     const signal = deps.signal;
     const playSessionId =
-        params.playSessionId ?? newDirectPlayFilmPlaySessionId();
+        params.playSessionId ?? newSessionVideoPlaySessionId();
     const playback = new PlaybackApi(
         api.configuration,
         undefined,
@@ -354,7 +354,7 @@ export async function planDirectPlayFilm(
             {}
         );
         if (!data.Id) {
-            throw new DirectPlayFilmError(
+            throw new SessionVideoError(
                 'failed',
                 'POST Playback/Sessions: no session id'
             );
@@ -384,7 +384,7 @@ export async function planDirectPlayFilm(
             throw err;
         }
     };
-    const session: DirectPlayFilmSession = { id: sessionId, release };
+    const session: SessionVideoSession = { id: sessionId, release };
 
     // Every exit below that does not hand the session to the caller releases it. A release failure
     // is logged; the original reason is what the caller sees.
@@ -402,7 +402,7 @@ export async function planDirectPlayFilm(
 
     if (signal?.aborted) {
         return abandon(
-            new DirectPlayFilmError(
+            new SessionVideoError(
                 'cancelled',
                 'POST Playback/Sessions: cancelled'
             )
@@ -411,11 +411,11 @@ export async function planDirectPlayFilm(
 
     // The existing chain may only start once this session is gone: a release that failed ends
     // the attempt instead of risking two live sessions for one playback.
-    const decline = async (reason: string): Promise<DirectPlayFilmOutcome> => {
+    const decline = async (reason: string): Promise<SessionVideoOutcome> => {
         try {
             await release();
         } catch (releaseError) {
-            throw new DirectPlayFilmError(
+            throw new SessionVideoError(
                 'failed',
                 `session ${sessionId} (${reason}) could not be released before falling back`,
                 statusOf(releaseError),
@@ -464,12 +464,12 @@ export async function planDirectPlayFilm(
     try {
         const mediaSourceId = stream.Url ? mediaSourceIdOf(stream.Url) : null;
         if (!stream.Url || !mediaSourceId || route === null) {
-            throw new DirectPlayFilmError(
+            throw new SessionVideoError(
                 'failed',
                 'GET .../Stream: descriptor names no route of this session'
             );
         }
-        const playMethod: FilmPlayerMethod =
+        const playMethod: SessionVideoPlayerMethod =
             route === 'hls' ? 'Transcode' : 'DirectPlay';
 
         const library = new LibraryApi(
@@ -485,7 +485,7 @@ export async function planDirectPlayFilm(
             (source) => source.Id === mediaSourceId
         );
         if (!mediaSource) {
-            throw new DirectPlayFilmError(
+            throw new SessionVideoError(
                 'notFound',
                 `item ${params.itemId} has no media source ${mediaSourceId}`
             );
@@ -500,7 +500,7 @@ export async function planDirectPlayFilm(
         throwIfCancelled(signal, 'capability');
 
         const url = absoluteMediaUrl(api, stream.Url, capability);
-        const textTracks: DirectPlayFilmTextTrack[] = [];
+        const textTracks: SessionVideoTextTrack[] = [];
         const trackPaths = new Map<number, string>();
         for (const track of directPlayTextTracks(
             params.itemId,
@@ -536,7 +536,7 @@ export async function planDirectPlayFilm(
                     ...mediaSource,
                     // An HLS output contains the one audio track the server selected: the
                     // player reads both facts off the media source, as PlaybackInfo used to set
-                    // them. The playlist always describes the whole film, so a seek and a resume
+                    // them. The playlist always describes the whole video, so a seek and a resume
                     // are the player's own.
                     ...(route === 'hls'
                         ? {
@@ -593,6 +593,6 @@ export async function planDirectPlayFilm(
             }
         };
     } catch (err) {
-        return abandon(classify('film start', err, signal));
+        return abandon(classify('video start', err, signal));
     }
 }
