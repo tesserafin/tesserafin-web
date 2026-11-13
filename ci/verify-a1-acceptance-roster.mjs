@@ -63,6 +63,8 @@ const ACCEPTANCE_ROSTER = [
     'dependencyDisclosure.spec.ts',
     // tesserafin#129 consolidation step 1: the direct-play film journey on Playback/Sessions.
     'directPlayFilm.spec.ts',
+    // Second journey: the remux film on Playback/Sessions.
+    'remuxFilm.spec.ts',
     'directPlayRevocation.spec.ts',
     'disclosure.spec.ts',
     'libassFamilies.spec.ts',
