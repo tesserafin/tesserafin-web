@@ -231,7 +231,110 @@ describe('planDirectPlayFilm', () => {
         expect(calls.some((c) => /PlaybackInfo/i.test(c.url))).toBe(false);
     });
 
-    it('releases the session before falling back when the server decides remux or transcode', async () => {
+    it('plans a remux from the session HLS route: one audio rendition, native seek, no legacy url', async () => {
+        const hls = `/Playback/Sessions/${SESSION}/Hls/main.m3u8?itemId=${ITEM}&mediaSourceId=${SOURCE}&playSessionId=ps`;
+        const { api, calls } = fakeApi({
+            create: () => ({
+                Id: SESSION,
+                Method: 'Remux',
+                SelectedStreams: { Audio: 1, Subtitle: null }
+            }),
+            stream: () => ({
+                Url: hls,
+                MimeType: 'application/x-mpegURL',
+                Container: 'mp4',
+                Protocol: 'Hls'
+            })
+        });
+        const mint = vi.fn(async () => 'CAP');
+        const outcome = await planDirectPlayFilm(
+            { ...params(api), startPositionTicks: 50_000_000 },
+            {
+                mintMediaCapability: mint,
+                authorizeSubtitle: subtitle,
+                logger: quiet
+            }
+        );
+
+        expect(outcome.kind).toBe('planned');
+        if (outcome.kind !== 'planned') return;
+        const { streamInfo } = outcome;
+        expect(streamInfo.url).toBe(
+            `http://server:8096${hls}&playbackCapability=CAP`
+        );
+        // The player's contract: a server-produced HLS stream, played by hls.js, sought natively.
+        expect(streamInfo.playMethod).toBe('Transcode');
+        expect(streamInfo.mimeType).toBe('application/x-mpegURL');
+        expect(streamInfo.mediaSource.TranscodingSubProtocol).toBe('hls');
+        expect(streamInfo.mediaSource.DefaultAudioStreamIndex).toBe(1);
+        expect(streamInfo.mediaSource.DefaultSubtitleStreamIndex).toBe(-1);
+        expect(streamInfo.transcodingOffsetTicks).toBe(0);
+        expect(streamInfo.playerStartPositionTicks).toBe(50_000_000);
+        expect(streamInfo.executionDecision).toMatchObject({
+            source: 'v2',
+            sessionOwned: true,
+            method: 'Remux',
+            playbackSessionId: SESSION,
+            protocol: 'Hls',
+            container: 'mp4'
+        });
+        // Text subtitles stay client-side tracks of the same item and source.
+        expect(streamInfo.textTracks.map((t) => t.index)).toEqual([2, 3]);
+        for (const legacy of [
+            'ApiKey',
+            'VideoCodec',
+            'Static=',
+            'PlaybackInfo',
+            '/Videos/'
+        ]) {
+            expect(streamInfo.url).not.toContain(legacy);
+        }
+        expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(0);
+        expect(calls.some((c) => /PlaybackInfo/i.test(c.url))).toBe(false);
+    });
+
+    it('declines a remux the server does not serve from the session, releasing it first', async () => {
+        const { api, calls } = fakeApi({
+            create: () => ({ Id: SESSION, Method: 'Remux' }),
+            stream: () => ({
+                Url: `/Videos/${ITEM}/master.m3u8?MediaSourceId=${SOURCE}&ApiKey=secret`,
+                Protocol: 'Hls',
+                Container: 'ts'
+            })
+        });
+        const mint = vi.fn(async () => 'CAP');
+        const outcome = await planDirectPlayFilm(params(api), {
+            mintMediaCapability: mint,
+            authorizeSubtitle: subtitle,
+            logger: quiet
+        });
+
+        expect(outcome).toEqual({
+            kind: 'notApplicable',
+            reason: 'server decided a remux it does not serve from the session'
+        });
+        expect(mint).not.toHaveBeenCalled();
+        expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
+    });
+
+    it('refuses a direct-play descriptor that names another session', async () => {
+        const { api, calls } = fakeApi({
+            stream: () => ({
+                Url: `/Playback/Sessions/cccccccccccccccccccccccccccccccc/File?itemId=${ITEM}&mediaSourceId=${SOURCE}&playSessionId=ps`,
+                Protocol: 'Http'
+            })
+        });
+        await expect(
+            planDirectPlayFilm(params(api), {
+                mintMediaCapability: vi.fn(async () => 'CAP'),
+                authorizeSubtitle: subtitle,
+                logger: quiet
+            })
+        ).rejects.toMatchObject({ failure: 'failed' });
+        expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
+    });
+
+    it('releases the session before falling back when the server decides a transcode', async () => {
         const { api, calls } = fakeApi({
             create: () => ({ Id: SESSION, Method: 'Transcode' })
         });

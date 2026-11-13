@@ -1,18 +1,21 @@
 /**
- * Consolidation step 1, first journey (server `docs/playback-path-inventory.md` §4): a film read
- * from a local file plays through `Playback/Sessions` alone.
+ * Consolidation step 1, film journeys (server `docs/playback-path-inventory.md` §4 and §5): a film
+ * read from a local file plays through `Playback/Sessions` alone, as a direct play or as a remux.
  *
- * The chain is `POST Playback/Sessions` → `GET .../Stream` → the session's own file route, through
- * the generated Tesserafin SDK configured from a `TesserafinApi` - never the `@jellyfin/sdk` `Api`
- * object, never `PlaybackInfo`, never the legacy `createStreamInfo`. The server decides with the v2
- * engine alone; this module only executes what it decided.
+ * The chain is `POST Playback/Sessions` → `GET .../Stream` → a route the session owns (its file
+ * route for a direct play, its HLS route for a remux), through the generated Tesserafin SDK
+ * configured from a `TesserafinApi` - never the `@jellyfin/sdk` `Api` object, never `PlaybackInfo`,
+ * never the legacy `createStreamInfo`. The server decides with the v2 engine alone and executes
+ * from the plan it retained; this module only plays what the descriptor names. A descriptor that
+ * names anything other than a route of this session is not this journey's to play.
  *
  * Outcomes are deliberately three, not two:
- *  - `planned`: the server decided a direct play; the caller plays `streamInfo` and owns `session`.
- *  - `notApplicable`: the server decided something this journey does not cover (remux, transcode,
- *    no viable direct plan). The session it created is released first, then the caller continues
- *    with the existing chain - with direct play disabled, so the old direct-play path of a film
- *    cannot come back that way.
+ *  - `planned`: the server decided a direct play or a remux it serves from the session; the
+ *    caller plays `streamInfo` and owns `session` until the playback stops.
+ *  - `notApplicable`: the server decided something this journey does not cover (transcode, a
+ *    remux it does not serve from the session, no viable plan). The session it created is
+ *    released first, then the caller continues with the existing chain - with direct play
+ *    disabled, so the old direct-play path of a film cannot come back that way.
  *  - a thrown {@link DirectPlayFilmError}: authentication, authorization, a vanished session or any
  *    other failure ends the attempt. It never falls back. When releasing the session also fails, the
  *    original error is the one thrown.
@@ -66,6 +69,11 @@ export interface DirectPlayFilmParams {
     maxBitrate?: number | null;
     preferredAudioStreamIndex?: number | null;
     preferredSubtitleStreamIndex?: number | null;
+    /** What a retry after an error forbids. Undefined: allowed. */
+    allowDirectPlay?: boolean;
+    allowDirectStream?: boolean;
+    allowVideoStreamCopy?: boolean;
+    allowAudioStreamCopy?: boolean;
     capabilityInputs?: PlaybackCapabilityInputs;
 }
 
@@ -88,13 +96,21 @@ export interface DirectPlayFilmDeps {
     logger?: Pick<Console, 'debug' | 'warn'>;
 }
 
+/**
+ * The player's own vocabulary for what it is handed: `DirectPlay` for the file as it is,
+ * `Transcode` for a stream the server produces - which is what a remux is to the player (an HLS
+ * output with one audio rendition), even though nothing is re-encoded. The server's decision
+ * itself is `executionDecision.method`.
+ */
+export type FilmPlayerMethod = 'DirectPlay' | 'Transcode';
+
 /** What the player is handed: the same fields the legacy player contract reads, built from the
  * session's descriptor only. */
 export interface DirectPlayFilmStreamInfo {
     url: string;
     mimeType: string | undefined;
     transcodingOffsetTicks: 0;
-    playMethod: 'DirectPlay';
+    playMethod: FilmPlayerMethod;
     playerStartPositionTicks: number;
     item: BaseItemDto;
     mediaSource: MediaSourceInfo;
@@ -105,8 +121,12 @@ export interface DirectPlayFilmStreamInfo {
     title: string | null | undefined;
     executionDecision: {
         source: 'v2';
+        /** The playback is served by routes of its session and stays on it until it stops. */
+        sessionOwned: true;
+        /** The server's decision. */
+        method: 'DirectPlay' | 'Remux';
         url: string;
-        playMethod: 'DirectPlay';
+        playMethod: FilmPlayerMethod;
         mimeType: string | undefined;
         transcodingOffsetTicks: 0;
         playSessionId: string;
@@ -255,6 +275,28 @@ function mediaSourceIdOf(descriptorUrl: string): string | null {
 }
 
 /**
+ * Which of the session's own routes a descriptor names: its file route (direct play), its HLS
+ * media playlist (remux), or neither - a url of the existing chain, which this journey never plays.
+ */
+function sessionRouteOf(
+    sessionId: string,
+    method: string | undefined,
+    descriptor: PlaybackSessionStreamDescriptor
+): 'file' | 'hls' | null {
+    const path = (descriptor.Url ?? '').split('?')[0];
+    const own = `/Playback/Sessions/${sessionId}/`;
+    if (method === 'DirectPlay' && path === `${own}File`) return 'file';
+    if (
+        method === 'Remux' &&
+        descriptor.Protocol === 'Hls' &&
+        path === `${own}Hls/main.m3u8`
+    ) {
+        return 'hls';
+    }
+    return null;
+}
+
+/**
  * Plans the playback of a film through `Playback/Sessions` alone. See the module comment for the
  * three outcomes.
  */
@@ -279,6 +321,7 @@ export async function planDirectPlayFilm(
     let sessionId: string;
     let method: string | undefined;
     let selectedSubtitle: number | null = null;
+    let selectedAudio: number | null = null;
     try {
         const { data } = await playback.createPlaybackSession(
             {
@@ -297,7 +340,11 @@ export async function planDirectPlayFilm(
                         preferredAudioStreamIndex:
                             params.preferredAudioStreamIndex ?? null,
                         preferredSubtitleStreamIndex:
-                            params.preferredSubtitleStreamIndex ?? null
+                            params.preferredSubtitleStreamIndex ?? null,
+                        allowDirectPlay: params.allowDirectPlay,
+                        allowDirectStream: params.allowDirectStream,
+                        allowVideoStreamCopy: params.allowVideoStreamCopy,
+                        allowAudioStreamCopy: params.allowAudioStreamCopy
                     })
                 }
             },
@@ -316,6 +363,7 @@ export async function planDirectPlayFilm(
         method = data.Method;
         // The server's own subtitle choice (user preferences, forced/default flags) is the default track.
         selectedSubtitle = data.SelectedStreams?.Subtitle?.Index ?? null;
+        selectedAudio = data.SelectedStreams?.Audio ?? null;
     } catch (err) {
         // 422: no direct plan the declared capabilities allow - a decision, not a refusal.
         if (statusOf(err) === 422) {
@@ -361,40 +409,64 @@ export async function planDirectPlayFilm(
         );
     }
 
-    if (method !== 'DirectPlay') {
-        // The existing chain may only start once this session is gone: a release that failed
-        // ends the attempt instead of risking two live sessions for one playback.
+    // The existing chain may only start once this session is gone: a release that failed ends
+    // the attempt instead of risking two live sessions for one playback.
+    const decline = async (reason: string): Promise<DirectPlayFilmOutcome> => {
         try {
             await release();
         } catch (releaseError) {
             throw new DirectPlayFilmError(
                 'failed',
-                `session ${sessionId} (${method ?? 'no method'}) could not be released before falling back`,
+                `session ${sessionId} (${reason}) could not be released before falling back`,
                 statusOf(releaseError),
                 releaseError
             );
         }
         throwIfCancelled(signal, 'release before fallback');
-        return {
-            kind: 'notApplicable',
-            reason: `server decided ${method ?? 'nothing'}`
-        };
+        return { kind: 'notApplicable', reason };
+    };
+
+    if (method !== 'DirectPlay' && method !== 'Remux') {
+        return decline(`server decided ${method ?? 'nothing'}`);
     }
 
+    let stream: PlaybackSessionStreamDescriptor;
+    let route: 'file' | 'hls' | null;
     try {
         throwIfCancelled(signal, 'decision');
         const { data: descriptor } = await playback.getPlaybackSessionStream(
             { id: sessionId },
             requestOptions
         );
-        const stream = descriptor as PlaybackSessionStreamDescriptor;
+        stream = descriptor as PlaybackSessionStreamDescriptor;
+        route = sessionRouteOf(sessionId, method, stream);
+    } catch (err) {
+        return abandon(classify('descriptor', err, signal));
+    }
+
+    // A remux the server does not serve from a session at all (another protocol, the existing
+    // chain's url) is a decision this journey does not cover, exactly like a transcode. A
+    // descriptor naming a session route that is not this session's is not a decision: it fails.
+    if (
+        route === null &&
+        method === 'Remux' &&
+        !(stream.Url ?? '').split('?')[0].includes('/Playback/Sessions/')
+    ) {
+        return decline(
+            'server decided a remux it does not serve from the session'
+        );
+    }
+
+    try {
         const mediaSourceId = stream.Url ? mediaSourceIdOf(stream.Url) : null;
-        if (!stream.Url || !mediaSourceId) {
+        if (!stream.Url || !mediaSourceId || route === null) {
             throw new DirectPlayFilmError(
                 'failed',
-                'GET .../Stream: descriptor names no file'
+                'GET .../Stream: descriptor names no route of this session'
             );
         }
+        const playMethod: FilmPlayerMethod =
+            route === 'hls' ? 'Transcode' : 'DirectPlay';
 
         const library = new LibraryApi(
             api.configuration,
@@ -443,7 +515,7 @@ export async function planDirectPlayFilm(
         }
         throwIfCancelled(signal, 'subtitles');
         logger.debug(
-            `${LOG_PREFIX} item ${params.itemId}: direct play from session ${sessionId}`
+            `${LOG_PREFIX} item ${params.itemId}: ${method} from session ${sessionId} (${route})`
         );
         return {
             kind: 'planned',
@@ -452,12 +524,25 @@ export async function planDirectPlayFilm(
                 url,
                 mimeType: stream.MimeType ?? undefined,
                 transcodingOffsetTicks: 0,
-                playMethod: 'DirectPlay',
+                playMethod,
                 playerStartPositionTicks: params.startPositionTicks ?? 0,
                 item,
                 // The server's selected subtitle is the source's default (-1: none).
                 mediaSource: {
                     ...mediaSource,
+                    // A remux is an HLS output of the one audio track the server selected: the
+                    // player reads both facts off the media source, as PlaybackInfo used to set
+                    // them. The playlist always describes the whole film, so a seek and a resume
+                    // are the player's own.
+                    ...(route === 'hls'
+                        ? {
+                              TranscodingSubProtocol: 'hls' as const,
+                              TranscodingContainer: stream.Container ?? null,
+                              DefaultAudioStreamIndex:
+                                  selectedAudio ??
+                                  mediaSource.DefaultAudioStreamIndex
+                          }
+                        : {}),
                     DefaultSubtitleStreamIndex:
                         selectedSubtitle ??
                         params.preferredSubtitleStreamIndex ??
@@ -486,19 +571,24 @@ export async function planDirectPlayFilm(
                 title: item.Name,
                 executionDecision: {
                     source: 'v2',
+                    sessionOwned: true,
+                    method,
                     url,
-                    playMethod: 'DirectPlay',
+                    playMethod,
                     mimeType: stream.MimeType ?? undefined,
                     transcodingOffsetTicks: 0,
                     playSessionId: playSessionId,
                     playbackSessionId: sessionId,
                     protocol: stream.Protocol ?? undefined,
                     container: stream.Container ?? undefined,
-                    retry: buildRetryMetadata('DirectPlay', null)
+                    retry: buildRetryMetadata(playMethod, {
+                        allowVideoStreamCopy: params.allowVideoStreamCopy,
+                        allowAudioStreamCopy: params.allowAudioStreamCopy
+                    })
                 }
             }
         };
     } catch (err) {
-        return abandon(classify('direct play start', err, signal));
+        return abandon(classify('film start', err, signal));
     }
 }
