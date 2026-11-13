@@ -2213,9 +2213,22 @@ export class PlaybackManager {
             return player.duration();
         }
 
-        function changeStream(player, ticks, params, recovery, afterFailure) {
+        function changeStream(
+            player,
+            ticks,
+            params,
+            recovery,
+            afterFailure,
+            onExistingChain
+        ) {
             if (canPlayerSeek(player) && params == null) {
                 player.currentTime(parseInt(ticks / 10000, 10));
+                return;
+            }
+
+            // A session-owned stream is being re-planned: the stream still attached is on its
+            // way out, and one change at a time is made on it.
+            if (getPlayerData(player).sessionReplan) {
                 return;
             }
 
@@ -2234,6 +2247,25 @@ export class PlaybackManager {
             };
             if (change.playback) {
                 change.playback.pendingChange = change;
+            }
+
+            // Consolidation step 1: a session-owned film playback never re-plans through
+            // PlaybackInfo. See replanSessionOwnedStream for the one case that comes back here.
+            if (
+                !onExistingChain &&
+                isSessionOwnedStream(getPlayerData(player).streamInfo)
+            ) {
+                replanSessionOwnedStream(player, ticks, params, change, () =>
+                    changeStream(
+                        player,
+                        ticks,
+                        { ...params, EnableDirectPlay: false },
+                        recovery,
+                        afterFailure,
+                        true
+                    )
+                );
+                return;
             }
 
             const liveStreamId = getPlayerData(player).streamInfo.liveStreamId;
@@ -2636,11 +2668,7 @@ export class PlaybackManager {
                         // Stopped or replaced while the new stream was loading. Its transcode
                         // is released, and the stream is stopped unless the player has since
                         // been given another playback's.
-                        apiClient
-                            .stopActiveEncodings(streamInfo.playSessionId)
-                            .catch(function () {
-                                /* best effort, as everywhere else */
-                            });
+                        releaseStreamOnServer(apiClient, streamInfo);
                         // Only while this stream is still the player's: after a reported
                         // stop the player is gone already, and after a replacement it is
                         // the next playback's.
@@ -3805,21 +3833,21 @@ export class PlaybackManager {
         }
 
         /**
-         * Consolidation step 1: plays a film through `Playback/Sessions` alone. Resolves to
-         * `{ kind: 'started', started }` when the server decided a direct play, to
-         * `{ kind: 'fallback' }` when it decided something this journey does not cover (its session
-         * already released), and to `{ kind: 'ended' }` when the attempt was refused, failed or was
-         * cancelled - never to the legacy chain in those cases.
+         * Consolidation step 1: plans a film through `Playback/Sessions` alone. Resolves to
+         * `{ kind: 'planned', streamInfo, api }` when the server decided a direct play or a remux
+         * it serves from the session, to `{ kind: 'fallback' }` when it decided something this
+         * journey does not cover (its session already released), and to `{ kind: 'ended' }` when
+         * the attempt was refused, failed or was cancelled - never to the legacy chain in those
+         * cases.
          */
-        async function playDirectPlayFilm({
-            player,
+        async function planFilmPlayback({
             apiClient,
             item,
             mediaSourceId,
             options,
             playOptions,
             maxBitrate,
-            onPlaybackStartedFn
+            quiet
         }) {
             self._directPlayFilmAbort?.abort();
             const controller = new AbortController();
@@ -3842,7 +3870,15 @@ export class PlaybackManager {
                         maxBitrate,
                         preferredAudioStreamIndex: options.audioStreamIndex,
                         preferredSubtitleStreamIndex:
-                            options.subtitleStreamIndex
+                            options.subtitleStreamIndex,
+                        // What a retry after an error forbids; undefined leaves the default.
+                        allowDirectPlay: options.enableDirectPlay ?? undefined,
+                        allowDirectStream:
+                            options.enableDirectStream ?? undefined,
+                        allowVideoStreamCopy:
+                            options.allowVideoStreamCopy ?? undefined,
+                        allowAudioStreamCopy:
+                            options.allowAudioStreamCopy ?? undefined
                     },
                     {
                         mintMediaCapability: async (
@@ -3872,6 +3908,9 @@ export class PlaybackManager {
                 );
             } catch (err) {
                 loading.hide();
+                if (quiet) {
+                    return { kind: 'ended', failure: err?.failure };
+                }
                 if (err?.failure !== 'cancelled') {
                     // The error carries status and stage only: no URL, no credential.
                     console.error(
@@ -3898,6 +3937,38 @@ export class PlaybackManager {
 
             outcome.streamInfo.backdropUrl =
                 getItemBackdropImageUrl(apiClient, item, {}, true) || undefined;
+            // The one handle that ends this session before its playback stops: a change the
+            // player cannot make by itself releases the session it replaces through it.
+            outcome.streamInfo.releaseSession = outcome.session.release;
+            return { kind: 'planned', streamInfo: outcome.streamInfo, api };
+        }
+
+        /**
+         * Plays a film through `Playback/Sessions` alone: {@link planFilmPlayback}, then the
+         * shared start. `{ kind: 'started', started }` replaces `planned`.
+         */
+        async function playDirectPlayFilm({
+            player,
+            apiClient,
+            item,
+            mediaSourceId,
+            options,
+            playOptions,
+            maxBitrate,
+            onPlaybackStartedFn
+        }) {
+            const outcome = await planFilmPlayback({
+                apiClient,
+                item,
+                mediaSourceId,
+                options,
+                playOptions,
+                maxBitrate
+            });
+            if (outcome.kind !== 'planned') {
+                return outcome;
+            }
+
             return {
                 kind: 'started',
                 started: startPlayerWithStreamInfo(
@@ -3907,9 +3978,202 @@ export class PlaybackManager {
                     playOptions,
                     maxBitrate,
                     onPlaybackStartedFn,
-                    api
+                    outcome.api
                 )
             };
+        }
+
+        /**
+         * Whether what the player holds is served by routes of its own `Playback/Sessions`
+         * session (a film's direct play or remux).
+         */
+        function isSessionOwnedStream(streamInfo) {
+            return streamInfo?.executionDecision?.sessionOwned === true;
+        }
+
+        /**
+         * Ends what a stream held on the server: its session when the stream is session-owned
+         * (which stops its job and revokes its capabilities), the legacy active encodings
+         * otherwise. Best effort, like every call it replaces.
+         */
+        function releaseStreamOnServer(apiClient, streamInfo, playSessionId) {
+            const released = isSessionOwnedStream(streamInfo)
+                ? Promise.resolve().then(() => streamInfo.releaseSession?.())
+                : apiClient.stopActiveEncodings(
+                      playSessionId ?? streamInfo?.playSessionId
+                  );
+            return released.catch(function () {
+                /* best effort, as everywhere else */
+            });
+        }
+
+        /**
+         * A change the player cannot make by itself (another audio track, another quality, a
+         * retry after an error) on a session-owned film playback. The session in place is
+         * released first, then the change is planned through `Playback/Sessions` again, with
+         * whatever the change forbids (a retry forbids direct play and stream copy): at no point
+         * are there two sessions for one playback, and `PlaybackInfo`/`createStreamInfo` are never
+         * asked on its behalf. Only when the server then decides something the film journey does
+         * not cover (a transcode) does the change continue on the existing chain - the same rule
+         * as at start.
+         *
+         * While it runs, `playerData.sessionReplan` is set: the stream still attached belongs to
+         * a session that is being, or has been, released, so what it reports (a 404 on its next
+         * segment) is not an error of this playback, and a second change is not started on it.
+         */
+        function replanSessionOwnedStream(
+            player,
+            ticks,
+            params,
+            change,
+            continueOnExistingChain
+        ) {
+            const playerData = getPlayerData(player);
+            const current = playerData.streamInfo;
+            const item = self.currentItem(player);
+            const apiClient = ServerConnections.getApiClient(item.ServerId);
+            const end = function () {
+                if (playerData.sessionReplan === change) {
+                    playerData.sessionReplan = null;
+                }
+                playerData.isChangingStream = false;
+            };
+            // Nothing will play: said as an error, so that a queue does not move on as if the
+            // item had finished. A recovery is ended by its own rules.
+            const cannotStart = function () {
+                end();
+                if (isStaleChange(player, change)) {
+                    abandonStaleChange(apiClient, player, change);
+                    return;
+                }
+                if (change.recovery) {
+                    onChangeCannotStart(player, change);
+                    return;
+                }
+                Events.trigger(self, 'playbackerror', [
+                    MediaError.SERVER_ERROR
+                ]);
+                onPlaybackStopped.call(
+                    player,
+                    {},
+                    `.${MediaError.SERVER_ERROR}`
+                );
+            };
+
+            playerData.sessionReplan = change;
+            playerData.isChangingStream = true;
+            Promise.resolve()
+                .then(() => current.releaseSession?.())
+                .then(
+                    function () {
+                        if (isStaleChange(player, change)) {
+                            return { kind: 'stale' };
+                        }
+                        // Released on the server: the stop path has nothing left to give back.
+                        // Only while the tracker still holds THIS session - never a later one.
+                        const tracker = playerData.playbackSessionTracker;
+                        if (
+                            tracker?.liveSessionId ===
+                            current.executionDecision.playbackSessionId
+                        ) {
+                            tracker.forget();
+                        }
+                        return planFilmPlayback({
+                            apiClient,
+                            item,
+                            mediaSourceId: self.currentMediaSource(player).Id,
+                            options: {
+                                audioStreamIndex:
+                                    params.AudioStreamIndex == null
+                                        ? playerData.audioStreamIndex
+                                        : params.AudioStreamIndex,
+                                subtitleStreamIndex:
+                                    params.SubtitleStreamIndex == null
+                                        ? playerData.subtitleStreamIndex
+                                        : params.SubtitleStreamIndex,
+                                enableDirectPlay: params.EnableDirectPlay,
+                                enableDirectStream: params.EnableDirectStream,
+                                allowVideoStreamCopy:
+                                    params.AllowVideoStreamCopy,
+                                allowAudioStreamCopy:
+                                    params.AllowAudioStreamCopy
+                            },
+                            playOptions: {
+                                startPositionTicks: ticks
+                                    ? parseInt(ticks, 10)
+                                    : 0,
+                                playbackAttemptId: playerData.playbackAttemptId
+                            },
+                            maxBitrate:
+                                params.MaxStreamingBitrate ||
+                                self.getMaxStreamingBitrate(player),
+                            quiet: true
+                        });
+                    },
+                    function (err) {
+                        // The session in place could not be released, so no other may be
+                        // created. A switch the viewer asked for simply did not happen and the
+                        // film plays on; after a failure there is nothing left to keep.
+                        console.error(
+                            `[direct-play-film] session of ${item.Id} could not be released for a change (${err?.message ?? err})`
+                        );
+                        return { kind: change.afterFailure ? 'ended' : 'kept' };
+                    }
+                )
+                .then(function (outcome) {
+                    const stale = isStaleChange(player, change);
+                    if (outcome.kind === 'kept') {
+                        end();
+                        if (!stale) {
+                            endChange(change);
+                        }
+                        return;
+                    }
+                    if (outcome.kind === 'planned' && stale) {
+                        releaseStreamOnServer(apiClient, outcome.streamInfo);
+                    }
+                    if (stale || outcome.kind === 'stale') {
+                        end();
+                        abandonStaleChange(apiClient, player, change);
+                        return;
+                    }
+                    if (outcome.kind === 'fallback') {
+                        end();
+                        continueOnExistingChain();
+                        return;
+                    }
+                    if (outcome.kind !== 'planned') {
+                        cannotStart();
+                        return;
+                    }
+
+                    outcome.streamInfo.fullscreen = current.fullscreen;
+                    outcome.streamInfo.aspectRatio = current.aspectRatio;
+                    outcome.streamInfo.resetSubtitleOffset = false;
+                    if (params.MaxStreamingBitrate) {
+                        playerData.maxStreamingBitrate =
+                            params.MaxStreamingBitrate;
+                    }
+                    // From here on the player's stream is the new one, and what it reports
+                    // is this playback's again.
+                    playerData.sessionReplan = null;
+                    const started = setSrcIntoPlayer(
+                        apiClient,
+                        player,
+                        outcome.streamInfo,
+                        change
+                    );
+                    // setSrcIntoPlayer made it this player's stream: its session is now the one
+                    // the stop path gives back.
+                    adoptPlaybackSessionForTeardown(playerData, outcome.api);
+                    return started;
+                })
+                .catch(function (err) {
+                    console.error(
+                        `[direct-play-film] change of ${item.Id} could not be planned (${err?.message ?? err})`
+                    );
+                    cannotStart();
+                });
         }
 
         /**
@@ -4253,8 +4517,9 @@ export class PlaybackManager {
                     ).then(onLegacyMediaSource);
 
                 // Consolidation step 1: a film on the local HTML player is planned through
-                // Playback/Sessions alone (directPlayFilm.ts). Only a decision this journey does
-                // not cover (remux, transcode) continues with the legacy chain, and then without
+                // Playback/Sessions alone (directPlayFilm.ts): a direct play, or a remux the
+                // server serves from the session. Only a decision this journey does not cover
+                // (a transcode) continues with the legacy chain, and then without
                 // direct play, so a film never reaches the legacy direct-play path. A refusal or a
                 // failure ends the attempt.
                 if (!isDirectPlayFilmCandidate(item, player)) {
@@ -5247,6 +5512,12 @@ export class PlaybackManager {
             if (playerData.softwareRecovery) {
                 // The failed stream is already being replaced. Anything more it reports is the
                 // same failure, and must neither start a second reload nor end the first.
+                return;
+            }
+
+            if (playerData.sessionReplan && !error.streamInfo) {
+                // The stream reporting belongs to a session released for a re-plan in flight:
+                // its segments are gone on purpose. Not an error of this playback.
                 return;
             }
 
