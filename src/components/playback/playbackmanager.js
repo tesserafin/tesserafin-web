@@ -4519,7 +4519,7 @@ export class PlaybackManager {
                 // Consolidation step 1: a film on the local HTML player is planned through
                 // Playback/Sessions alone (directPlayFilm.ts): a direct play, or a remux the
                 // server serves from the session. Only a decision this journey does not cover
-                // (a transcode) continues with the legacy chain, and then without
+                // (an unmigrated output) continues with the legacy chain, and then without
                 // direct play, so a film never reaches the legacy direct-play path. A refusal or a
                 // failure ends the attempt.
                 if (!isDirectPlayFilmCandidate(item, player)) {

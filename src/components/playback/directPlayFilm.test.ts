@@ -311,7 +311,7 @@ describe('planDirectPlayFilm', () => {
 
         expect(outcome).toEqual({
             kind: 'notApplicable',
-            reason: 'server decided a remux it does not serve from the session'
+            reason: 'server decided an output it does not serve from the session'
         });
         expect(mint).not.toHaveBeenCalled();
         expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
@@ -336,7 +336,8 @@ describe('planDirectPlayFilm', () => {
 
     it('releases the session before falling back when the server decides a transcode', async () => {
         const { api, calls } = fakeApi({
-            create: () => ({ Id: SESSION, Method: 'Transcode' })
+            create: () => ({ Id: SESSION, Method: 'Transcode' }),
+            stream: () => ({ Url: '/Videos/film/master.m3u8', Protocol: 'Hls' })
         });
         const outcome = await planDirectPlayFilm(params(api), {
             mintMediaCapability: vi.fn(),
@@ -346,7 +347,7 @@ describe('planDirectPlayFilm', () => {
 
         expect(outcome).toEqual({
             kind: 'notApplicable',
-            reason: 'server decided Transcode'
+            reason: 'server decided an output it does not serve from the session'
         });
         expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
     });
@@ -452,6 +453,10 @@ describe('planDirectPlayFilm review fixes (#404)', () => {
         const controller = new AbortController();
         const { api, calls } = fakeApi({
             create: () => ({ Id: SESSION, Method: 'Transcode' }),
+            stream: () => ({
+                Url: '/Videos/film/master.m3u8',
+                Protocol: 'Hls'
+            }),
             del: () => {
                 controller.abort();
             }
@@ -491,6 +496,10 @@ describe('planDirectPlayFilm review fixes (#404)', () => {
     it('does not fall back when the declined session could not be released', async () => {
         const { api, calls } = fakeApi({
             create: () => ({ Id: SESSION, Method: 'Transcode' }),
+            stream: () => ({
+                Url: '/Videos/film/master.m3u8',
+                Protocol: 'Hls'
+            }),
             del: () => 500
         });
         await expect(
@@ -510,6 +519,10 @@ describe('planDirectPlayFilm review fixes (#404)', () => {
     it('still falls back when the declined session is already gone (404)', async () => {
         const { api } = fakeApi({
             create: () => ({ Id: SESSION, Method: 'Transcode' }),
+            stream: () => ({
+                Url: '/Videos/film/master.m3u8',
+                Protocol: 'Hls'
+            }),
             del: () => 404
         });
         await expect(

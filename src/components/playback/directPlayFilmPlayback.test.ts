@@ -246,7 +246,11 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         );
     });
 
-    it('releases the session before the legacy chain when the server decides a transcode, then plays without direct play', async () => {
+    it('releases an output outside the migrated scope before the legacy chain', async () => {
+        streamDescriptor.mockReturnValue({
+            Url: '/Videos/film/master.m3u8',
+            Protocol: 'Hls'
+        });
         createSession.mockResolvedValue({
             data: { Id: SESSION_ID, Method: 'Transcode' }
         });
@@ -272,66 +276,71 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         });
     });
 
-    it('plays a remux from the session HLS route without PlaybackInfo or createStreamInfo, and releases on stop', async () => {
-        createSession.mockResolvedValue({
-            data: {
-                Id: SESSION_ID,
-                Method: 'Remux',
-                SelectedStreams: { Audio: 1 }
-            }
-        });
-        streamDescriptor.mockImplementation(hlsDescriptor);
-        const { manager, player } = mountManager();
+    it.each(['Remux', 'Transcode'])(
+        'plays %s from the session HLS route without PlaybackInfo or createStreamInfo, and releases on stop',
+        async (method) => {
+            createSession.mockResolvedValue({
+                data: {
+                    Id: SESSION_ID,
+                    Method: method,
+                    SelectedStreams: { Audio: 1 }
+                }
+            });
+            streamDescriptor.mockImplementation(hlsDescriptor);
+            const { manager, player } = mountManager();
 
-        await manager.play({ items: [videoItem()], startPositionTicks: 0 });
-        await vi.waitFor(() => expect(player.played).toHaveLength(1), {
-            timeout: 20000,
-            interval: 10
-        });
+            await manager.play({ items: [videoItem()], startPositionTicks: 0 });
+            await vi.waitFor(() => expect(player.played).toHaveLength(1), {
+                timeout: 20000,
+                interval: 10
+            });
 
-        const streamInfo = (
-            player.played as Array<{
-                url: string;
-                playMethod: string;
-                mediaSource: { TranscodingSubProtocol?: string };
-            }>
-        )[0];
-        expect(streamInfo.url).toContain(
-            `/Playback/Sessions/${SESSION_ID}/Hls/main.m3u8?`
-        );
-        expect(streamInfo.url).toContain('playbackCapability=film-capability');
-        expect(streamInfo.url).not.toMatch(/ApiKey|api_key|\/Videos\//i);
-        expect(streamInfo.playMethod).toBe('Transcode');
-        expect(streamInfo.mediaSource.TranscodingSubProtocol).toBe('hls');
+            const streamInfo = (
+                player.played as Array<{
+                    url: string;
+                    playMethod: string;
+                    mediaSource: { TranscodingSubProtocol?: string };
+                }>
+            )[0];
+            expect(streamInfo.url).toContain(
+                `/Playback/Sessions/${SESSION_ID}/Hls/main.m3u8?`
+            );
+            expect(streamInfo.url).toContain(
+                'playbackCapability=film-capability'
+            );
+            expect(streamInfo.url).not.toMatch(/ApiKey|api_key|\/Videos\//i);
+            expect(streamInfo.playMethod).toBe('Transcode');
+            expect(streamInfo.mediaSource.TranscodingSubProtocol).toBe('hls');
 
-        // A seek is the player's own: the playlist describes the whole film.
-        const sought: number[] = [];
-        player.currentTime = (value?: number) => {
-            if (value !== undefined) sought.push(value);
-            return 0;
-        };
-        manager.seek(50_000_000, player);
-        expect(sought).toEqual([5000]);
+            // A seek is the player's own: the playlist describes the whole film.
+            const sought: number[] = [];
+            player.currentTime = (value?: number) => {
+                if (value !== undefined) sought.push(value);
+                return 0;
+            };
+            manager.seek(50_000_000, player);
+            expect(sought).toEqual([5000]);
 
-        expect(createSession).toHaveBeenCalledTimes(1);
-        expect(deleteSession).not.toHaveBeenCalled();
-        expect(postedPlaybackInfo).not.toHaveBeenCalled();
-        expect(legacyStreamInfoBuilt).not.toHaveBeenCalled();
+            expect(createSession).toHaveBeenCalledTimes(1);
+            expect(deleteSession).not.toHaveBeenCalled();
+            expect(postedPlaybackInfo).not.toHaveBeenCalled();
+            expect(legacyStreamInfoBuilt).not.toHaveBeenCalled();
 
-        await manager.stop(player);
-        Events.trigger(player, 'stopped', [{}]);
-        await vi.waitFor(
-            () =>
-                expect(
-                    fetchCalls.filter((c) => c.method === 'DELETE')
-                ).toHaveLength(1),
-            { timeout: 20000, interval: 10 }
-        );
-        expect(fetchCalls[0].url).toBe(
-            `http://127.0.0.1:8096/Playback/Sessions/${SESSION_ID}`
-        );
-        expect(postedPlaybackInfo).not.toHaveBeenCalled();
-    });
+            await manager.stop(player);
+            Events.trigger(player, 'stopped', [{}]);
+            await vi.waitFor(
+                () =>
+                    expect(
+                        fetchCalls.filter((c) => c.method === 'DELETE')
+                    ).toHaveLength(1),
+                { timeout: 20000, interval: 10 }
+            );
+            expect(fetchCalls[0].url).toBe(
+                `http://127.0.0.1:8096/Playback/Sessions/${SESSION_ID}`
+            );
+            expect(postedPlaybackInfo).not.toHaveBeenCalled();
+        }
+    );
 
     it('re-plans an audio change through Sessions: releases the session in place first, never PlaybackInfo', async () => {
         const SECOND = 'dddddddddddddddddddddddddddddddd';
@@ -400,7 +409,7 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         expect(deleteSession).toHaveBeenCalledTimes(1);
     });
 
-    it('continues a change on the existing chain only when the server then decides a transcode, after both releases', async () => {
+    it('continues a change on the existing chain only for an output outside the migrated scope, after both releases', async () => {
         const SECOND = 'dddddddddddddddddddddddddddddddd';
         createSession
             .mockResolvedValueOnce({
@@ -409,7 +418,11 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
             .mockResolvedValueOnce({
                 data: { Id: SECOND, Method: 'Transcode' }
             });
-        streamDescriptor.mockImplementation(hlsDescriptor);
+        streamDescriptor.mockImplementation((id) =>
+            id === SECOND
+                ? { Url: '/Videos/film/master.m3u8', Protocol: 'Hls' }
+                : hlsDescriptor(id)
+        );
         const { manager, player } = mountManager();
 
         await manager.play({ items: [videoItem()], startPositionTicks: 0 });
@@ -468,7 +481,7 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         expect(stops).toHaveLength(1);
     });
 
-    it('a retry after an error forbids what failed: the server transcodes, and only then the existing chain runs', async () => {
+    it('a retry after an error forbids what failed: the server transcodes through the same session delivery', async () => {
         const SECOND = 'dddddddddddddddddddddddddddddddd';
         createSession
             .mockResolvedValueOnce({
@@ -491,7 +504,7 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         // re-plan nor the existing chain may start on it.
         Events.trigger(player, 'error', [{ type: 'network' }]);
         Events.trigger(player, 'error', [{ type: 'network' }]);
-        await vi.waitFor(() => expect(postedPlaybackInfo).toHaveBeenCalled(), {
+        await vi.waitFor(() => expect(player.played).toHaveLength(2), {
             timeout: 20000,
             interval: 10
         });
@@ -506,18 +519,17 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
             AllowVideoStreamCopy: false
         });
         expect(deleteSession.mock.calls.map((call) => call[0])).toEqual([
-            { id: SESSION_ID },
-            { id: SECOND }
+            { id: SESSION_ID }
         ]);
-        expect(postedPlaybackInfo).toHaveBeenCalledTimes(1);
-        expect(deleteSession.mock.invocationCallOrder[1]).toBeLessThan(
-            postedPlaybackInfo.mock.invocationCallOrder[0]
-        );
+        expect(postedPlaybackInfo).not.toHaveBeenCalled();
+        expect(legacyStreamInfoBuilt).not.toHaveBeenCalled();
         expect(
-            postedPlaybackInfo.mock.calls[0][0].playbackInfoDto
+            (player.played[1] as { executionDecision: unknown })
+                .executionDecision
         ).toMatchObject({
-            EnableDirectPlay: false,
-            AllowVideoStreamCopy: false
+            method: 'Transcode',
+            sessionOwned: true,
+            playbackSessionId: SECOND
         });
     });
 
