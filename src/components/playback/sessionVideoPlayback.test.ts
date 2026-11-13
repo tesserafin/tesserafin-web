@@ -22,6 +22,10 @@ import {
     videoSource
 } from './__testSupport/livetvHarness';
 
+let currentType = 'Movie';
+const currentItem = (id = VIDEO_ITEM_ID) =>
+    videoItem({ Type: currentType, Id: id });
+
 const SESSION_ID = 'cccccccccccccccccccccccccccccccc';
 const postedPlaybackInfo = vi.fn();
 const legacyStreamInfoBuilt = vi.fn();
@@ -79,8 +83,8 @@ vi.mock('lib/tesserafin-sdk/generated/api/playback-api', () => ({
 
 vi.mock('lib/tesserafin-sdk/generated/api/library-api', () => ({
     LibraryApi: class {
-        getItem() {
-            return Promise.resolve({ data: videoItem() });
+        getItem(request: { itemId: string }) {
+            return Promise.resolve({ data: currentItem(request.itemId) });
         }
     }
 }));
@@ -129,10 +133,15 @@ const apiClient = {
     appVersion: () => '1.0.0',
     getCurrentUserId: () => USER_ID,
     getCurrentUser: () =>
-        Promise.resolve({ Id: USER_ID, Configuration: {}, Policy: {} }),
+        Promise.resolve({
+            Id: USER_ID,
+            Configuration: { EnableNextEpisodeAutoPlay: true },
+            Policy: {}
+        }),
     getEndpointInfo: () => Promise.resolve({ IsInNetwork: true }),
     getSavedEndpointInfo: () => ({ IsInNetwork: true }),
-    getItem: () => Promise.resolve(videoItem()),
+    getItem: (_userId: string, itemId: string) =>
+        Promise.resolve(currentItem(itemId)),
     getItems: () => Promise.resolve({ Items: [] }),
     getIntros: () => Promise.resolve({ Items: [] }),
     getUser: () => Promise.resolve({ Id: USER_ID, Configuration: {} }),
@@ -173,7 +182,16 @@ const stops: unknown[] = [];
 function mountManager() {
     errors.length = 0;
     stops.length = 0;
+    // A fake player belongs to this manager only. Broadcasting its registration would also
+    // attach the default singleton and previous tests' managers to the same stopped event.
+    const subscriptions = vi.spyOn(Events, 'on');
     const manager = new PlaybackManager();
+    const registered = subscriptions.mock.calls.find(
+        ([target, type]) => target === pluginManager && type === 'registered'
+    )?.[2];
+    subscriptions.mockRestore();
+    if (!registered)
+        throw new Error('the manager must subscribe to player registration');
     Events.on(manager, 'playbackerror', (_e: unknown, code: unknown) =>
         errors.push(code)
     );
@@ -182,15 +200,18 @@ function mountManager() {
     );
     const player = createFakePlayer();
     player.id = 'htmlvideoplayer';
-    Events.trigger(pluginManager, 'registered', [player]);
+    registered.call(pluginManager, { type: 'registered' }, player);
     return { manager, player };
 }
 
-describe('direct-play film journey', { timeout: 60000 }, () => {
+describe.each(['Movie', 'Episode'])('%s', { timeout: 60000 }, (type) => {
     beforeEach(() => {
+        currentType = type;
         postedPlaybackInfo.mockReset();
         postedPlaybackInfo.mockImplementation(
-            createPlaybackInfoResponder({ [VIDEO_ITEM_ID]: [videoSource()] })
+            createPlaybackInfoResponder({
+                [VIDEO_ITEM_ID]: [videoSource()]
+            })
         );
         legacyStreamInfoBuilt.mockReset();
         createSession.mockReset();
@@ -212,7 +233,10 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         });
         const { manager, player } = mountManager();
 
-        await manager.play({ items: [videoItem()], startPositionTicks: 0 });
+        await manager.play({
+            items: [currentItem()],
+            startPositionTicks: 0
+        });
         await vi.waitFor(() => expect(player.played).toHaveLength(1), {
             timeout: 20000,
             interval: 10
@@ -246,13 +270,20 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         );
     });
 
-    it('releases the session before the legacy chain when the server decides a transcode, then plays without direct play', async () => {
+    it('releases an output outside the migrated scope before the legacy chain', async () => {
+        streamDescriptor.mockReturnValue({
+            Url: '/Videos/film/master.m3u8',
+            Protocol: 'Hls'
+        });
         createSession.mockResolvedValue({
             data: { Id: SESSION_ID, Method: 'Transcode' }
         });
         const { manager, player } = mountManager();
 
-        await manager.play({ items: [videoItem()], startPositionTicks: 0 });
+        await manager.play({
+            items: [currentItem()],
+            startPositionTicks: 0
+        });
         await vi.waitFor(() => expect(postedPlaybackInfo).toHaveBeenCalled(), {
             timeout: 20000,
             interval: 10
@@ -272,65 +303,119 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         });
     });
 
-    it('plays a remux from the session HLS route without PlaybackInfo or createStreamInfo, and releases on stop', async () => {
-        createSession.mockResolvedValue({
-            data: {
-                Id: SESSION_ID,
-                Method: 'Remux',
-                SelectedStreams: { Audio: 1 }
-            }
-        });
-        streamDescriptor.mockImplementation(hlsDescriptor);
+    it.each(['Remux', 'Transcode'])(
+        'plays %s from the session HLS route without PlaybackInfo or createStreamInfo, and releases on stop',
+        async (method) => {
+            createSession.mockResolvedValue({
+                data: {
+                    Id: SESSION_ID,
+                    Method: method,
+                    SelectedStreams: { Audio: 1 }
+                }
+            });
+            streamDescriptor.mockImplementation(hlsDescriptor);
+            const { manager, player } = mountManager();
+
+            await manager.play({
+                items: [currentItem()],
+                startPositionTicks: 0
+            });
+            await vi.waitFor(() => expect(player.played).toHaveLength(1), {
+                timeout: 20000,
+                interval: 10
+            });
+
+            const streamInfo = (
+                player.played as Array<{
+                    url: string;
+                    playMethod: string;
+                    mediaSource: { TranscodingSubProtocol?: string };
+                }>
+            )[0];
+            expect(streamInfo.url).toContain(
+                `/Playback/Sessions/${SESSION_ID}/Hls/main.m3u8?`
+            );
+            expect(streamInfo.url).toContain(
+                'playbackCapability=film-capability'
+            );
+            expect(streamInfo.url).not.toMatch(/ApiKey|api_key|\/Videos\//i);
+            expect(streamInfo.playMethod).toBe('Transcode');
+            expect(streamInfo.mediaSource.TranscodingSubProtocol).toBe('hls');
+
+            // A seek is the player's own: the playlist describes the whole film.
+            const sought: number[] = [];
+            player.currentTime = (value?: number) => {
+                if (value !== undefined) sought.push(value);
+                return 0;
+            };
+            manager.seek(50_000_000, player);
+            expect(sought).toEqual([5000]);
+
+            expect(createSession).toHaveBeenCalledTimes(1);
+            expect(deleteSession).not.toHaveBeenCalled();
+            expect(postedPlaybackInfo).not.toHaveBeenCalled();
+            expect(legacyStreamInfoBuilt).not.toHaveBeenCalled();
+
+            await manager.stop(player);
+            Events.trigger(player, 'stopped', [{}]);
+            await vi.waitFor(
+                () =>
+                    expect(
+                        fetchCalls.filter((c) => c.method === 'DELETE')
+                    ).toHaveLength(1),
+                { timeout: 20000, interval: 10 }
+            );
+            expect(fetchCalls[0].url).toBe(
+                `http://127.0.0.1:8096/Playback/Sessions/${SESSION_ID}`
+            );
+            expect(postedPlaybackInfo).not.toHaveBeenCalled();
+        }
+    );
+
+    it('plans the next queued item through Sessions after completion and releases both sessions', async () => {
+        const NEXT_ITEM = 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+        const SECOND = 'dddddddddddddddddddddddddddddddd';
+        createSession
+            .mockResolvedValueOnce({
+                data: { Id: SESSION_ID, Method: 'DirectPlay' }
+            })
+            .mockResolvedValueOnce({
+                data: { Id: SECOND, Method: 'DirectPlay' }
+            });
+        streamDescriptor.mockImplementation((id) => ({
+            ...fileDescriptor(id),
+            Url: fileDescriptor(id).Url.replace(
+                VIDEO_ITEM_ID,
+                id === SECOND ? NEXT_ITEM : VIDEO_ITEM_ID
+            )
+        }));
         const { manager, player } = mountManager();
-
-        await manager.play({ items: [videoItem()], startPositionTicks: 0 });
-        await vi.waitFor(() => expect(player.played).toHaveLength(1), {
-            timeout: 20000,
-            interval: 10
+        await manager.play({
+            items: [currentItem(), currentItem(NEXT_ITEM)],
+            startPositionTicks: 0
         });
-
-        const streamInfo = (
-            player.played as Array<{
-                url: string;
-                playMethod: string;
-                mediaSource: { TranscodingSubProtocol?: string };
-            }>
-        )[0];
-        expect(streamInfo.url).toContain(
-            `/Playback/Sessions/${SESSION_ID}/Hls/main.m3u8?`
-        );
-        expect(streamInfo.url).toContain('playbackCapability=film-capability');
-        expect(streamInfo.url).not.toMatch(/ApiKey|api_key|\/Videos\//i);
-        expect(streamInfo.playMethod).toBe('Transcode');
-        expect(streamInfo.mediaSource.TranscodingSubProtocol).toBe('hls');
-
-        // A seek is the player's own: the playlist describes the whole film.
-        const sought: number[] = [];
-        player.currentTime = (value?: number) => {
-            if (value !== undefined) sought.push(value);
-            return 0;
-        };
-        manager.seek(50_000_000, player);
-        expect(sought).toEqual([5000]);
-
-        expect(createSession).toHaveBeenCalledTimes(1);
-        expect(deleteSession).not.toHaveBeenCalled();
-        expect(postedPlaybackInfo).not.toHaveBeenCalled();
-        expect(legacyStreamInfoBuilt).not.toHaveBeenCalled();
-
+        await vi.waitFor(() => expect(player.played).toHaveLength(1));
+        Events.trigger(player, 'stopped', [{}]);
+        await vi.waitFor(() => expect(player.played).toHaveLength(2));
+        expect(
+            createSession.mock.calls.map(
+                (call) => call[0].createPlaybackSessionRequest.ItemId
+            )
+        ).toEqual([VIDEO_ITEM_ID, NEXT_ITEM]);
         await manager.stop(player);
         Events.trigger(player, 'stopped', [{}]);
-        await vi.waitFor(
-            () =>
-                expect(
-                    fetchCalls.filter((c) => c.method === 'DELETE')
-                ).toHaveLength(1),
-            { timeout: 20000, interval: 10 }
-        );
-        expect(fetchCalls[0].url).toBe(
-            `http://127.0.0.1:8096/Playback/Sessions/${SESSION_ID}`
+        await vi.waitFor(() =>
+            expect(
+                fetchCalls
+                    .filter((call) => call.method === 'DELETE')
+                    .map((call) => call.url)
+            ).toEqual([
+                `http://127.0.0.1:8096/Playback/Sessions/${SESSION_ID}`,
+                `http://127.0.0.1:8096/Playback/Sessions/${SECOND}`
+            ])
         );
         expect(postedPlaybackInfo).not.toHaveBeenCalled();
+        expect(legacyStreamInfoBuilt).not.toHaveBeenCalled();
     });
 
     it('re-plans an audio change through Sessions: releases the session in place first, never PlaybackInfo', async () => {
@@ -353,7 +438,10 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         streamDescriptor.mockImplementation(hlsDescriptor);
         const { manager, player } = mountManager();
 
-        await manager.play({ items: [videoItem()], startPositionTicks: 0 });
+        await manager.play({
+            items: [currentItem()],
+            startPositionTicks: 0
+        });
         await vi.waitFor(() => expect(player.played).toHaveLength(1), {
             timeout: 20000,
             interval: 10
@@ -400,7 +488,7 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         expect(deleteSession).toHaveBeenCalledTimes(1);
     });
 
-    it('continues a change on the existing chain only when the server then decides a transcode, after both releases', async () => {
+    it('continues a change on the existing chain only for an output outside the migrated scope, after both releases', async () => {
         const SECOND = 'dddddddddddddddddddddddddddddddd';
         createSession
             .mockResolvedValueOnce({
@@ -409,10 +497,17 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
             .mockResolvedValueOnce({
                 data: { Id: SECOND, Method: 'Transcode' }
             });
-        streamDescriptor.mockImplementation(hlsDescriptor);
+        streamDescriptor.mockImplementation((id) =>
+            id === SECOND
+                ? { Url: '/Videos/film/master.m3u8', Protocol: 'Hls' }
+                : hlsDescriptor(id)
+        );
         const { manager, player } = mountManager();
 
-        await manager.play({ items: [videoItem()], startPositionTicks: 0 });
+        await manager.play({
+            items: [currentItem()],
+            startPositionTicks: 0
+        });
         await vi.waitFor(() => expect(player.played).toHaveLength(1), {
             timeout: 20000,
             interval: 10
@@ -442,12 +537,17 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
                 data: { Id: SESSION_ID, Method: 'Remux' }
             })
             .mockRejectedValueOnce(
-                Object.assign(new Error('403'), { response: { status: 403 } })
+                Object.assign(new Error('403'), {
+                    response: { status: 403 }
+                })
             );
         streamDescriptor.mockImplementation(hlsDescriptor);
         const { manager, player } = mountManager();
 
-        await manager.play({ items: [videoItem()], startPositionTicks: 0 });
+        await manager.play({
+            items: [currentItem()],
+            startPositionTicks: 0
+        });
         await vi.waitFor(() => expect(player.played).toHaveLength(1), {
             timeout: 20000,
             interval: 10
@@ -468,7 +568,7 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         expect(stops).toHaveLength(1);
     });
 
-    it('a retry after an error forbids what failed: the server transcodes, and only then the existing chain runs', async () => {
+    it('a retry after an error forbids what failed: the server transcodes through the same session delivery', async () => {
         const SECOND = 'dddddddddddddddddddddddddddddddd';
         createSession
             .mockResolvedValueOnce({
@@ -480,7 +580,10 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         streamDescriptor.mockImplementation(hlsDescriptor);
         const { manager, player } = mountManager();
 
-        await manager.play({ items: [videoItem()], startPositionTicks: 0 });
+        await manager.play({
+            items: [currentItem()],
+            startPositionTicks: 0
+        });
         await vi.waitFor(() => expect(player.played).toHaveLength(1), {
             timeout: 20000,
             interval: 10
@@ -491,7 +594,7 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         // re-plan nor the existing chain may start on it.
         Events.trigger(player, 'error', [{ type: 'network' }]);
         Events.trigger(player, 'error', [{ type: 'network' }]);
-        await vi.waitFor(() => expect(postedPlaybackInfo).toHaveBeenCalled(), {
+        await vi.waitFor(() => expect(player.played).toHaveLength(2), {
             timeout: 20000,
             interval: 10
         });
@@ -506,18 +609,17 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
             AllowVideoStreamCopy: false
         });
         expect(deleteSession.mock.calls.map((call) => call[0])).toEqual([
-            { id: SESSION_ID },
-            { id: SECOND }
+            { id: SESSION_ID }
         ]);
-        expect(postedPlaybackInfo).toHaveBeenCalledTimes(1);
-        expect(deleteSession.mock.invocationCallOrder[1]).toBeLessThan(
-            postedPlaybackInfo.mock.invocationCallOrder[0]
-        );
+        expect(postedPlaybackInfo).not.toHaveBeenCalled();
+        expect(legacyStreamInfoBuilt).not.toHaveBeenCalled();
         expect(
-            postedPlaybackInfo.mock.calls[0][0].playbackInfoDto
+            (player.played[1] as { executionDecision: unknown })
+                .executionDecision
         ).toMatchObject({
-            EnableDirectPlay: false,
-            AllowVideoStreamCopy: false
+            method: 'Transcode',
+            sessionOwned: true,
+            playbackSessionId: SECOND
         });
     });
 
@@ -537,7 +639,10 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         streamDescriptor.mockImplementation(hlsDescriptor);
         const { manager, player } = mountManager();
 
-        await manager.play({ items: [videoItem()], startPositionTicks: 0 });
+        await manager.play({
+            items: [currentItem()],
+            startPositionTicks: 0
+        });
         await vi.waitFor(() => expect(player.played).toHaveLength(1), {
             timeout: 20000,
             interval: 10
@@ -573,7 +678,10 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         streamDescriptor.mockImplementation(hlsDescriptor);
         const { manager, player } = mountManager();
 
-        await manager.play({ items: [videoItem()], startPositionTicks: 0 });
+        await manager.play({
+            items: [currentItem()],
+            startPositionTicks: 0
+        });
         await vi.waitFor(() => expect(player.played).toHaveLength(1), {
             timeout: 20000,
             interval: 10
@@ -615,7 +723,10 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         );
         const { manager, player } = mountManager();
 
-        await manager.play({ items: [videoItem()], startPositionTicks: 0 });
+        await manager.play({
+            items: [currentItem()],
+            startPositionTicks: 0
+        });
         await vi.waitFor(() => expect(alerts).toHaveLength(1), {
             timeout: 20000,
             interval: 10

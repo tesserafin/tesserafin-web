@@ -17,7 +17,7 @@
  *   * A film the server decides to transcode releases its session before the legacy chain plays it,
  *     so one session at most is alive, and it still plays.
  *
- * `createStreamInfo` cannot be observed from a browser; `directPlayFilmPlayback.test.ts` asserts it
+ * `createStreamInfo` cannot be observed from a browser; `sessionVideoPlayback.test.ts` asserts it
  * at the playback manager. OUTPUT SAFETY: urls are kept in memory; reports carry paths and status
  * codes, never a query value.
  */
@@ -451,13 +451,13 @@ test.describe('direct-play film on Playback/Sessions', () => {
         }
     });
 
-    test('a film decided as a transcode releases its session, then plays through the existing chain', async ({
+    test('a film decided as a transcode plays through its own session without PlaybackInfo', async ({
         page
     }) => {
         const a = await admin();
         try {
             const itemId = await itemIdByName(a, TRANSCODE_TITLE);
-            const traffic = watch(page, false);
+            const traffic = watch(page, true);
             await signIn(page);
             await openDetailByName(page, TRANSCODE_TITLE);
             const reachedPlayer = page.waitForURL(/#\/video/, {
@@ -472,18 +472,9 @@ test.describe('direct-play film on Playback/Sessions', () => {
                 })
                 .toBeGreaterThan(0.2);
 
-            expect(
-                traffic.creates[0],
-                'the first decision is not a direct play'
-            ).not.toBe('DirectPlay');
-            expect(
-                traffic.deletes,
-                'that session was released before the legacy chain'
-            ).toBeGreaterThanOrEqual(1);
-            expect(
-                traffic.playbackInfo,
-                'the existing chain plays it'
-            ).toBeGreaterThanOrEqual(1);
+            expect(traffic.creates).toEqual(['Transcode']);
+            expect(traffic.deletes).toBe(0);
+            expect(traffic.playbackInfo).toBe(0);
             expect(
                 traffic.fileStatuses,
                 'no session file route for a transcode'

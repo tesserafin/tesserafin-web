@@ -35,7 +35,7 @@ import { PluginType } from 'constants/pluginType';
 import { TICKS_PER_SECOND } from 'constants/time';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
 import { brokerFor } from 'lib/playbackCredentials/broker';
-import { isDirectPlayFilmCandidate } from './directPlayFilmCandidate.ts';
+import { isSessionVideoCandidate } from './sessionVideoCandidate.ts';
 import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket';
 import { MediaError } from 'types/mediaError';
 import { getMediaError } from 'utils/mediaError';
@@ -405,16 +405,16 @@ let startingPlaySession = new Date().getTime();
  * server's own value instead of calling this.
  */
 /**
- * The direct-play film journey, loaded on first use (it brings the generated Playback/Library API
+ * The local film/episode journey, loaded on first use (it brings the generated Playback/Library API
  * clients). The cached promise holds the function, not the module namespace, so export mangling
  * still applies to the chunk.
  */
-let planDirectPlayFilmLoader;
-function loadPlanDirectPlayFilm() {
-    planDirectPlayFilmLoader ??= import('./directPlayFilm.ts').then(
-        (module) => module.planDirectPlayFilm
+let planSessionVideoLoader;
+function loadPlanSessionVideo() {
+    planSessionVideoLoader ??= import('./sessionVideo.ts').then(
+        (module) => module.planSessionVideo
     );
-    return planDirectPlayFilmLoader;
+    return planSessionVideoLoader;
 }
 
 function playSessionIdFor(requestOptions) {
@@ -3833,14 +3833,14 @@ export class PlaybackManager {
         }
 
         /**
-         * Consolidation step 1: plans a film through `Playback/Sessions` alone. Resolves to
+         * Consolidation step 1: plans a local film or episode through `Playback/Sessions` alone. Resolves to
          * `{ kind: 'planned', streamInfo, api }` when the server decided a direct play or a remux
          * it serves from the session, to `{ kind: 'fallback' }` when it decided something this
          * journey does not cover (its session already released), and to `{ kind: 'ended' }` when
          * the attempt was refused, failed or was cancelled - never to the legacy chain in those
          * cases.
          */
-        async function planFilmPlayback({
+        async function planSessionVideoPlayback({
             apiClient,
             item,
             mediaSourceId,
@@ -3849,17 +3849,17 @@ export class PlaybackManager {
             maxBitrate,
             quiet
         }) {
-            self._directPlayFilmAbort?.abort();
+            self._sessionVideoAbort?.abort();
             const controller = new AbortController();
-            self._directPlayFilmAbort = controller;
+            self._sessionVideoAbort = controller;
             const api = ServerConnections.getTesserafinApi(
                 apiClient.serverId()
             );
 
             let outcome;
             try {
-                const planDirectPlayFilm = await loadPlanDirectPlayFilm();
-                outcome = await planDirectPlayFilm(
+                const planSessionVideo = await loadPlanSessionVideo();
+                outcome = await planSessionVideo(
                     {
                         api,
                         itemId: item.Id,
@@ -3914,7 +3914,7 @@ export class PlaybackManager {
                 if (err?.failure !== 'cancelled') {
                     // The error carries status and stage only: no URL, no credential.
                     console.error(
-                        `[direct-play-film] playback of ${item.Id} ended: ${err?.failure ?? 'failed'} (${err?.message ?? ''})`
+                        `[session-video] playback of ${item.Id} ended: ${err?.failure ?? 'failed'} (${err?.message ?? ''})`
                     );
                     showPlaybackInfoErrorMessage(
                         self,
@@ -3926,8 +3926,8 @@ export class PlaybackManager {
                 }
                 return { kind: 'ended' };
             } finally {
-                if (self._directPlayFilmAbort === controller) {
-                    self._directPlayFilmAbort = null;
+                if (self._sessionVideoAbort === controller) {
+                    self._sessionVideoAbort = null;
                 }
             }
 
@@ -3944,10 +3944,10 @@ export class PlaybackManager {
         }
 
         /**
-         * Plays a film through `Playback/Sessions` alone: {@link planFilmPlayback}, then the
+         * Plays a local film or episode through `Playback/Sessions` alone: {@link planSessionVideoPlayback}, then the
          * shared start. `{ kind: 'started', started }` replaces `planned`.
          */
-        async function playDirectPlayFilm({
+        async function playSessionVideo({
             player,
             apiClient,
             item,
@@ -3957,7 +3957,7 @@ export class PlaybackManager {
             maxBitrate,
             onPlaybackStartedFn
         }) {
-            const outcome = await planFilmPlayback({
+            const outcome = await planSessionVideoPlayback({
                 apiClient,
                 item,
                 mediaSourceId,
@@ -3985,7 +3985,7 @@ export class PlaybackManager {
 
         /**
          * Whether what the player holds is served by routes of its own `Playback/Sessions`
-         * session (a film's direct play or remux).
+         * session (a local video's direct play, remux or supported transcode).
          */
         function isSessionOwnedStream(streamInfo) {
             return streamInfo?.executionDecision?.sessionOwned === true;
@@ -4078,7 +4078,7 @@ export class PlaybackManager {
                         ) {
                             tracker.forget();
                         }
-                        return planFilmPlayback({
+                        return planSessionVideoPlayback({
                             apiClient,
                             item,
                             mediaSourceId: self.currentMediaSource(player).Id,
@@ -4115,7 +4115,7 @@ export class PlaybackManager {
                         // created. A switch the viewer asked for simply did not happen and the
                         // film plays on; after a failure there is nothing left to keep.
                         console.error(
-                            `[direct-play-film] session of ${item.Id} could not be released for a change (${err?.message ?? err})`
+                            `[session-video] session of ${item.Id} could not be released for a change (${err?.message ?? err})`
                         );
                         return { kind: change.afterFailure ? 'ended' : 'kept' };
                     }
@@ -4170,7 +4170,7 @@ export class PlaybackManager {
                 })
                 .catch(function (err) {
                     console.error(
-                        `[direct-play-film] change of ${item.Id} could not be planned (${err?.message ?? err})`
+                        `[session-video] change of ${item.Id} could not be planned (${err?.message ?? err})`
                     );
                     cannotStart();
                 });
@@ -4516,17 +4516,17 @@ export class PlaybackManager {
                         options
                     ).then(onLegacyMediaSource);
 
-                // Consolidation step 1: a film on the local HTML player is planned through
-                // Playback/Sessions alone (directPlayFilm.ts): a direct play, or a remux the
+                // Consolidation step 1: a film or episode on the local HTML player is planned through
+                // Playback/Sessions alone (sessionVideo.ts): a direct play, or a remux the
                 // server serves from the session. Only a decision this journey does not cover
-                // (a transcode) continues with the legacy chain, and then without
-                // direct play, so a film never reaches the legacy direct-play path. A refusal or a
+                // (an unmigrated output) continues with the legacy chain, and then without
+                // direct play, so these items never reach the legacy direct-play path. A refusal or a
                 // failure ends the attempt.
-                if (!isDirectPlayFilmCandidate(item, player)) {
+                if (!isSessionVideoCandidate(item, player)) {
                     return playLegacyChain();
                 }
 
-                return playDirectPlayFilm({
+                return playSessionVideo({
                     player,
                     apiClient,
                     item,
@@ -6415,8 +6415,8 @@ export class PlaybackManager {
     }
 
     stop(player) {
-        // A film still being planned through Playback/Sessions is cancelled; its session is released.
-        this._directPlayFilmAbort?.abort();
+        // A video still being planned through Playback/Sessions is cancelled; its session is released.
+        this._sessionVideoAbort?.abort();
         player = player || this._currentPlayer;
         if (player) {
             if (enableLocalPlaylistManagement(player)) {
