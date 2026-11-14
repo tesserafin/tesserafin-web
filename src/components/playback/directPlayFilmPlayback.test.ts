@@ -40,6 +40,13 @@ const hlsDescriptor = (sessionId: string) => ({
     Container: 'mp4',
     Protocol: 'Hls'
 });
+/** A transcode of the existing chain: not a route of the session, so not this journey's. */
+const legacyTranscodeDescriptor = () => ({
+    Url: `/Videos/${VIDEO_ITEM_ID}/master.m3u8?MediaSourceId=${videoSource().Id}&VideoCodec=h264`,
+    MimeType: 'application/x-mpegURL',
+    Container: 'ts',
+    Protocol: 'Hls'
+});
 const fetchCalls: Array<{ url: string; method?: string }> = [];
 const alerts: unknown[] = [];
 
@@ -246,10 +253,86 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         );
     });
 
-    it('releases the session before the legacy chain when the server decides a transcode, then plays without direct play', async () => {
+    it('plays a transcode from the session HLS route without PlaybackInfo or createStreamInfo', async () => {
+        createSession.mockResolvedValue({
+            data: {
+                Id: SESSION_ID,
+                Method: 'Transcode',
+                SelectedStreams: { Audio: 1 }
+            }
+        });
+        streamDescriptor.mockImplementation(hlsDescriptor);
+        const { manager, player } = mountManager();
+
+        await manager.play({ items: [videoItem()], startPositionTicks: 0 });
+        await vi.waitFor(() => expect(player.played).toHaveLength(1), {
+            timeout: 20000,
+            interval: 10
+        });
+
+        const streamInfo = (
+            player.played as Array<{ url: string; playMethod: string }>
+        )[0];
+        expect(streamInfo.url).toContain(
+            `/Playback/Sessions/${SESSION_ID}/Hls/main.m3u8?`
+        );
+        expect(streamInfo.playMethod).toBe('Transcode');
+        expect(createSession).toHaveBeenCalledTimes(1);
+        expect(deleteSession).not.toHaveBeenCalled();
+        expect(postedPlaybackInfo).not.toHaveBeenCalled();
+        expect(legacyStreamInfoBuilt).not.toHaveBeenCalled();
+    });
+
+    it('re-plans a quality change of a transcode through Sessions: the ceiling is a constraint, never PlaybackInfo', async () => {
+        const SECOND = 'dddddddddddddddddddddddddddddddd';
+        createSession
+            .mockResolvedValueOnce({
+                data: { Id: SESSION_ID, Method: 'Transcode' }
+            })
+            .mockResolvedValueOnce({
+                data: { Id: SECOND, Method: 'Transcode' }
+            });
+        streamDescriptor.mockImplementation(hlsDescriptor);
+        const { manager, player } = mountManager();
+
+        await manager.play({ items: [videoItem()], startPositionTicks: 0 });
+        await vi.waitFor(() => expect(player.played).toHaveLength(1), {
+            timeout: 20000,
+            interval: 10
+        });
+
+        manager.setMaxStreamingBitrate(
+            { maxBitrate: 1_500_000, enableAutomaticBitrateDetection: false },
+            player
+        );
+        await vi.waitFor(() => expect(player.played).toHaveLength(2), {
+            timeout: 20000,
+            interval: 10
+        });
+
+        expect(createSession).toHaveBeenCalledTimes(2);
+        expect(
+            createSession.mock.calls[1][0].createPlaybackSessionRequest
+                .Constraints.MaxBitrate
+        ).toBe(1_500_000);
+        expect(deleteSession.mock.calls.map((call) => call[0])).toEqual([
+            { id: SESSION_ID }
+        ]);
+        expect(deleteSession.mock.invocationCallOrder[0]).toBeLessThan(
+            createSession.mock.invocationCallOrder[1]
+        );
+        expect((player.played as Array<{ url: string }>)[1].url).toContain(
+            `/Playback/Sessions/${SECOND}/Hls/main.m3u8?`
+        );
+        expect(postedPlaybackInfo).not.toHaveBeenCalled();
+        expect(legacyStreamInfoBuilt).not.toHaveBeenCalled();
+    });
+
+    it('releases the session before the legacy chain when the server decides a transcode it does not serve from the session, then plays without direct play', async () => {
         createSession.mockResolvedValue({
             data: { Id: SESSION_ID, Method: 'Transcode' }
         });
+        streamDescriptor.mockImplementation(legacyTranscodeDescriptor);
         const { manager, player } = mountManager();
 
         await manager.play({ items: [videoItem()], startPositionTicks: 0 });
@@ -400,7 +483,7 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         expect(deleteSession).toHaveBeenCalledTimes(1);
     });
 
-    it('continues a change on the existing chain only when the server then decides a transcode, after both releases', async () => {
+    it('continues a change on the existing chain only when the server then decides something it does not serve from the session, after both releases', async () => {
         const SECOND = 'dddddddddddddddddddddddddddddddd';
         createSession
             .mockResolvedValueOnce({
@@ -409,7 +492,9 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
             .mockResolvedValueOnce({
                 data: { Id: SECOND, Method: 'Transcode' }
             });
-        streamDescriptor.mockImplementation(hlsDescriptor);
+        streamDescriptor.mockImplementation((id: string) =>
+            id === SECOND ? legacyTranscodeDescriptor() : hlsDescriptor(id)
+        );
         const { manager, player } = mountManager();
 
         await manager.play({ items: [videoItem()], startPositionTicks: 0 });
@@ -468,7 +553,7 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         expect(stops).toHaveLength(1);
     });
 
-    it('a retry after an error forbids what failed: the server transcodes, and only then the existing chain runs', async () => {
+    it('a retry after an error forbids what failed and stays on Sessions: the server transcodes, PlaybackInfo is never asked', async () => {
         const SECOND = 'dddddddddddddddddddddddddddddddd';
         createSession
             .mockResolvedValueOnce({
@@ -491,7 +576,7 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         // re-plan nor the existing chain may start on it.
         Events.trigger(player, 'error', [{ type: 'network' }]);
         Events.trigger(player, 'error', [{ type: 'network' }]);
-        await vi.waitFor(() => expect(postedPlaybackInfo).toHaveBeenCalled(), {
+        await vi.waitFor(() => expect(player.played).toHaveLength(2), {
             timeout: 20000,
             interval: 10
         });
@@ -505,20 +590,18 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
             AllowDirectStream: false,
             AllowVideoStreamCopy: false
         });
+        // One session at a time, and the second one is the playback's: nothing else is released.
         expect(deleteSession.mock.calls.map((call) => call[0])).toEqual([
-            { id: SESSION_ID },
-            { id: SECOND }
+            { id: SESSION_ID }
         ]);
-        expect(postedPlaybackInfo).toHaveBeenCalledTimes(1);
-        expect(deleteSession.mock.invocationCallOrder[1]).toBeLessThan(
-            postedPlaybackInfo.mock.invocationCallOrder[0]
+        expect(deleteSession.mock.invocationCallOrder[0]).toBeLessThan(
+            createSession.mock.invocationCallOrder[1]
         );
-        expect(
-            postedPlaybackInfo.mock.calls[0][0].playbackInfoDto
-        ).toMatchObject({
-            EnableDirectPlay: false,
-            AllowVideoStreamCopy: false
-        });
+        expect((player.played as Array<{ url: string }>)[1].url).toContain(
+            `/Playback/Sessions/${SECOND}/Hls/main.m3u8?`
+        );
+        expect(postedPlaybackInfo).not.toHaveBeenCalled();
+        expect(legacyStreamInfoBuilt).not.toHaveBeenCalled();
     });
 
     it('makes one change at a time: a second one during a re-plan starts nothing', async () => {

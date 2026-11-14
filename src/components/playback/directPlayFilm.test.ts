@@ -16,6 +16,7 @@ const SESSION = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
 interface Call {
     method: string;
     url: string;
+    data?: { Constraints?: Record<string, unknown> };
 }
 
 /** An axios stand-in answering the four routes this journey uses, recording every request. */
@@ -32,11 +33,19 @@ function fakeApi(answers: {
         async (config: {
             method?: string;
             url?: string;
+            data?: unknown;
             signal?: AbortSignal;
         }) => {
             const method = (config.method ?? 'GET').toUpperCase();
             const url = config.url ?? '';
-            calls.push({ method, url });
+            calls.push({
+                method,
+                url,
+                data:
+                    typeof config.data === 'string'
+                        ? JSON.parse(config.data)
+                        : undefined
+            });
             const pick = (
                 fn: (() => unknown) | undefined,
                 fallback: unknown
@@ -334,9 +343,85 @@ describe('planDirectPlayFilm', () => {
         expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
     });
 
-    it('releases the session before falling back when the server decides a transcode', async () => {
+    it('plans a transcode from the session HLS route, like a remux, and names no encoding option', async () => {
+        const hls = `/Playback/Sessions/${SESSION}/Hls/main.m3u8?itemId=${ITEM}&mediaSourceId=${SOURCE}&playSessionId=ps`;
         const { api, calls } = fakeApi({
-            create: () => ({ Id: SESSION, Method: 'Transcode' })
+            create: () => ({
+                Id: SESSION,
+                Method: 'Transcode',
+                SelectedStreams: { Audio: 2, Subtitle: { Index: 2 } }
+            }),
+            stream: () => ({
+                Url: hls,
+                MimeType: 'application/x-mpegURL',
+                Container: 'mp4',
+                Protocol: 'Hls'
+            })
+        });
+        const outcome = await planDirectPlayFilm(
+            {
+                ...params(api),
+                startPositionTicks: 70_000_000,
+                maxBitrate: 1_500_000,
+                preferredAudioStreamIndex: 2,
+                allowVideoStreamCopy: false
+            },
+            {
+                mintMediaCapability: vi.fn(async () => 'CAP'),
+                authorizeSubtitle: subtitle,
+                logger: quiet
+            }
+        );
+
+        expect(outcome.kind).toBe('planned');
+        if (outcome.kind !== 'planned') return;
+        const { streamInfo } = outcome;
+        expect(streamInfo.url).toBe(
+            `http://server:8096${hls}&playbackCapability=CAP`
+        );
+        expect(streamInfo.playMethod).toBe('Transcode');
+        expect(streamInfo.mediaSource.TranscodingSubProtocol).toBe('hls');
+        expect(streamInfo.mediaSource.DefaultAudioStreamIndex).toBe(2);
+        expect(streamInfo.mediaSource.DefaultSubtitleStreamIndex).toBe(2);
+        // The playlist describes the whole film: the resume is the player's seek, in media time.
+        expect(streamInfo.transcodingOffsetTicks).toBe(0);
+        expect(streamInfo.playerStartPositionTicks).toBe(70_000_000);
+        expect(streamInfo.executionDecision).toMatchObject({
+            source: 'v2',
+            sessionOwned: true,
+            method: 'Transcode',
+            playbackSessionId: SESSION
+        });
+        // What the change asked for went to the server as constraints, not into the url.
+        const post = calls.find((c) => c.method === 'POST');
+        expect(post?.data?.Constraints).toMatchObject({
+            MaxBitrate: 1_500_000,
+            PreferredAudioStreamIndex: 2,
+            AllowVideoStreamCopy: false
+        });
+        for (const legacy of [
+            'ApiKey',
+            'VideoCodec',
+            'AudioCodec',
+            'VideoBitrate',
+            'MaxStreamingBitrate',
+            'AudioStreamIndex',
+            '/Videos/'
+        ]) {
+            expect(streamInfo.url).not.toContain(legacy);
+        }
+        expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(0);
+        expect(calls.some((c) => /PlaybackInfo/i.test(c.url))).toBe(false);
+    });
+
+    it('releases the session before falling back when the server decides a transcode it does not serve from the session', async () => {
+        const { api, calls } = fakeApi({
+            create: () => ({ Id: SESSION, Method: 'Transcode' }),
+            stream: () => ({
+                Url: `/Videos/${ITEM}/master.m3u8?MediaSourceId=${SOURCE}&VideoCodec=h264`,
+                Protocol: 'Hls',
+                Container: 'ts'
+            })
         });
         const outcome = await planDirectPlayFilm(params(api), {
             mintMediaCapability: vi.fn(),
@@ -346,7 +431,7 @@ describe('planDirectPlayFilm', () => {
 
         expect(outcome).toEqual({
             kind: 'notApplicable',
-            reason: 'server decided Transcode'
+            reason: 'server decided a transcode it does not serve from the session'
         });
         expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
     });
@@ -452,6 +537,11 @@ describe('planDirectPlayFilm review fixes (#404)', () => {
         const controller = new AbortController();
         const { api, calls } = fakeApi({
             create: () => ({ Id: SESSION, Method: 'Transcode' }),
+            stream: () => ({
+                Url: `/Videos/${ITEM}/master.m3u8?MediaSourceId=${SOURCE}&VideoCodec=h264`,
+                Protocol: 'Hls',
+                Container: 'ts'
+            }),
             del: () => {
                 controller.abort();
             }
@@ -491,6 +581,11 @@ describe('planDirectPlayFilm review fixes (#404)', () => {
     it('does not fall back when the declined session could not be released', async () => {
         const { api, calls } = fakeApi({
             create: () => ({ Id: SESSION, Method: 'Transcode' }),
+            stream: () => ({
+                Url: `/Videos/${ITEM}/master.m3u8?MediaSourceId=${SOURCE}&VideoCodec=h264`,
+                Protocol: 'Hls',
+                Container: 'ts'
+            }),
             del: () => 500
         });
         await expect(
@@ -510,6 +605,11 @@ describe('planDirectPlayFilm review fixes (#404)', () => {
     it('still falls back when the declined session is already gone (404)', async () => {
         const { api } = fakeApi({
             create: () => ({ Id: SESSION, Method: 'Transcode' }),
+            stream: () => ({
+                Url: `/Videos/${ITEM}/master.m3u8?MediaSourceId=${SOURCE}&VideoCodec=h264`,
+                Protocol: 'Hls',
+                Container: 'ts'
+            }),
             del: () => 404
         });
         await expect(
