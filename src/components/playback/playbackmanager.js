@@ -3834,8 +3834,8 @@ export class PlaybackManager {
 
         /**
          * Consolidation step 1: plans a film through `Playback/Sessions` alone. Resolves to
-         * `{ kind: 'planned', streamInfo, api }` when the server decided a direct play or a remux
-         * it serves from the session, to `{ kind: 'fallback' }` when it decided something this
+         * `{ kind: 'planned', streamInfo, api }` when the server decided a direct play, a remux
+         * or a transcode it serves from the session, to `{ kind: 'fallback' }` when it decided something this
          * journey does not cover (its session already released), and to `{ kind: 'ended' }` when
          * the attempt was refused, failed or was cancelled - never to the legacy chain in those
          * cases.
@@ -3985,7 +3985,7 @@ export class PlaybackManager {
 
         /**
          * Whether what the player holds is served by routes of its own `Playback/Sessions`
-         * session (a film's direct play or remux).
+         * session (a film's direct play, remux or transcode).
          */
         function isSessionOwnedStream(streamInfo) {
             return streamInfo?.executionDecision?.sessionOwned === true;
@@ -4014,8 +4014,8 @@ export class PlaybackManager {
          * whatever the change forbids (a retry forbids direct play and stream copy): at no point
          * are there two sessions for one playback, and `PlaybackInfo`/`createStreamInfo` are never
          * asked on its behalf. Only when the server then decides something the film journey does
-         * not cover (a transcode) does the change continue on the existing chain - the same rule
-         * as at start.
+         * not cover (tone mapping, a burnt-in subtitle, a delivery that is not HLS) does the
+         * change continue on the existing chain - the same rule as at start.
          *
          * While it runs, `playerData.sessionReplan` is set: the stream still attached belongs to
          * a session that is being, or has been, released, so what it reports (a 404 on its next
