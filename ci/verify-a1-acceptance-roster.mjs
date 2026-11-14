@@ -65,6 +65,8 @@ const ACCEPTANCE_ROSTER = [
     'directPlayFilm.spec.ts',
     // Second journey: the remux film on Playback/Sessions.
     'remuxFilm.spec.ts',
+    // Third journey: the SDR transcode film on Playback/Sessions (start, track and quality changes).
+    'transcodeFilm.spec.ts',
     'directPlayRevocation.spec.ts',
     'disclosure.spec.ts',
     'libassFamilies.spec.ts',
