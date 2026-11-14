@@ -37,7 +37,7 @@
     },
     "budgets": {
         "initial": {
-            "rawJsBytes": 1929216,
+            "rawJsBytes": 1930240,
             "rawCssBytes": 172032,
             "rawBytes": 2101248,
             "gzipBytes": 536576,
@@ -45,7 +45,7 @@
             "assetCount": 21
         },
         "startup": {
-            "rawBytes": 3194880,
+            "rawBytes": 3195904,
             "gzipBytes": 897024,
             "brotliBytes": 565248,
             "assetCount": 41
@@ -81,7 +81,13 @@
             "id": "video-player",
             "pattern": "^\\./apps/modern/(features/(playerTracks|playerPanels)|routes/video)/",
             "reason": "DEBT-WEB-2. The player page and its React track menus are reached by starting playback, never at boot. /video is one lazy route in both families; before it was, the modern family imported VideoPage (and its MUI top bar) statically from routes.tsx, which put it in the start-up graph. Making it lazy took startup.rawBytes 3234656 -> 3164342 (-70314) and startup.assetCount 45 -> 43 on a local build. A static import of TrackMenus or VideoPage into routes.tsx fails this rule. DEBT-WEB-4 adds features/playerPanels (the stats and subtitle-offset panels, which replaced components/playerstats and components/subtitlesync): it is reached the same way and held to the same rule."
+        },
+        {
+            "id": "playback-reporting",
+            "pattern": "^\\./(components/playback/playbackReportingQueue|lib/tesserafin-sdk/generated/api/session-api)",
+            "reason": "The report queue and generated SessionApi load on the first playback report. The eager facade only snapshots event-time values; reporting must not become startup work."
         }
     ],
-    "acceptanceRuleForItemDetails": "tesserafin-web #129 Step 1b, SATISFIED: the modern Item Details route is registered through ASYNC_USER_ROUTES / toAsyncPageRoute in both route families, and the `item-details` protectedModulePatterns entry above enforces its absence from the initial and start-up graphs. No ceiling was raised for it."
+    "acceptanceRuleForItemDetails": "tesserafin-web #129 Step 1b, SATISFIED: the modern Item Details route is registered through ASYNC_USER_ROUTES / toAsyncPageRoute in both route families, and the `item-details` protectedModulePatterns entry above enforces its absence from the initial and start-up graphs. No ceiling was raised for it.",
+    "playbackReportingSdk": "Consolidation step 3, base 6ec2a3b08b: two production builds with the same node_modules. main raw 387308 -> 386043 (-1265 B); initial raw JS 1926626 -> 1929460 (+2834 B), raw total 2098414 -> 2101248 (+2834 B), gzip 536550 -> 536298 (-252 B), brotli 451992 -> 452044 (+52 B), assets 23 -> 21; startup raw 3192467 -> 3195301 (+2834 B), gzip 896684 -> 896441 (-243 B), brotli 564705 -> 564763 (+58 B), assets 43 -> 41. The synchronous snapshot captures position, queue, playback owner and connection identity before teardown; the report queue and generated SessionApi remain lazy and are protected below. Only initial.rawJsBytes and startup.rawBytes exceed their former ceilings (244 B and 421 B); each ceiling increases by 1024 B per the rounding rule. Compressed ceilings, asset counts and the 450 KiB main limit stay unchanged."
 }

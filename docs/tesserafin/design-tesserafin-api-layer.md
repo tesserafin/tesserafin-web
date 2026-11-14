@@ -594,3 +594,40 @@ traverse, pas par lot séparé) :
 5. **Nouvelle (§9.3)** : `TesserafinApi`/`reefin-connection` doit-il un jour porter le WebSocket, pour
    débloquer la migration de `sessions`/`tasks` (§9.5) ? Pas tranché ici — dépend du RFC de
    renommage/réécriture de la couche connexion évoqué en §4.2, hors périmètre de ce document.
+
+
+## 10. Playback reports — consolidation step 3 (2026-11-14)
+
+The playback manager sends start, progress and stop through the generated `SessionApi`, constructed
+from `ServerConnections.getTesserafinApi()`. `playbackReporting.ts` synchronously captures position,
+queue, item/source/play-session identifiers and connection identity. Its shared import promise
+preserves invocation order while loading `playbackReportingQueue.ts` and the generated API lazily.
+The delivery budget protects both modules from the initial/startup graph.
+
+The queue serializes reports for each server connection: an old stop must finish before the next
+start can update the device's `NowPlayingItem`. A local execution owner survives stream changes
+and software recovery, independently of the diagnostic PlaybackAttemptId and mutable server
+PlaySessionId. A new playback receives a new owner. Duplicate stops and reports from a superseded
+owner are ignored. Explicitly addressed SessionId values have separate active owners.
+
+Snapshots include the authorization/base URL and generated client configuration at event time.
+Queued work is discarded if that connection changes; it is never reauthenticated as another user.
+A request has a 10-second timeout, no retry, and a rejection does not poison the queue. The manager
+handles synchronous and asynchronous failures without interrupting session/capability cleanup.
+Queue entries contain only the generated QueueItem fields. EventName is not in the pinned report
+contract and is no longer added to payloads.
+
+The old dynamic report-method dispatch, queue projector and three legacy-client type declarations
+are deleted. No reporting flag or
+legacy-client fallback remains. The existing connection manager and its other consumers still
+import the old clients: the import ratchet remains at 348 files; this bounded slice does not
+complete step 3 or remove either package.
+
+Transport tests exercise the real generated API with an in-memory Axios adapter. Manager tests
+observe the generated methods and forbid their old-client counterparts, including a rejected stop
+report. The real-server Playwright spec `playbackReporting.spec.ts` replaces the old report methods
+with throwing probes, verifies start/seek/pause/stop and checks persisted resume in a fresh context.
+The companion API-only case executes the same production reporter against the real server and
+checks persisted position and device state after an old stop is rejected. This does not validate a
+browser or decoder. Presence in the acceptance roster is not proof of browser execution; runtime evidence and
+limits belong in the implementation PR.

@@ -8,6 +8,20 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('lib/tesserafin-sdk/generated/api/session-api', () => ({
+    SessionApi: class {
+        reportPlaybackStart(request: unknown) {
+            return generatedStart(request);
+        }
+        reportPlaybackProgress(request: unknown) {
+            return generatedProgress(request);
+        }
+        reportPlaybackStopped(request: unknown) {
+            return generatedStop(request);
+        }
+    }
+}));
+
 vi.stubGlobal('__WEBPACK_SERVE__', false);
 vi.stubGlobal('__USE_SYSTEM_FONTS__', false);
 vi.stubGlobal('__JF_BUILD_VERSION__', 'test');
@@ -21,6 +35,13 @@ import {
     videoItem,
     videoSource
 } from './__testSupport/livetvHarness';
+
+const generatedStart = vi.fn((_request: unknown) => Promise.resolve());
+const generatedProgress = vi.fn((_request: unknown) => Promise.resolve());
+const generatedStop = vi.fn((_request: unknown) => Promise.resolve());
+const legacyReport = vi.fn(() => {
+    throw new Error('legacy reporting reached');
+});
 
 const SESSION_ID = 'cccccccccccccccccccccccccccccccc';
 const postedPlaybackInfo = vi.fn();
@@ -145,9 +166,9 @@ const apiClient = {
     getUser: () => Promise.resolve({ Id: USER_ID, Configuration: {} }),
     getUrl: (path: string) => 'http://127.0.0.1:8096/' + path,
     isMinServerVersion: () => true,
-    reportPlaybackStart: () => Promise.resolve(),
-    reportPlaybackProgress: () => Promise.resolve(),
-    reportPlaybackStopped: () => Promise.resolve(),
+    reportPlaybackStart: legacyReport,
+    reportPlaybackProgress: legacyReport,
+    reportPlaybackStopped: legacyReport,
     sendMessage: () => undefined,
     ajax: () => Promise.resolve({})
 };
@@ -195,6 +216,10 @@ function mountManager() {
 
 describe('direct-play film journey', { timeout: 60000 }, () => {
     beforeEach(() => {
+        generatedStart.mockReset().mockResolvedValue();
+        generatedProgress.mockReset().mockResolvedValue();
+        generatedStop.mockReset().mockResolvedValue();
+        legacyReport.mockClear();
         postedPlaybackInfo.mockReset();
         postedPlaybackInfo.mockImplementation(
             createPlaybackInfoResponder({ [VIDEO_ITEM_ID]: [videoSource()] })
@@ -251,6 +276,36 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         expect(fetchCalls[0].url).toBe(
             `http://127.0.0.1:8096/Playback/Sessions/${SESSION_ID}`
         );
+        await vi.waitFor(() => expect(generatedStop).toHaveBeenCalledTimes(1));
+        expect(generatedStart).toHaveBeenCalledTimes(1);
+        expect(generatedStop.mock.calls[0][0]).toMatchObject({
+            playbackStopInfo: { ItemId: VIDEO_ITEM_ID }
+        });
+        expect(legacyReport).not.toHaveBeenCalled();
+    });
+
+    it('releases the session when the generated stop report fails', async () => {
+        generatedStop.mockRejectedValueOnce(new Error('report refused'));
+        createSession.mockResolvedValue({
+            data: { Id: SESSION_ID, Method: 'DirectPlay' }
+        });
+        const { manager, player } = mountManager();
+        const warning = vi
+            .spyOn(console, 'warn')
+            .mockImplementation(() => undefined);
+        await manager.play({ items: [videoItem()] });
+        await vi.waitFor(() => expect(generatedStart).toHaveBeenCalledTimes(1));
+        await manager.stop(player);
+        Events.trigger(player, 'stopped', [{}]);
+        await vi.waitFor(() => expect(generatedStop).toHaveBeenCalledTimes(1));
+        await vi.waitFor(() =>
+            expect(warning).toHaveBeenCalledWith(
+                'Playback report failed',
+                'stop'
+            )
+        );
+        expect(fetchCalls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
+        expect(legacyReport).not.toHaveBeenCalled();
     });
 
     it('plays a transcode from the session HLS route without PlaybackInfo or createStreamInfo', async () => {
@@ -413,6 +468,13 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         expect(fetchCalls[0].url).toBe(
             `http://127.0.0.1:8096/Playback/Sessions/${SESSION_ID}`
         );
+        await vi.waitFor(() => expect(generatedStop).toHaveBeenCalledTimes(1));
+        expect(generatedStart).toHaveBeenCalledTimes(1);
+        expect(generatedStop.mock.calls[0][0]).toMatchObject({
+            playbackStopInfo: { ItemId: VIDEO_ITEM_ID }
+        });
+        expect(legacyReport).not.toHaveBeenCalled();
+
         expect(postedPlaybackInfo).not.toHaveBeenCalled();
     });
 

@@ -29,9 +29,6 @@ declare module 'jellyfin-apiclient' {
         ParentalRating,
         PingRequestDto,
         PlaybackInfoResponse,
-        PlaybackProgressInfo,
-        PlaybackStartInfo,
-        PlaybackStopInfo,
         PlayCommand,
         PlaystateCommand,
         PluginInfo,
@@ -386,9 +383,6 @@ declare module 'jellyfin-apiclient' {
         ): Promise<void>;
         reportCapabilities(capabilities: ClientCapabilities): Promise<void>;
         reportOfflineActions(actions: any): Promise<any>;
-        reportPlaybackProgress(options: PlaybackProgressInfo): Promise<void>;
-        reportPlaybackStart(options: PlaybackStartInfo): Promise<void>;
-        reportPlaybackStopped(options: PlaybackStopInfo): Promise<void>;
         reportSyncJobItemTransferred(syncJobItemId: string): Promise<any>;
         requestSyncPlayBuffering(options?: BufferRequestDto): Promise<void>;
         requestSyncPlayMovePlaylistItem(

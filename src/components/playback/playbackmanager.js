@@ -36,6 +36,7 @@ import { TICKS_PER_SECOND } from 'constants/time';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
 import { brokerFor } from 'lib/playbackCredentials/broker';
 import { isDirectPlayFilmCandidate } from './directPlayFilmCandidate.ts';
+import { reportPlayback as sendPlaybackReport } from './playbackReporting.ts';
 import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket';
 import { MediaError } from 'types/mediaError';
 import { getMediaError } from 'utils/mediaError';
@@ -137,38 +138,33 @@ function reportPlayback(
     player,
     reportPlaylist,
     serverId,
-    method,
-    progressEventName
+    kind
 ) {
     if (!serverId) {
-        // Not a server item
-        // We can expand on this later and possibly report them
         Events.trigger(playbackManagerInstance, 'reportplayback', [false]);
         return;
     }
 
-    const info = Object.assign({}, state.PlayState);
-    info.ItemId = state.NowPlayingItem.Id;
-
-    if (progressEventName) {
-        info.EventName = progressEventName;
+    // Capture API, position and queue before returning to stop/next-item teardown. Reporting
+    // failure must never interrupt session or capability cleanup, including synchronous failure.
+    const failed = () => console.warn('Playback report failed', kind);
+    try {
+        const api = ServerConnections.getTesserafinApi(serverId);
+        const queue = reportPlaylist
+            ? getPlaylistSync(playbackManagerInstance, player)
+            : undefined;
+        sendPlaybackReport(api, kind, state, queue)
+            .then((sent) => {
+                if (sent) {
+                    Events.trigger(playbackManagerInstance, 'reportplayback', [
+                        true
+                    ]);
+                }
+            })
+            .catch(failed);
+    } catch {
+        failed();
     }
-
-    if (reportPlaylist) {
-        addPlaylistToPlaybackReport(
-            playbackManagerInstance,
-            info,
-            player,
-            serverId
-        );
-    }
-
-    const apiClient = ServerConnections.getApiClient(serverId);
-    const reportPlaybackPromise = apiClient[method](info);
-    // Notify that report has been sent
-    reportPlaybackPromise.then(() => {
-        Events.trigger(playbackManagerInstance, 'reportplayback', [true]);
-    });
 }
 
 function getPlaylistSync(playbackManagerInstance, player) {
@@ -178,28 +174,6 @@ function getPlaylistSync(playbackManagerInstance, player) {
     }
 
     return playbackManagerInstance._playQueueManager.getPlaylist();
-}
-
-function addPlaylistToPlaybackReport(
-    playbackManagerInstance,
-    info,
-    player,
-    serverId
-) {
-    info.NowPlayingQueue = getPlaylistSync(playbackManagerInstance, player).map(
-        function (i) {
-            const itemInfo = {
-                Id: i.Id,
-                PlaylistItemId: i.PlaylistItemId
-            };
-
-            if (i.ServerId !== serverId) {
-                itemInfo.ServerId = i.ServerId;
-            }
-
-            return itemInfo;
-        }
-    );
 }
 
 function normalizeName(t) {
@@ -2689,7 +2663,7 @@ export class PlaybackManager {
                         playerData.transcodeFailureTicks = 0;
                     }
 
-                    sendProgressUpdate(player, 'timeupdate');
+                    sendProgressUpdate(player);
                 },
                 function (e) {
                     if (change && isStaleChange(player, change)) {
@@ -3212,13 +3186,17 @@ export class PlaybackManager {
                 !enableLocalPlaylistManagement(player) &&
                 player.getPlayerState
             ) {
-                return player.getPlayerState();
+                return {
+                    ...player.getPlayerState(),
+                    reportingOwner: getPlayerData(player).playbackReportingOwner
+                };
             }
 
             item = item || self.currentItem(player);
             mediaSource = mediaSource || self.currentMediaSource(player);
 
             const state = {
+                reportingOwner: getPlayerData(player).playbackReportingOwner,
                 PlayState: {}
             };
 
@@ -5288,7 +5266,7 @@ export class PlaybackManager {
 
         function onPlayerProgressInterval() {
             const player = this;
-            sendProgressUpdate(player, 'timeupdate');
+            sendProgressUpdate(player);
         }
 
         function startPlaybackProgressTimer(player) {
@@ -5323,6 +5301,7 @@ export class PlaybackManager {
 
             playerData.streamInfo = streamInfo;
 
+            getPlayerData(player).playbackReportingOwner = {};
             streamInfo.playbackStartTimeTicks = new Date().getTime() * 10000;
 
             if (mediaSource) {
@@ -5354,7 +5333,7 @@ export class PlaybackManager {
                 player,
                 true,
                 state.NowPlayingItem.ServerId,
-                'reportPlaybackStart'
+                'start'
             );
 
             state.IsFirstItem = isFirstItem;
@@ -5382,6 +5361,7 @@ export class PlaybackManager {
             playerData.streamInfo = {};
 
             const streamInfo = playerData.streamInfo;
+            getPlayerData(player).playbackReportingOwner = {};
             streamInfo.playbackStartTimeTicks = new Date().getTime() * 10000;
 
             const state = self.getPlayerState(player, item, mediaSource);
@@ -5392,7 +5372,7 @@ export class PlaybackManager {
                 player,
                 true,
                 state.NowPlayingItem.ServerId,
-                'reportPlaybackStart'
+                'start'
             );
 
             state.IsFirstItem = isFirstItem;
@@ -5443,7 +5423,7 @@ export class PlaybackManager {
                     player,
                     true,
                     playerStopInfo.item.ServerId,
-                    'reportPlaybackStopped'
+                    'stop'
                 );
             }
 
@@ -5744,7 +5724,7 @@ export class PlaybackManager {
                     player,
                     true,
                     streamInfo.item.ServerId,
-                    'reportPlaybackStopped'
+                    'stop'
                 );
 
                 // #153-A1: drop this play session's capabilities the moment its playback ends.
@@ -5889,7 +5869,7 @@ export class PlaybackManager {
                         activePlayer,
                         true,
                         serverId,
-                        'reportPlaybackStopped'
+                        'stop'
                     );
                 }
 
@@ -5913,47 +5893,47 @@ export class PlaybackManager {
 
         function onPlaybackTimeUpdate() {
             const player = this;
-            sendProgressUpdate(player, 'timeupdate');
+            sendProgressUpdate(player);
         }
 
         function onPlaybackPause() {
             const player = this;
-            sendProgressUpdate(player, 'pause');
+            sendProgressUpdate(player);
         }
 
         function onPlaybackUnpause() {
             const player = this;
-            sendProgressUpdate(player, 'unpause');
+            sendProgressUpdate(player);
         }
 
         function onPlaybackVolumeChange() {
             const player = this;
-            sendProgressUpdate(player, 'volumechange');
+            sendProgressUpdate(player);
         }
 
         function onRepeatModeChange() {
             const player = this;
-            sendProgressUpdate(player, 'repeatmodechange');
+            sendProgressUpdate(player);
         }
 
         function onShuffleQueueModeChange() {
             const player = this;
-            sendProgressUpdate(player, 'shufflequeuemodechange');
+            sendProgressUpdate(player);
         }
 
         function onPlaylistItemMove() {
             const player = this;
-            sendProgressUpdate(player, 'playlistitemmove', true);
+            sendProgressUpdate(player, true);
         }
 
         function onPlaylistItemRemove() {
             const player = this;
-            sendProgressUpdate(player, 'playlistitemremove', true);
+            sendProgressUpdate(player, true);
         }
 
         function onPlaylistItemAdd() {
             const player = this;
-            sendProgressUpdate(player, 'playlistitemadd', true);
+            sendProgressUpdate(player, true);
         }
 
         function unbindStopped(player) {
@@ -6040,7 +6020,7 @@ export class PlaybackManager {
 
         pluginManager.ofType(PluginType.MediaPlayer).forEach(initMediaPlayer);
 
-        function sendProgressUpdate(player, progressEventName, reportPlaylist) {
+        function sendProgressUpdate(player, reportPlaylist) {
             if (!player) {
                 throw new Error('player cannot be null');
             }
@@ -6059,8 +6039,7 @@ export class PlaybackManager {
                         player,
                         reportPlaylist,
                         serverId,
-                        'reportPlaybackProgress',
-                        progressEventName
+                        'progress'
                     );
                 }
 

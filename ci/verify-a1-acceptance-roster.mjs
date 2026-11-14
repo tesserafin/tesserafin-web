@@ -63,6 +63,8 @@ const ACCEPTANCE_ROSTER = [
     'dependencyDisclosure.spec.ts',
     // tesserafin#129 consolidation step 1: the direct-play film journey on Playback/Sessions.
     'directPlayFilm.spec.ts',
+    // Consolidation step 3: generated reports with the old-client methods forbidden.
+    'playbackReporting.spec.ts',
     // Second journey: the remux film on Playback/Sessions.
     'remuxFilm.spec.ts',
     // Third journey: the SDR transcode film on Playback/Sessions (start, track and quality changes).

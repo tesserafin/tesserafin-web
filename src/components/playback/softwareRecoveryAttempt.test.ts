@@ -10,6 +10,28 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('lib/tesserafin-sdk/generated/api/session-api', () => ({
+    SessionApi: class {
+        reportPlaybackStart({
+            playbackStartInfo
+        }: {
+            playbackStartInfo: unknown;
+        }) {
+            return reportPlaybackStart(playbackStartInfo);
+        }
+        reportPlaybackProgress() {
+            return Promise.resolve();
+        }
+        reportPlaybackStopped({
+            playbackStopInfo
+        }: {
+            playbackStopInfo: unknown;
+        }) {
+            return reportPlaybackStopped(playbackStopInfo);
+        }
+    }
+}));
+
 vi.stubGlobal('__WEBPACK_SERVE__', false);
 vi.stubGlobal('__USE_SYSTEM_FONTS__', false);
 vi.stubGlobal('__JF_BUILD_VERSION__', 'test');
@@ -110,9 +132,15 @@ const apiClient = {
     getUser: () => Promise.resolve({ Id: USER_ID, Configuration: {} }),
     getUrl: (path: string) => 'http://127.0.0.1:8096/' + path,
     isMinServerVersion: () => true,
-    reportPlaybackStart,
-    reportPlaybackProgress: () => Promise.resolve(),
-    reportPlaybackStopped,
+    reportPlaybackStart: () => {
+        throw new Error('legacy reporting reached');
+    },
+    reportPlaybackProgress: () => {
+        throw new Error('legacy reporting reached');
+    },
+    reportPlaybackStopped: () => {
+        throw new Error('legacy reporting reached');
+    },
     stopActiveEncodings,
     sendMessage: () => undefined,
     ajax: () => Promise.resolve({})
@@ -122,6 +150,7 @@ const serverConnectionsMock = {
     ServerConnections: {
         getApiClient: () => apiClient,
         getApi: () => ({ axiosInstance: {}, basePath: '', accessToken: '' }),
+        getTesserafinApi: () => apiClient._tesserafinSdk,
         currentApiClient: () => apiClient
     }
 };

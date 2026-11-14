@@ -13,6 +13,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // `playbackmanager` pulls in `webSettings` -> `apphost` -> the route tree, which read webpack
 // build-time globals. Without these three the module graph throws at import time.
+vi.mock('lib/tesserafin-sdk/generated/api/session-api', () => ({
+    SessionApi: class {
+        reportPlaybackStart() {
+            return Promise.resolve();
+        }
+        reportPlaybackProgress() {
+            return Promise.resolve();
+        }
+        reportPlaybackStopped() {
+            return Promise.resolve();
+        }
+    }
+}));
+
 vi.stubGlobal('__WEBPACK_SERVE__', false);
 vi.stubGlobal('__USE_SYSTEM_FONTS__', false);
 vi.stubGlobal('__JF_BUILD_VERSION__', 'test');
@@ -138,9 +152,15 @@ const apiClient = {
     getUser: () => Promise.resolve({ Id: USER_ID, Configuration: {} }),
     getUrl: (path: string) => 'http://127.0.0.1:8096/' + path,
     isMinServerVersion: () => true,
-    reportPlaybackStart: () => Promise.resolve(),
-    reportPlaybackProgress: () => Promise.resolve(),
-    reportPlaybackStopped: () => Promise.resolve(),
+    reportPlaybackStart: () => {
+        throw new Error('legacy reporting reached');
+    },
+    reportPlaybackProgress: () => {
+        throw new Error('legacy reporting reached');
+    },
+    reportPlaybackStopped: () => {
+        throw new Error('legacy reporting reached');
+    },
     sendMessage: () => undefined,
     ajax: () => Promise.resolve({})
 };
@@ -149,6 +169,7 @@ const serverConnectionsMock = {
     ServerConnections: {
         getApiClient: () => apiClient,
         getApi: () => ({ axiosInstance: {}, basePath: '', accessToken: '' }),
+        getTesserafinApi: () => apiClient._tesserafinSdk,
         currentApiClient: () => apiClient
     }
 };
