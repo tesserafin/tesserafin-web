@@ -451,13 +451,22 @@ test.describe('direct-play film on Playback/Sessions', () => {
         }
     });
 
-    test('a film decided as a transcode releases its session, then plays through the existing chain', async ({
+    test('a film decided as a transcode stays on its session: HLS from the session route, never PlaybackInfo', async ({
         page
     }) => {
         const a = await admin();
         try {
             const itemId = await itemIdByName(a, TRANSCODE_TITLE);
-            const traffic = watch(page, false);
+            const traffic = watch(page, true);
+            const hls: string[] = [];
+            page.on('response', (response) => {
+                if (
+                    /\/Playback\/Sessions\/[0-9a-f]+\/Hls\//i.test(
+                        response.url()
+                    )
+                )
+                    hls.push(response.url());
+            });
             await signIn(page);
             await openDetailByName(page, TRANSCODE_TITLE);
             const reachedPlayer = page.waitForURL(/#\/video/, {
@@ -472,26 +481,35 @@ test.describe('direct-play film on Playback/Sessions', () => {
                 })
                 .toBeGreaterThan(0.2);
 
-            expect(
-                traffic.creates[0],
-                'the first decision is not a direct play'
-            ).not.toBe('DirectPlay');
-            expect(
-                traffic.deletes,
-                'that session was released before the legacy chain'
-            ).toBeGreaterThanOrEqual(1);
+            // MPEG-4 Part 2 + AC-3: neither stream is decodable, so both are encoded - by the
+            // engine's decision, from the session's own HLS route.
+            expect(traffic.creates, 'one decision: a transcode').toEqual([
+                'Transcode'
+            ]);
+            expect(traffic.deletes, 'the session is kept while it plays').toBe(
+                0
+            );
             expect(
                 traffic.playbackInfo,
-                'the existing chain plays it'
-            ).toBeGreaterThanOrEqual(1);
+                'PlaybackInfo is never asked for a film'
+            ).toBe(0);
             expect(
                 traffic.fileStatuses,
                 'no session file route for a transcode'
             ).toEqual([]);
             expect(
-                await liveSessions(a, itemId),
-                'at most one session lives'
-            ).toBeLessThanOrEqual(1);
+                hls.length,
+                'the bytes come from the session HLS route'
+            ).toBeGreaterThan(1);
+            expect(
+                hls.every((url) => /[?&]playbackCapability=/.test(url)),
+                'every HLS request carries a capability'
+            ).toBe(true);
+            expect(
+                hls.some((url) => /[?&](ApiKey|api_key)=/i.test(url)),
+                'no durable token in a media url'
+            ).toBe(false);
+            expect(await liveSessions(a, itemId), 'one session lives').toBe(1);
             await page.keyboard.press('Escape');
         } finally {
             await a.dispose();

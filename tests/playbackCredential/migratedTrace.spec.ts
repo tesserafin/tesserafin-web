@@ -44,6 +44,9 @@ function classify(url: string): string {
     if (/\/attachments\//.test(u)) return 'attachment';
     if (/\/trickplay\//.test(u)) return 'trickplay';
     if (/\/subtitles\//.test(u)) return 'subtitle';
+    // A film's remux or transcode since consolidation step 1 (tesserafin#129): its session's own
+    // HLS route. Matched before the legacy families, whose patterns it would otherwise satisfy.
+    if (/\/playback\/sessions\/[^/]+\/hls\//.test(u)) return 'session-hls';
     if (/\/hls\//.test(u)) return 'legacy-hls';
     if (/hls1\//.test(u)) return 'hls-segment';
     if (/master\.m3u8/.test(u)) return 'hls-master';
@@ -74,6 +77,7 @@ function redact(url: string): string {
 const MEDIA_CLASSES = new Set([
     'direct-video',
     'session-file',
+    'session-hls',
     'direct-audio',
     'universal-audio',
     'hls-master',

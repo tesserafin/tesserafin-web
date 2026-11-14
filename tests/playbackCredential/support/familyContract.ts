@@ -56,20 +56,22 @@ export const FAMILY_CONTRACT: Record<string, FamilyEntry> = {
         owner: 'matrix.spec.ts',
         note: 'seedAudioLibrary; the client builds /universal for every audio item'
     },
-    'hls-master': {
+    'session-hls': {
         status: 'required',
         owner: 'migratedTrace.spec.ts',
-        note: 'the rig seeds Transcode Probe, whose PlaybackInfo returns an HLS master'
+        note: 'consolidation step 1: Transcode Probe (a film, MPEG-4 Part 2 + AC-3) is transcoded from /Playback/Sessions/{id}/Hls/main.m3u8 and its hls1 segments'
+    },
+    'hls-master': {
+        status: 'unreached',
+        note: 'consolidation step 1 (tesserafin#129): every film of the rig is now played from its session (session-file, session-hls). /Videos/{id}/master.m3u8 is still served to a non-film video that needs a transcode, which this rig does not seed (Codec Probes holds only Remux Probe, which Chrome direct-plays); server-side its contract is PlaybackUrlContractEndToEndTests and HlsOutputIsolationEndToEndTests. Promote with a non-film transcode fixture, or drop when step 2 removes the route.'
     },
     'hls-variant': {
-        status: 'required',
-        owner: 'migratedTrace.spec.ts',
-        note: 'follows the master'
+        status: 'unreached',
+        note: 'follows hls-master; see there'
     },
     'hls-segment': {
-        status: 'required',
-        owner: 'migratedTrace.spec.ts',
-        note: 'follows the variant'
+        status: 'unreached',
+        note: 'follows hls-master; see there'
     },
     subtitle: {
         status: 'required',

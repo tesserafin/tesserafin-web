@@ -17,7 +17,8 @@
  *
  * The fixture is the rig's "Dubbed Film (2024)": a `Movie` (H.264 + two AC-3 tracks in Matroska,
  * 30 s) with a SubRip sidecar. A browser decodes its video and not its audio; the two audio
- * tracks differ (index 1: 1000 Hz, "fre"; index 2: 440 Hz, "eng", the default).
+ * tracks differ (1000 Hz French, 440 Hz English, the default). Their indices are the server's
+ * (the external subtitle is listed first) and are read from it, not assumed.
  */
 import { expect, request, test, type Page } from '@playwright/test';
 
@@ -36,12 +37,45 @@ import {
     watch,
     type Traffic
 } from './support/filmSession';
-import { admin, itemIdByName, openDetailByName } from './support/rig';
+import {
+    admin,
+    itemIdByName,
+    openDetailByName,
+    type Admin
+} from './support/rig';
 
 const FILM = 'Dubbed Film';
 const RESUME_TOLERANCE_SECONDS = 1.0;
 const AUDIO_ENCODED = /-codec:a:0 (aac|libfdk_aac|aac_at)\b/;
 const VIDEO_ENCODED = /-codec:v:0 (libx264|h264_[a-z0-9]+)\b/;
+
+/** The film's audio tracks as the server lists them: the default one and the other one. */
+async function audioTracks(
+    a: Admin,
+    itemId: string
+): Promise<{ defaultIndex: number; otherIndex: number }> {
+    const item = await (
+        await a.api.get(`/Users/${a.userId}/Items/${itemId}`, {
+            headers: adminHeaders(a)
+        })
+    ).json();
+    const audio = (
+        (item.MediaStreams ?? []) as Array<{
+            Type: string;
+            Index: number;
+            IsDefault?: boolean;
+        }>
+    ).filter((stream) => stream.Type === 'Audio');
+    expect(audio, 'the film has two audio tracks').toHaveLength(2);
+    const preferred = audio.find((stream) => stream.IsDefault) ?? audio[0];
+    const other = audio.find((stream) => stream !== preferred)!;
+    return { defaultIndex: preferred.Index, otherIndex: other.Index };
+}
+
+/** The input streams an FFmpeg command maps, in order: which tracks the job reads. */
+function mappedInputs(command: string): string {
+    return [...command.matchAll(/-map 0:(\d+)/g)].map((m) => m[1]).join(',');
+}
 
 /** Opens one of the player's menus; the controls hide while the film plays. */
 async function openPlayerMenu(page: Page, kind: string): Promise<void> {
@@ -103,6 +137,7 @@ test.describe('transcode film on Playback/Sessions', () => {
         const previousSubtitleMode = await setSubtitleMode(a, 'Always');
         try {
             const itemId = await itemIdByName(a, FILM);
+            const tracks = await audioTracks(a, itemId);
             const traffic = await watch(page);
             await signIn(page);
             await startFilm(page, FILM);
@@ -121,12 +156,13 @@ test.describe('transcode film on Playback/Sessions', () => {
                 ['Transcode']
             );
 
-            // Start: the video is copied, the audio encoded, from the default track (index 2).
+            // Start: the video is copied, the audio encoded, from the default track.
             let logs = await ffmpegLogs(a, itemId);
             expect(logs, 'one FFmpeg job for the start').toHaveLength(1);
             expect(logs[0].text).toContain('-codec:v:0 copy');
             expect(logs[0].text).toMatch(AUDIO_ENCODED);
-            expect(logs[0].text).toContain('-map 0:2 ');
+            const startInputs = mappedInputs(logs[0].text);
+            expect(startInputs, 'the start job maps its inputs').not.toBe('');
 
             // Seek far forward, then back: the player's own seek inside the session's playlist.
             await seekTo(page, 21);
@@ -186,7 +222,7 @@ test.describe('transcode film on Playback/Sessions', () => {
             // other track. The film goes on from where it was, in media time.
             const beforeTrack = await videoTime(page);
             await openPlayerMenu(page, 'audio');
-            await chooseRow(page, '1');
+            await chooseRow(page, String(tracks.otherIndex));
             await expect
                 .poll(() => traffic.creates, {
                     timeout: 30_000,
@@ -196,8 +232,8 @@ test.describe('transcode film on Playback/Sessions', () => {
             await expect
                 .poll(
                     async () =>
-                        (await ffmpegLogs(a, itemId)).some((log) =>
-                            log.text.includes('-map 0:1 ')
+                        (await ffmpegLogs(a, itemId)).some(
+                            (log) => mappedInputs(log.text) !== startInputs
                         ),
                     {
                         timeout: 45_000,
@@ -222,7 +258,9 @@ test.describe('transcode film on Playback/Sessions', () => {
                 'one session after the track change'
             ).toBe(1);
             logs = await ffmpegLogs(a, itemId);
-            const trackJob = logs.find((log) => log.text.includes('-map 0:1 '));
+            const trackJob = logs.find(
+                (log) => mappedInputs(log.text) !== startInputs
+            );
             expect(trackJob?.text).toContain('-codec:v:0 copy');
             expect(trackJob?.text).toMatch(AUDIO_ENCODED);
             expectOnlySessionRoutes(traffic);
@@ -283,7 +321,10 @@ test.describe('transcode film on Playback/Sessions', () => {
                 maxrate,
                 'the ceiling the encoder is given is not above the one chosen'
             ).toBeLessThanOrEqual(Math.max(lowest, 100_000));
-            expect(qualityJob!.text).toContain('-map 0:1 ');
+            expect(
+                mappedInputs(qualityJob!.text),
+                'the quality change keeps the chosen audio track'
+            ).toBe(mappedInputs(trackJob!.text));
             expect(traffic.deletes, 'the second session was released').toBe(2);
             expect(
                 await liveSessions(a, itemId),
