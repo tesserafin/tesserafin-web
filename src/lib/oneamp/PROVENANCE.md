@@ -19,17 +19,30 @@ rebuilding the module whenever the pin changes (contract §10).
 | `Cargo.lock` at that commit | sha256 `70de3a1a1a92ecf53a24f3bc66c57b5bd47a0d689c8eaa98d43e7ab96e96b6f4` |
 
 Since the contract's audit pin `c2eb12157d` (v1.4.1), all3f0r1/oneamp#4 changed only the
-reference JavaScript glue, the docs and the tests. No Rust source changed, and the module is
-byte-identical to the audit build (same sha256 as contract §1).
+reference JavaScript glue, the docs and the tests. No Rust source changed, and the module was
+byte-identical to the audit build (contract §1) before the path remapping below.
 
 ## Build
 
 ```sh
 git -C oneamp checkout d7d8c82e16fdd54d1e580a6e83ed09bee6e295bf
+cd oneamp
 cargo clean --release --target wasm32-unknown-unknown
-cargo build -p oneamp-wasm --target wasm32-unknown-unknown --release --locked
+SYSROOT="$(rustc --print sysroot)"
+RUSTFLAGS="--remap-path-prefix=${CARGO_HOME:-$HOME/.cargo}/registry/src=/cargo/registry/src \
+--remap-path-prefix=${SYSROOT}/lib/rustlib/src/rust=/rustc/58cf8f9c35b355199727627d07ae34a4e2846d67 \
+--remap-path-prefix=$PWD=/oneamp" \
+  cargo build -p oneamp-wasm --target wasm32-unknown-unknown --release --locked
 sha256sum target/wasm32-unknown-unknown/release/oneamp_wasm.wasm
 ```
+
+The path remapping is required. Without it, panic locations embed the builder's absolute
+paths (`/home/<user>/.cargo/registry/...`, the rustup `rust-src` path), which the Linux
+packages refuse (`ci/package/verify-artifacts.sh`, unenumerated embedded build path) and
+which would publish the builder's home directory. With it, the module carries only
+`/cargo/registry/src/...` and `/rustc/<commit>/library/...`, and the hash does not depend on
+where the checkout or `CARGO_HOME` lives (verified from two different checkout paths).
+The pre-remap build of the same commit was sha256 `e741630f…` (contract §1).
 
 Toolchain (`rustc -vV`), Linux x86_64 host:
 
@@ -51,8 +64,8 @@ byte-reproducible across rustc versions: to reproduce this hash, use this toolch
 | Item | Value |
 |---|---|
 | File | `oneamp_wasm.wasm` |
-| Size | 158,378 bytes (66,637 bytes `gzip -9`) |
-| sha256 | `e741630f4a333430bc630bae04b9efec05f76f0ba22694684457242e5e030b84` |
+| Size | 158,250 bytes (66,625 bytes `gzip -9`) |
+| sha256 | `276a993a82a68efe91430b7de5e5e85f518b2a7ff43fb3a6642d187ec1ed216c` |
 | Imports | none (`WebAssembly.Module.imports(m).length === 0`) |
 
 ## Licences
