@@ -45,7 +45,7 @@
             "assetCount": 21
         },
         "startup": {
-            "rawBytes": 3194880,
+            "rawBytes": 3195136,
             "gzipBytes": 897024,
             "brotliBytes": 565248,
             "assetCount": 41
