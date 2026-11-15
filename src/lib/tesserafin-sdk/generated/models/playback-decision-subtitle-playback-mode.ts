@@ -14,7 +14,7 @@
 
 
 /**
- * How a user wants subtitles auto-selected when no explicit stream index is requested. Mirrors the legacy `Tesserafin.Database.Implementations.Enums.SubtitlePlaybackMode` (same member names and numeric values) without depending on it: the domain assembly references nothing outside itself (RFC PR91 §4/§7), so this is a domain-local copy of the vocabulary, not a reuse of the legacy type.
+ * How a user wants subtitles auto-selected when no explicit stream index is requested. Mirrors the legacy `Tesserafin.Data.Enums.SubtitlePlaybackMode` (same member names and numeric values) without depending on it: the domain assembly references nothing outside itself (RFC PR91 §4/§7), so this is a domain-local copy of the vocabulary, not a reuse of the legacy type.
  * @export
  * @enum {string}
  */

@@ -14,7 +14,7 @@
 
 
 /**
- * Defines the types of content an individual Tesserafin.Database.Implementations.Entities.MediaSegment represents.
+ * Defines the types of content an individual Tesserafin.Data.Entities.MediaSegment represents.
  * @export
  * @enum {string}
  */
