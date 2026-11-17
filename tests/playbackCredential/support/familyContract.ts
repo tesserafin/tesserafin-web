@@ -65,12 +65,14 @@ export const FAMILY_CONTRACT: Record<string, FamilyEntry> = {
         note: 'consolidation step 1 (tesserafin#129): every library video of the rig is now played from its session (session-file, session-hls). /Videos/{id}/master.m3u8 is still served to a plan the session journey does not execute (tone mapping, burn-in, a target other than H.264/AAC) and to PlaybackInfo clients, which this rig does not drive; server-side its contract is PlaybackUrlContractEndToEndTests and HlsOutputIsolationEndToEndTests. Promote with a non-film transcode fixture, or drop when step 2 removes the route.'
     },
     'hls-variant': {
-        status: 'unreached',
-        note: 'follows hls-master; see there'
+        status: 'required',
+        owner: 'matrix.spec.ts',
+        note: "seedAudioLibrary(..., 'wma'): /Audio/{id}/universal answers a track no browser decodes with the existing chain's HLS transcode, /Audio/{id}/main.m3u8"
     },
     'hls-segment': {
-        status: 'unreached',
-        note: 'follows hls-master; see there'
+        status: 'required',
+        owner: 'matrix.spec.ts',
+        note: 'follows hls-variant: the hls1 segments of that audio transcode'
     },
     subtitle: {
         status: 'required',
