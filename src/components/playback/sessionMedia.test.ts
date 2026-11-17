@@ -3,11 +3,11 @@ import { describe, expect, it, vi } from 'vitest';
 import type { TesserafinApi } from 'lib/tesserafin-sdk/client';
 
 import {
-    SessionVideoError,
-    isSessionVideoCandidate,
-    newSessionVideoPlaySessionId,
-    planSessionVideo
-} from './sessionVideo';
+    SessionMediaError,
+    isSessionMediaCandidate,
+    newSessionMediaPlaySessionId,
+    planSessionMedia
+} from './sessionMedia';
 
 const ITEM = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 const SOURCE = ITEM;
@@ -141,11 +141,11 @@ const subtitle = vi.fn(
     async (path: string) => `${path}?playbackCapability=SUB`
 );
 
-describe('isSessionVideoCandidate', () => {
+describe('isSessionMediaCandidate', () => {
     const html = { id: 'htmlvideoplayer', isLocalPlayer: true };
     it('owns a library video on the local html player only', () => {
         expect(
-            isSessionVideoCandidate(
+            isSessionMediaCandidate(
                 {
                     Id: ITEM,
                     Type: 'Movie',
@@ -156,43 +156,43 @@ describe('isSessionVideoCandidate', () => {
             )
         ).toBe(true);
         expect(
-            isSessionVideoCandidate(
+            isSessionMediaCandidate(
                 { Id: ITEM, Type: 'Episode', MediaType: 'Video' },
                 html
             )
         ).toBe(true);
         expect(
-            isSessionVideoCandidate(
+            isSessionMediaCandidate(
                 { Id: ITEM, Type: 'Video', MediaType: 'Video' },
                 html
             )
         ).toBe(true);
         expect(
-            isSessionVideoCandidate(
+            isSessionMediaCandidate(
                 { Id: ITEM, Type: 'MusicVideo', MediaType: 'Video' },
                 html
             )
         ).toBe(true);
         expect(
-            isSessionVideoCandidate(
+            isSessionMediaCandidate(
                 { Id: ITEM, Type: 'Trailer', MediaType: 'Video' },
                 html
             )
         ).toBe(true);
         expect(
-            isSessionVideoCandidate(
+            isSessionMediaCandidate(
                 { Id: ITEM, Type: 'Recording', MediaType: 'Video' },
                 html
             )
         ).toBe(false);
         expect(
-            isSessionVideoCandidate(
+            isSessionMediaCandidate(
                 { Id: ITEM, Type: 'ChannelVideoItem', MediaType: 'Video' },
                 html
             )
         ).toBe(false);
         expect(
-            isSessionVideoCandidate(
+            isSessionMediaCandidate(
                 {
                     Id: ITEM,
                     Type: 'Movie',
@@ -203,25 +203,64 @@ describe('isSessionVideoCandidate', () => {
             )
         ).toBe(false);
         expect(
-            isSessionVideoCandidate(
+            isSessionMediaCandidate(
                 { Id: ITEM, Type: 'Movie', MediaType: 'Video' },
                 { id: 'chromecast', isLocalPlayer: false }
             )
         ).toBe(false);
         expect(
-            isSessionVideoCandidate(
+            isSessionMediaCandidate(
                 { Id: ITEM, Type: 'TvChannel', MediaType: 'Video' },
                 html
             )
         ).toBe(false);
     });
+
+    it('owns a library audio track on the local html audio player only', () => {
+        const audioPlayer = { id: 'htmlaudioplayer', isLocalPlayer: true };
+        expect(
+            isSessionMediaCandidate(
+                { Id: ITEM, Type: 'Audio', MediaType: 'Audio' },
+                audioPlayer
+            )
+        ).toBe(true);
+        expect(
+            isSessionMediaCandidate(
+                { Id: ITEM, Type: 'Audio', MediaType: 'Audio' },
+                html
+            )
+        ).toBe(false);
+        expect(
+            isSessionMediaCandidate(
+                { Id: ITEM, Type: 'AudioBook', MediaType: 'Audio' },
+                audioPlayer
+            )
+        ).toBe(false);
+        expect(
+            isSessionMediaCandidate(
+                {
+                    Id: ITEM,
+                    Type: 'Audio',
+                    MediaType: 'Audio',
+                    LocationType: 'Remote'
+                },
+                audioPlayer
+            )
+        ).toBe(false);
+        expect(
+            isSessionMediaCandidate(
+                { Id: ITEM, Type: 'Audio', MediaType: 'Audio' },
+                { id: 'chromecast', isLocalPlayer: false }
+            )
+        ).toBe(false);
+    });
 });
 
-describe('planSessionVideo', () => {
+describe('planSessionMedia', () => {
     it('plans a direct play from the session descriptor alone, with a capability and no durable token', async () => {
         const { api, calls } = fakeApi({});
         const mint = vi.fn(async () => 'CAP');
-        const outcome = await planSessionVideo(params(api), {
+        const outcome = await planSessionMedia(params(api), {
             mintMediaCapability: mint,
             authorizeSubtitle: subtitle,
             logger: quiet
@@ -301,7 +340,7 @@ describe('planSessionVideo', () => {
             })
         });
         const mint = vi.fn(async () => 'CAP');
-        const outcome = await planSessionVideo(
+        const outcome = await planSessionMedia(
             { ...params(api), startPositionTicks: 50_000_000 },
             {
                 mintMediaCapability: mint,
@@ -357,7 +396,7 @@ describe('planSessionVideo', () => {
             })
         });
         const mint = vi.fn(async () => 'CAP');
-        const outcome = await planSessionVideo(params(api), {
+        const outcome = await planSessionMedia(params(api), {
             mintMediaCapability: mint,
             authorizeSubtitle: subtitle,
             logger: quiet
@@ -379,7 +418,7 @@ describe('planSessionVideo', () => {
             })
         });
         await expect(
-            planSessionVideo(params(api), {
+            planSessionMedia(params(api), {
                 mintMediaCapability: vi.fn(async () => 'CAP'),
                 authorizeSubtitle: subtitle,
                 logger: quiet
@@ -403,7 +442,7 @@ describe('planSessionVideo', () => {
                 Protocol: 'Hls'
             })
         });
-        const outcome = await planSessionVideo(
+        const outcome = await planSessionMedia(
             {
                 ...params(api),
                 startPositionTicks: 70_000_000,
@@ -468,7 +507,7 @@ describe('planSessionVideo', () => {
                 Container: 'ts'
             })
         });
-        const outcome = await planSessionVideo(params(api), {
+        const outcome = await planSessionMedia(params(api), {
             mintMediaCapability: vi.fn(),
             authorizeSubtitle: subtitle,
             logger: quiet
@@ -483,7 +522,7 @@ describe('planSessionVideo', () => {
 
     it('falls back without a session to release when no direct plan is viable (422)', async () => {
         const { api, calls } = fakeApi({ create: () => 422 });
-        const outcome = await planSessionVideo(params(api), {
+        const outcome = await planSessionMedia(params(api), {
             mintMediaCapability: vi.fn(),
             authorizeSubtitle: subtitle,
             logger: quiet
@@ -503,13 +542,13 @@ describe('planSessionVideo', () => {
         async (status, failure) => {
             const { api } = fakeApi({ create: () => status });
             await expect(
-                planSessionVideo(params(api), {
+                planSessionMedia(params(api), {
                     mintMediaCapability: vi.fn(),
                     authorizeSubtitle: subtitle,
                     logger: quiet
                 })
             ).rejects.toMatchObject({
-                name: 'SessionVideoError',
+                name: 'SessionMediaError',
                 failure,
                 status
             });
@@ -519,7 +558,7 @@ describe('planSessionVideo', () => {
     it('releases the session and keeps the original error when the descriptor is refused', async () => {
         const { api, calls } = fakeApi({ stream: () => 403 });
         await expect(
-            planSessionVideo(params(api), {
+            planSessionMedia(params(api), {
                 mintMediaCapability: vi.fn(),
                 authorizeSubtitle: subtitle,
                 logger: quiet
@@ -532,7 +571,7 @@ describe('planSessionVideo', () => {
         const { api } = fakeApi({ stream: () => 401, del: () => 500 });
         const logger = { debug: vi.fn(), warn: vi.fn() };
         await expect(
-            planSessionVideo(params(api), {
+            planSessionMedia(params(api), {
                 mintMediaCapability: vi.fn(),
                 authorizeSubtitle: subtitle,
                 logger
@@ -547,14 +586,14 @@ describe('planSessionVideo', () => {
             response: { status: 403 }
         });
         await expect(
-            planSessionVideo(params(api), {
+            planSessionMedia(params(api), {
                 mintMediaCapability: vi.fn(async () => {
                     throw brokerError;
                 }),
                 authorizeSubtitle: subtitle,
                 logger: quiet
             })
-        ).rejects.toBeInstanceOf(SessionVideoError);
+        ).rejects.toBeInstanceOf(SessionMediaError);
         expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
     });
 
@@ -566,7 +605,7 @@ describe('planSessionVideo', () => {
             return 'CAP';
         });
         await expect(
-            planSessionVideo(params(api), {
+            planSessionMedia(params(api), {
                 mintMediaCapability: mint,
                 authorizeSubtitle: subtitle,
                 signal: controller.signal,
@@ -577,7 +616,7 @@ describe('planSessionVideo', () => {
     });
 });
 
-describe('planSessionVideo review fixes (#404)', () => {
+describe('planSessionMedia review fixes (#404)', () => {
     it('does not fall back if the start is cancelled while deleting the declined session', async () => {
         const controller = new AbortController();
         const { api, calls } = fakeApi({
@@ -592,7 +631,7 @@ describe('planSessionVideo review fixes (#404)', () => {
             }
         });
         await expect(
-            planSessionVideo(params(api), {
+            planSessionMedia(params(api), {
                 mintMediaCapability: vi.fn(),
                 authorizeSubtitle: subtitle,
                 signal: controller.signal,
@@ -612,7 +651,7 @@ describe('planSessionVideo review fixes (#404)', () => {
             }
         });
         await expect(
-            planSessionVideo(params(api), {
+            planSessionMedia(params(api), {
                 mintMediaCapability: vi.fn(),
                 authorizeSubtitle: subtitle,
                 signal: controller.signal,
@@ -634,13 +673,13 @@ describe('planSessionVideo review fixes (#404)', () => {
             del: () => 500
         });
         await expect(
-            planSessionVideo(params(api), {
+            planSessionMedia(params(api), {
                 mintMediaCapability: vi.fn(),
                 authorizeSubtitle: subtitle,
                 logger: quiet
             })
         ).rejects.toMatchObject({
-            name: 'SessionVideoError',
+            name: 'SessionMediaError',
             failure: 'failed',
             status: 500
         });
@@ -658,7 +697,7 @@ describe('planSessionVideo review fixes (#404)', () => {
             del: () => 404
         });
         await expect(
-            planSessionVideo(params(api), {
+            planSessionMedia(params(api), {
                 mintMediaCapability: vi.fn(),
                 authorizeSubtitle: subtitle,
                 logger: quiet
@@ -667,10 +706,10 @@ describe('planSessionVideo review fixes (#404)', () => {
     });
 });
 
-describe('newSessionVideoPlaySessionId', () => {
+describe('newSessionMediaPlaySessionId', () => {
     it('is 128 random bits in hex', () => {
-        const a = newSessionVideoPlaySessionId();
+        const a = newSessionMediaPlaySessionId();
         expect(a).toMatch(/^[0-9a-f]{32}$/);
-        expect(newSessionVideoPlaySessionId()).not.toBe(a);
+        expect(newSessionMediaPlaySessionId()).not.toBe(a);
     });
 });

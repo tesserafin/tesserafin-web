@@ -1,7 +1,9 @@
 /**
- * Consolidation step 1, local video journeys (server `docs/playback-path-inventory.md` §4 to §7): a
- * library video (film, episode, home video, music video, trailer) read from a local file plays through `Playback/Sessions` alone, as a direct play, a remux or an
- * SDR transcode.
+ * Consolidation step 1, local media journeys (server `docs/playback-path-inventory.md` §4 to §7): a
+ * library video (film, episode, home video, music video, trailer) read from a local file plays
+ * through `Playback/Sessions` alone, as a direct play, a remux or an SDR transcode; a library audio
+ * track plays the same way when the server decides a direct play (an audio transcode is still the
+ * existing chain's, reached through `notApplicable`).
  *
  * The chain is `POST Playback/Sessions` → `GET .../Stream` → a route the session owns (its file
  * route for a direct play, its HLS route for a remux or a transcode), through the generated Tesserafin SDK
@@ -18,7 +20,7 @@
  *    delivery that is not HLS - or no viable plan). The session it created is
  *    released first, then the caller continues with the existing chain - with direct play
  *    disabled, so the old direct-play path of a library video cannot come back that way.
- *  - a thrown {@link SessionVideoError}: authentication, authorization, a vanished session or any
+ *  - a thrown {@link SessionMediaError}: authentication, authorization, a vanished session or any
  *    other failure ends the attempt. It never falls back. When releasing the session also fails, the
  *    original error is the one thrown.
  */
@@ -41,30 +43,30 @@ import {
     type PlaybackCapabilityInputs
 } from 'scripts/tesserafinPlaybackCapabilities';
 
-const LOG_PREFIX = '[session-video]';
+const LOG_PREFIX = '[session-media]';
 
 /**
  * A play session id for the file route and every `/Sessions/Playing*` report of this playback:
  * 128 random bits, hex. `crypto.getRandomValues` exists outside secure contexts too (a LAN server
  * over plain HTTP), unlike `crypto.randomUUID`.
  */
-export function newSessionVideoPlaySessionId(): string {
+export function newSessionMediaPlaySessionId(): string {
     const bytes = new Uint8Array(16);
     crypto.getRandomValues(bytes);
     return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 export {
-    isSessionVideoCandidate,
-    type SessionVideoCandidate
-} from './sessionVideoCandidate';
+    isSessionMediaCandidate,
+    type SessionMediaCandidate
+} from './sessionMediaCandidate';
 
-export interface SessionVideoParams {
+export interface SessionMediaParams {
     api: TesserafinApi;
     itemId: string;
     userId: string;
     mediaSourceId?: string | null;
-    /** Defaults to {@link newSessionVideoPlaySessionId}. */
+    /** Defaults to {@link newSessionMediaPlaySessionId}. */
     playSessionId?: string;
     playbackAttemptId?: string;
     startPositionTicks?: number;
@@ -79,7 +81,7 @@ export interface SessionVideoParams {
     capabilityInputs?: PlaybackCapabilityInputs;
 }
 
-export interface SessionVideoDeps {
+export interface SessionMediaDeps {
     /** Mints the `Media` capability for the file route (the existing credential broker). */
     mintMediaCapability: (
         itemId: string,
@@ -104,20 +106,20 @@ export interface SessionVideoDeps {
  * HLS output with one audio rendition), even though nothing is re-encoded. The server's decision
  * itself is `executionDecision.method`.
  */
-export type SessionVideoPlayerMethod = 'DirectPlay' | 'Transcode';
+export type SessionMediaPlayerMethod = 'DirectPlay' | 'Transcode';
 
 /** What the player is handed: the same fields the legacy player contract reads, built from the
  * session's descriptor only. */
-export interface SessionVideoStreamInfo {
+export interface SessionMediaStreamInfo {
     url: string;
     mimeType: string | undefined;
     transcodingOffsetTicks: 0;
-    playMethod: SessionVideoPlayerMethod;
+    playMethod: SessionMediaPlayerMethod;
     playerStartPositionTicks: number;
     item: BaseItemDto;
     mediaSource: MediaSourceInfo;
-    textTracks: SessionVideoTextTrack[];
-    mediaType: 'Video';
+    textTracks: SessionMediaTextTrack[];
+    mediaType: 'Audio' | 'Video';
     liveStreamId: undefined;
     playSessionId: string;
     title: string | null | undefined;
@@ -128,7 +130,7 @@ export interface SessionVideoStreamInfo {
         /** The server's decision. */
         method: 'DirectPlay' | 'Remux' | 'Transcode';
         url: string;
-        playMethod: SessionVideoPlayerMethod;
+        playMethod: SessionMediaPlayerMethod;
         mimeType: string | undefined;
         transcodingOffsetTicks: 0;
         playSessionId: string;
@@ -139,7 +141,7 @@ export interface SessionVideoStreamInfo {
     };
 }
 
-export interface SessionVideoTextTrack {
+export interface SessionMediaTextTrack {
     url: string;
     language: string;
     isDefault: boolean;
@@ -158,7 +160,7 @@ export function directPlayTextTracks(
     itemId: string,
     mediaSource: MediaSourceInfo,
     defaultIndex: number | null | undefined
-): Array<Omit<SessionVideoTextTrack, 'url'> & { path: string }> {
+): Array<Omit<SessionMediaTextTrack, 'url'> & { path: string }> {
     return (mediaSource.MediaStreams ?? [])
         .filter(
             (stream) =>
@@ -179,41 +181,41 @@ export function directPlayTextTracks(
         });
 }
 
-export interface SessionVideoSession {
+export interface SessionMediaSession {
     id: string;
     /** DELETE the session. Idempotent; rejects only if the server could not be reached or refused. */
     release: () => Promise<void>;
 }
 
-export type SessionVideoOutcome =
+export type SessionMediaOutcome =
     | {
           kind: 'planned';
-          streamInfo: SessionVideoStreamInfo;
-          session: SessionVideoSession;
+          streamInfo: SessionMediaStreamInfo;
+          session: SessionMediaSession;
       }
     | { kind: 'notApplicable'; reason: string };
 
-export type SessionVideoFailure =
+export type SessionMediaFailure =
     | 'unauthenticated'
     | 'forbidden'
     | 'notFound'
     | 'cancelled'
     | 'failed';
 
-export class SessionVideoError extends Error {
-    readonly failure: SessionVideoFailure;
+export class SessionMediaError extends Error {
+    readonly failure: SessionMediaFailure;
     readonly status: number | undefined;
     readonly detail: unknown;
 
     constructor(
-        failure: SessionVideoFailure,
+        failure: SessionMediaFailure,
         message: string,
         status?: number,
         detail?: unknown
     ) {
         super(message);
         this.detail = detail;
-        this.name = 'SessionVideoError';
+        this.name = 'SessionMediaError';
         this.failure = failure;
         this.status = status;
     }
@@ -226,10 +228,10 @@ function classify(
     stage: string,
     err: unknown,
     signal?: AbortSignal
-): SessionVideoError {
-    if (err instanceof SessionVideoError) return err;
+): SessionMediaError {
+    if (err instanceof SessionMediaError) return err;
     if (signal?.aborted) {
-        return new SessionVideoError(
+        return new SessionMediaError(
             'cancelled',
             `${stage}: cancelled`,
             undefined,
@@ -237,14 +239,14 @@ function classify(
         );
     }
     const status = statusOf(err);
-    const byStatus: Record<number, SessionVideoFailure> = {
+    const byStatus: Record<number, SessionMediaFailure> = {
         401: 'unauthenticated',
         403: 'forbidden',
         404: 'notFound'
     };
-    const failure: SessionVideoFailure =
+    const failure: SessionMediaFailure =
         (status !== undefined && byStatus[status]) || 'failed';
-    return new SessionVideoError(
+    return new SessionMediaError(
         failure,
         `${stage}: ${status ?? 'no response'}`,
         status,
@@ -257,7 +259,7 @@ function throwIfCancelled(
     stage: string
 ): void {
     if (signal?.aborted) {
-        throw new SessionVideoError('cancelled', `${stage}: cancelled`);
+        throw new SessionMediaError('cancelled', `${stage}: cancelled`);
     }
 }
 
@@ -302,15 +304,15 @@ function sessionRouteOf(
  * Plans the playback of a library video through `Playback/Sessions` alone. See the module comment for the
  * three outcomes.
  */
-export async function planSessionVideo(
-    params: SessionVideoParams,
-    deps: SessionVideoDeps
-): Promise<SessionVideoOutcome> {
+export async function planSessionMedia(
+    params: SessionMediaParams,
+    deps: SessionMediaDeps
+): Promise<SessionMediaOutcome> {
     const logger = deps.logger ?? console;
     const api = params.api;
     const signal = deps.signal;
     const playSessionId =
-        params.playSessionId ?? newSessionVideoPlaySessionId();
+        params.playSessionId ?? newSessionMediaPlaySessionId();
     const playback = new PlaybackApi(
         api.configuration,
         undefined,
@@ -356,7 +358,7 @@ export async function planSessionVideo(
             {}
         );
         if (!data.Id) {
-            throw new SessionVideoError(
+            throw new SessionMediaError(
                 'failed',
                 'POST Playback/Sessions: no session id'
             );
@@ -386,7 +388,7 @@ export async function planSessionVideo(
             throw err;
         }
     };
-    const session: SessionVideoSession = { id: sessionId, release };
+    const session: SessionMediaSession = { id: sessionId, release };
 
     // Every exit below that does not hand the session to the caller releases it. A release failure
     // is logged; the original reason is what the caller sees.
@@ -404,7 +406,7 @@ export async function planSessionVideo(
 
     if (signal?.aborted) {
         return abandon(
-            new SessionVideoError(
+            new SessionMediaError(
                 'cancelled',
                 'POST Playback/Sessions: cancelled'
             )
@@ -413,11 +415,11 @@ export async function planSessionVideo(
 
     // The existing chain may only start once this session is gone: a release that failed ends
     // the attempt instead of risking two live sessions for one playback.
-    const decline = async (reason: string): Promise<SessionVideoOutcome> => {
+    const decline = async (reason: string): Promise<SessionMediaOutcome> => {
         try {
             await release();
         } catch (releaseError) {
-            throw new SessionVideoError(
+            throw new SessionMediaError(
                 'failed',
                 `session ${sessionId} (${reason}) could not be released before falling back`,
                 statusOf(releaseError),
@@ -467,12 +469,12 @@ export async function planSessionVideo(
     try {
         const mediaSourceId = stream.Url ? mediaSourceIdOf(stream.Url) : null;
         if (!stream.Url || !mediaSourceId || route === null) {
-            throw new SessionVideoError(
+            throw new SessionMediaError(
                 'failed',
                 'GET .../Stream: descriptor names no route of this session'
             );
         }
-        const playMethod: SessionVideoPlayerMethod =
+        const playMethod: SessionMediaPlayerMethod =
             route === 'hls' ? 'Transcode' : 'DirectPlay';
 
         const library = new LibraryApi(
@@ -488,7 +490,7 @@ export async function planSessionVideo(
             (source) => source.Id === mediaSourceId
         );
         if (!mediaSource) {
-            throw new SessionVideoError(
+            throw new SessionMediaError(
                 'notFound',
                 `item ${params.itemId} has no media source ${mediaSourceId}`
             );
@@ -503,7 +505,7 @@ export async function planSessionVideo(
         throwIfCancelled(signal, 'capability');
 
         const url = absoluteMediaUrl(api, stream.Url, capability);
-        const textTracks: SessionVideoTextTrack[] = [];
+        const textTracks: SessionMediaTextTrack[] = [];
         const trackPaths = new Map<number, string>();
         for (const track of directPlayTextTracks(
             params.itemId,
@@ -582,7 +584,7 @@ export async function planSessionVideo(
                     )
                 },
                 textTracks,
-                mediaType: 'Video',
+                mediaType: item.MediaType === 'Audio' ? 'Audio' : 'Video',
                 liveStreamId: undefined,
                 playSessionId: playSessionId,
                 title: item.Name,
