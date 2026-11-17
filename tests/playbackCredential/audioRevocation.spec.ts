@@ -82,7 +82,9 @@ test.describe('#153-A1 universal-audio revocation', () => {
         const a = await admin();
         // Its OWN library. Sharing `A1 Audio` with matrix.spec.ts made whichever spec ran second
         // resolve the first one's disposed item and answer 404.
-        const audio = await seedAudioLibrary(a, 'A1 Revocation Audio');
+        // A track the browser cannot play as it is: a direct play is served from the session's
+        // file route since consolidation step 1, and only a transcode still reaches universal.
+        const audio = await seedAudioLibrary(a, 'A1 Revocation Audio', 'wma');
 
         const requests: AudioRequest[] = [];
         const lifecycle: Lifecycle[] = [];

@@ -179,7 +179,12 @@ async function waitForItems(
  */
 export async function seedAudioLibrary(
     a: Admin,
-    label = 'A1 Audio'
+    label = 'A1 Audio',
+    /**
+     * `mp3` is played as it is, from the session's file route. `wma` (WMA v2 in ASF) is decoded by
+     * no browser, so the server transcodes it and the client reaches `/Audio/{id}/universal`.
+     */
+    format: 'mp3' | 'wma' = 'mp3'
 ): Promise<SeededLibrary> {
     const root = mkdtempSync(join(tmpdir(), 'a1-audio-'));
     const name = `${label} Probe`;
@@ -191,12 +196,12 @@ export async function seedAudioLibrary(
         '-i',
         'sine=frequency=440:duration=8',
         '-c:a',
-        'libmp3lame',
+        format === 'wma' ? 'wmav2' : 'libmp3lame',
         '-b:a',
         '128k',
         '-metadata',
         `title=${name}`,
-        join(dir, `${name}.mp3`)
+        join(dir, `${name}.${format}`)
     ]);
     await addLibrary(a, label, 'music', root);
     await waitForItems(a, [name]);

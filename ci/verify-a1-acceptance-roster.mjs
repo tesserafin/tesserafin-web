@@ -69,6 +69,8 @@ const ACCEPTANCE_ROSTER = [
     'transcodeFilm.spec.ts',
     // Fourth journey: local episodes on Playback/Sessions, the queue moving to the next one included.
     'sessionEpisode.spec.ts',
+    // Audio: a track the browser plays as it is, from the session's file route.
+    'sessionAudio.spec.ts',
     'directPlayRevocation.spec.ts',
     'disclosure.spec.ts',
     'libassFamilies.spec.ts',

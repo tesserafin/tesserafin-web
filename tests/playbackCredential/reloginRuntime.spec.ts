@@ -235,7 +235,14 @@ test.describe('#153-A1 sign out and back in', () => {
 
         page.on('response', (response) => {
             const url = response.url();
-            if (!/\/audio\/[^/]+\/universal/i.test(url)) return;
+            // Universal audio, or the session's own file route that serves an audio direct play
+            // since consolidation step 1: either carries the capability.
+            if (
+                !/\/audio\/[^/]+\/universal|\/playback\/sessions\/[^/]+\/file/i.test(
+                    url
+                )
+            )
+                return;
             let keys: string[] = [];
             try {
                 keys = [...new URL(url).searchParams.keys()];

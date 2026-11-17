@@ -53,7 +53,7 @@ export const FAMILY_CONTRACT: Record<string, FamilyEntry> = {
     'universal-audio': {
         status: 'required',
         owner: 'matrix.spec.ts',
-        note: 'seedAudioLibrary; the client builds /universal for every audio item'
+        note: "seedAudioLibrary(..., 'wma'): a track no browser decodes is transcoded through /universal; a track the browser plays as it is is served from the session's file route since consolidation step 1 (sessionAudio.spec.ts)"
     },
     'session-hls': {
         status: 'required',
