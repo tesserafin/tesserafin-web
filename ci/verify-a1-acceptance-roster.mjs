@@ -67,6 +67,8 @@ const ACCEPTANCE_ROSTER = [
     'remuxFilm.spec.ts',
     // Third journey: the SDR transcode film on Playback/Sessions (start, track and quality changes).
     'transcodeFilm.spec.ts',
+    // Fourth journey: local episodes on Playback/Sessions, the queue moving to the next one included.
+    'sessionEpisode.spec.ts',
     'directPlayRevocation.spec.ts',
     'disclosure.spec.ts',
     'libassFamilies.spec.ts',
