@@ -35,7 +35,7 @@ import { PluginType } from 'constants/pluginType';
 import { TICKS_PER_SECOND } from 'constants/time';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
 import { brokerFor } from 'lib/playbackCredentials/broker';
-import { isSessionVideoCandidate } from './sessionVideoCandidate.ts';
+import { isSessionMediaCandidate } from './sessionMediaCandidate.ts';
 import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket';
 import { MediaError } from 'types/mediaError';
 import { getMediaError } from 'utils/mediaError';
@@ -409,12 +409,12 @@ let startingPlaySession = new Date().getTime();
  * clients). The cached promise holds the function, not the module namespace, so export mangling
  * still applies to the chunk.
  */
-let planSessionVideoLoader;
-function loadPlanSessionVideo() {
-    planSessionVideoLoader ??= import('./sessionVideo.ts').then(
-        (module) => module.planSessionVideo
+let planSessionMediaLoader;
+function loadPlanSessionMedia() {
+    planSessionMediaLoader ??= import('./sessionMedia.ts').then(
+        (module) => module.planSessionMedia
     );
-    return planSessionVideoLoader;
+    return planSessionMediaLoader;
 }
 
 function playSessionIdFor(requestOptions) {
@@ -3833,14 +3833,14 @@ export class PlaybackManager {
         }
 
         /**
-         * Consolidation step 1: plans a library video through `Playback/Sessions` alone. Resolves to
+         * Consolidation step 1: plans a library video or audio track through `Playback/Sessions` alone. Resolves to
          * `{ kind: 'planned', streamInfo, api }` when the server decided a direct play, a remux
          * or a transcode it serves from the session, to `{ kind: 'fallback' }` when it decided something this
          * journey does not cover (its session already released), and to `{ kind: 'ended' }` when
          * the attempt was refused, failed or was cancelled - never to the legacy chain in those
          * cases.
          */
-        async function planSessionVideoPlayback({
+        async function planSessionMediaPlayback({
             apiClient,
             item,
             mediaSourceId,
@@ -3849,17 +3849,17 @@ export class PlaybackManager {
             maxBitrate,
             quiet
         }) {
-            self._sessionVideoAbort?.abort();
+            self._sessionMediaAbort?.abort();
             const controller = new AbortController();
-            self._sessionVideoAbort = controller;
+            self._sessionMediaAbort = controller;
             const api = ServerConnections.getTesserafinApi(
                 apiClient.serverId()
             );
 
             let outcome;
             try {
-                const planSessionVideo = await loadPlanSessionVideo();
-                outcome = await planSessionVideo(
+                const planSessionMedia = await loadPlanSessionMedia();
+                outcome = await planSessionMedia(
                     {
                         api,
                         itemId: item.Id,
@@ -3914,7 +3914,7 @@ export class PlaybackManager {
                 if (err?.failure !== 'cancelled') {
                     // The error carries status and stage only: no URL, no credential.
                     console.error(
-                        `[session-video] playback of ${item.Id} ended: ${err?.failure ?? 'failed'} (${err?.message ?? ''})`
+                        `[session-media] playback of ${item.Id} ended: ${err?.failure ?? 'failed'} (${err?.message ?? ''})`
                     );
                     showPlaybackInfoErrorMessage(
                         self,
@@ -3926,8 +3926,8 @@ export class PlaybackManager {
                 }
                 return { kind: 'ended' };
             } finally {
-                if (self._sessionVideoAbort === controller) {
-                    self._sessionVideoAbort = null;
+                if (self._sessionMediaAbort === controller) {
+                    self._sessionMediaAbort = null;
                 }
             }
 
@@ -3944,10 +3944,10 @@ export class PlaybackManager {
         }
 
         /**
-         * Plays a library video through `Playback/Sessions` alone: {@link planSessionVideoPlayback}, then the
+         * Plays a library video or audio track through `Playback/Sessions` alone: {@link planSessionMediaPlayback}, then the
          * shared start. `{ kind: 'started', started }` replaces `planned`.
          */
-        async function playSessionVideo({
+        async function playSessionMedia({
             player,
             apiClient,
             item,
@@ -3957,7 +3957,7 @@ export class PlaybackManager {
             maxBitrate,
             onPlaybackStartedFn
         }) {
-            const outcome = await planSessionVideoPlayback({
+            const outcome = await planSessionMediaPlayback({
                 apiClient,
                 item,
                 mediaSourceId,
@@ -4078,7 +4078,7 @@ export class PlaybackManager {
                         ) {
                             tracker.forget();
                         }
-                        return planSessionVideoPlayback({
+                        return planSessionMediaPlayback({
                             apiClient,
                             item,
                             mediaSourceId: self.currentMediaSource(player).Id,
@@ -4115,7 +4115,7 @@ export class PlaybackManager {
                         // created. A switch the viewer asked for simply did not happen and the
                         // item plays on; after a failure there is nothing left to keep.
                         console.error(
-                            `[session-video] session of ${item.Id} could not be released for a change (${err?.message ?? err})`
+                            `[session-media] session of ${item.Id} could not be released for a change (${err?.message ?? err})`
                         );
                         return { kind: change.afterFailure ? 'ended' : 'kept' };
                     }
@@ -4170,7 +4170,7 @@ export class PlaybackManager {
                 })
                 .catch(function (err) {
                     console.error(
-                        `[session-video] change of ${item.Id} could not be planned (${err?.message ?? err})`
+                        `[session-media] change of ${item.Id} could not be planned (${err?.message ?? err})`
                     );
                     cannotStart();
                 });
@@ -4516,17 +4516,17 @@ export class PlaybackManager {
                         options
                     ).then(onLegacyMediaSource);
 
-                // Consolidation step 1: a library video on the local HTML player is planned
-                // through Playback/Sessions alone (sessionVideo.ts): a direct play, a remux or an
+                // Consolidation step 1: a library video or audio track on a local HTML player is planned
+                // through Playback/Sessions alone (sessionMedia.ts): a direct play, a remux or an
                 // SDR transcode the server serves from the session. Only a decision this journey
                 // does not cover (tone mapping, a burnt-in subtitle) continues with the legacy
                 // chain, and then without direct play, so such an item never reaches the legacy
                 // direct-play path. A refusal or a failure ends the attempt.
-                if (!isSessionVideoCandidate(item, player)) {
+                if (!isSessionMediaCandidate(item, player)) {
                     return playLegacyChain();
                 }
 
-                return playSessionVideo({
+                return playSessionMedia({
                     player,
                     apiClient,
                     item,
@@ -6415,8 +6415,8 @@ export class PlaybackManager {
     }
 
     stop(player) {
-        // A library video still being planned through Playback/Sessions is cancelled; its session is released.
-        this._sessionVideoAbort?.abort();
+        // A library item still being planned through Playback/Sessions is cancelled; its session is released.
+        this._sessionMediaAbort?.abort();
         player = player || this._currentPlayer;
         if (player) {
             if (enableLocalPlaylistManagement(player)) {
