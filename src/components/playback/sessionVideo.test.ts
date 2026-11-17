@@ -103,6 +103,13 @@ function fakeApi(answers: {
                                     Codec: 'PGSSUB',
                                     IsTextSubtitleStream: false
                                 }
+                            ],
+                            MediaAttachments: [
+                                {
+                                    Index: 5,
+                                    MimeType: 'font/ttf',
+                                    FileName: 'font.ttf'
+                                }
                             ]
                         }
                     ]
@@ -242,6 +249,14 @@ describe('planSessionVideo', () => {
         expect(
             outcome.streamInfo.mediaSource.MediaStreams?.[3]?.DeliveryMethod
         ).toBeUndefined();
+        expect(outcome.streamInfo.mediaSource.MediaAttachments).toEqual([
+            {
+                Index: 5,
+                MimeType: 'font/ttf',
+                FileName: 'font.ttf',
+                DeliveryUrl: `/Videos/${ITEM}/${SOURCE}/Attachments/5`
+            }
+        ]);
         expect(outcome.streamInfo.textTracks).toEqual([
             {
                 url: `http://server:8096/Videos/${ITEM}/${SOURCE}/Subtitles/2/0/Stream.vtt?playbackCapability=SUB`,
