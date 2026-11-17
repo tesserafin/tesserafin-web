@@ -42,14 +42,13 @@ export interface FamilyEntry {
  */
 export const FAMILY_CONTRACT: Record<string, FamilyEntry> = {
     'direct-video': {
-        status: 'required',
-        owner: 'matrix.spec.ts',
-        note: 'the rig seeds Smoke Test Movie; direct-play is its default path'
+        status: 'unreached',
+        note: 'consolidation step 1 (tesserafin#129): every library video of the rig (films, episodes, the Remux Probe home video) now direct-plays from its session (session-file). /Videos/{id}/stream is still served to PlaybackInfo clients (Android) and Live TV, neither of which this browser suite drives; server-side its contract is PlaybackUrlContractEndToEndTests. Drop when step 2 removes the route.'
     },
     'session-file': {
         status: 'required',
         owner: 'migratedTrace.spec.ts',
-        note: 'consolidation step 1: Smoke Test Movie (a film) direct-plays from /Playback/Sessions/{id}/File; direct-video stays required through the non-film items matrix.spec.ts plays'
+        note: 'consolidation step 1: Smoke Test Movie (a film) direct-plays from /Playback/Sessions/{id}/File, as every library video now does'
     },
     'universal-audio': {
         status: 'required',
@@ -63,7 +62,7 @@ export const FAMILY_CONTRACT: Record<string, FamilyEntry> = {
     },
     'hls-master': {
         status: 'unreached',
-        note: 'consolidation step 1 (tesserafin#129): every film of the rig is now played from its session (session-file, session-hls). /Videos/{id}/master.m3u8 is still served to a non-film video that needs a transcode, which this rig does not seed (Codec Probes holds only Remux Probe, which Chrome direct-plays); server-side its contract is PlaybackUrlContractEndToEndTests and HlsOutputIsolationEndToEndTests. Promote with a non-film transcode fixture, or drop when step 2 removes the route.'
+        note: 'consolidation step 1 (tesserafin#129): every library video of the rig is now played from its session (session-file, session-hls). /Videos/{id}/master.m3u8 is still served to a plan the session journey does not execute (tone mapping, burn-in, a target other than H.264/AAC) and to PlaybackInfo clients, which this rig does not drive; server-side its contract is PlaybackUrlContractEndToEndTests and HlsOutputIsolationEndToEndTests. Promote with a non-film transcode fixture, or drop when step 2 removes the route.'
     },
     'hls-variant': {
         status: 'unreached',

@@ -555,6 +555,15 @@ export async function planSessionVideo(
                         selectedSubtitle ??
                         params.preferredSubtitleStreamIndex ??
                         -1,
+                    // ASS/SSA rendering loads the source's embedded fonts from the attachment
+                    // route, at the url PlaybackInfo used to set; the player adds the Attachments
+                    // capability itself (htmlVideoPlayer renderSsaAss).
+                    MediaAttachments: (mediaSource.MediaAttachments ?? []).map(
+                        (attachment) => ({
+                            ...attachment,
+                            DeliveryUrl: `/Videos/${params.itemId}/${encodeURIComponent(mediaSourceId)}/Attachments/${attachment.Index}`
+                        })
+                    ),
                     // The player reads a text track's delivery off the stream itself, as
                     // PlaybackInfo used to set it: External, at the subtitle route (the player
                     // adds the Subtitles capability through playbackManager.getSubtitleUrl).
