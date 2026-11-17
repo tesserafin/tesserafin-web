@@ -43,6 +43,8 @@ function family(url: string): string | null {
     if (/\/attachments\//.test(u)) return 'attachment';
     if (/\/trickplay\//.test(u)) return 'trickplay';
     if (/\/subtitles\//.test(u)) return 'subtitle';
+    if (/\/playback\/sessions\/[^/]+\/file/.test(u)) return 'session-file';
+    if (/\/playback\/sessions\/[^/]+\/hls\//.test(u)) return 'session-hls';
     if (/\/hls\//.test(u)) return 'legacy-hls';
     if (/hls1\//.test(u)) return 'hls-segment';
     if (/master\.m3u8/.test(u)) return 'hls-master';
@@ -102,7 +104,7 @@ test.describe('#153-A1 browser matrix', () => {
         test.setTimeout(600_000);
 
         const a = await admin();
-        const audio = await seedAudioLibrary(a);
+        const audio = await seedAudioLibrary(a, undefined, 'wma');
         // Its OWN library, like the audio one above. `seedAssLibrary` derives the item name
         // from the label, so two specs sharing the default would share an item as well.
         const ass = await seedAssLibrary(a, 'A1 Matrix Subtitles');
