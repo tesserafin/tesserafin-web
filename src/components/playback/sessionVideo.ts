@@ -1,6 +1,6 @@
 /**
- * Consolidation step 1, local video journeys (server `docs/playback-path-inventory.md` §4 to §6): a
- * film or an episode read from a local file plays through `Playback/Sessions` alone, as a direct play, a remux or an
+ * Consolidation step 1, local video journeys (server `docs/playback-path-inventory.md` §4 to §7): a
+ * library video (film, episode, home video, music video, trailer) read from a local file plays through `Playback/Sessions` alone, as a direct play, a remux or an
  * SDR transcode.
  *
  * The chain is `POST Playback/Sessions` → `GET .../Stream` → a route the session owns (its file
@@ -17,7 +17,7 @@
  *    transcode it does not serve from the session - tone mapping, a burnt-in subtitle, a
  *    delivery that is not HLS - or no viable plan). The session it created is
  *    released first, then the caller continues with the existing chain - with direct play
- *    disabled, so the old direct-play path of a film or an episode cannot come back that way.
+ *    disabled, so the old direct-play path of a library video cannot come back that way.
  *  - a thrown {@link SessionVideoError}: authentication, authorization, a vanished session or any
  *    other failure ends the attempt. It never falls back. When releasing the session also fails, the
  *    original error is the one thrown.
@@ -299,7 +299,7 @@ function sessionRouteOf(
 }
 
 /**
- * Plans the playback of a film or an episode through `Playback/Sessions` alone. See the module comment for the
+ * Plans the playback of a library video through `Playback/Sessions` alone. See the module comment for the
  * three outcomes.
  */
 export async function planSessionVideo(
