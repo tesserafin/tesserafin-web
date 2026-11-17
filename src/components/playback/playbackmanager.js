@@ -3833,7 +3833,7 @@ export class PlaybackManager {
         }
 
         /**
-         * Consolidation step 1: plans a film or an episode through `Playback/Sessions` alone. Resolves to
+         * Consolidation step 1: plans a library video through `Playback/Sessions` alone. Resolves to
          * `{ kind: 'planned', streamInfo, api }` when the server decided a direct play, a remux
          * or a transcode it serves from the session, to `{ kind: 'fallback' }` when it decided something this
          * journey does not cover (its session already released), and to `{ kind: 'ended' }` when
@@ -3944,7 +3944,7 @@ export class PlaybackManager {
         }
 
         /**
-         * Plays a film or an episode through `Playback/Sessions` alone: {@link planSessionVideoPlayback}, then the
+         * Plays a library video through `Playback/Sessions` alone: {@link planSessionVideoPlayback}, then the
          * shared start. `{ kind: 'started', started }` replaces `planned`.
          */
         async function playSessionVideo({
@@ -4516,7 +4516,7 @@ export class PlaybackManager {
                         options
                     ).then(onLegacyMediaSource);
 
-                // Consolidation step 1: a film or an episode on the local HTML player is planned
+                // Consolidation step 1: a library video on the local HTML player is planned
                 // through Playback/Sessions alone (sessionVideo.ts): a direct play, a remux or an
                 // SDR transcode the server serves from the session. Only a decision this journey
                 // does not cover (tone mapping, a burnt-in subtitle) continues with the legacy
@@ -6415,7 +6415,7 @@ export class PlaybackManager {
     }
 
     stop(player) {
-        // A film or an episode still being planned through Playback/Sessions is cancelled; its session is released.
+        // A library video still being planned through Playback/Sessions is cancelled; its session is released.
         this._sessionVideoAbort?.abort();
         player = player || this._currentPlayer;
         if (player) {

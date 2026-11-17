@@ -4,6 +4,18 @@
  * (and the generated SDK it uses) into the main bundle; the journey itself is loaded on demand.
  */
 
+/**
+ * The library video families this journey owns. Live TV channels, programmes and recordings, and
+ * channel-plugin items, plan elsewhere.
+ */
+const LIBRARY_VIDEO_TYPES = new Set([
+    'Movie',
+    'Episode',
+    'Video',
+    'MusicVideo',
+    'Trailer'
+]);
+
 /** The item fields that decide whether this journey owns a playback. */
 export interface SessionVideoCandidate {
     Id?: string | null;
@@ -14,7 +26,7 @@ export interface SessionVideoCandidate {
 }
 
 /**
- * Whether this journey owns the playback of `item` on `player`: a film or an episode, on the server, played by the
+ * Whether this journey owns the playback of `item` on `player`: a library video (film, episode, home video, music video, trailer), on the server, played by the
  * local HTML video player (not a cast or remote target, which plan for themselves).
  */
 export function isSessionVideoCandidate(
@@ -23,7 +35,7 @@ export function isSessionVideoCandidate(
 ): boolean {
     return (
         !!item?.Id &&
-        (item.Type === 'Movie' || item.Type === 'Episode') &&
+        LIBRARY_VIDEO_TYPES.has(item.Type ?? '') &&
         item.MediaType === 'Video' &&
         (item.LocationType == null || item.LocationType === 'FileSystem') &&
         !item.IsPlaceHolder &&

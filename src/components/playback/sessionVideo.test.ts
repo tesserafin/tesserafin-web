@@ -136,7 +136,7 @@ const subtitle = vi.fn(
 
 describe('isSessionVideoCandidate', () => {
     const html = { id: 'htmlvideoplayer', isLocalPlayer: true };
-    it('owns a film or an episode on the local html player only', () => {
+    it('owns a library video on the local html player only', () => {
         expect(
             isSessionVideoCandidate(
                 {
@@ -159,10 +159,28 @@ describe('isSessionVideoCandidate', () => {
                 { Id: ITEM, Type: 'Video', MediaType: 'Video' },
                 html
             )
-        ).toBe(false);
+        ).toBe(true);
         expect(
             isSessionVideoCandidate(
                 { Id: ITEM, Type: 'MusicVideo', MediaType: 'Video' },
+                html
+            )
+        ).toBe(true);
+        expect(
+            isSessionVideoCandidate(
+                { Id: ITEM, Type: 'Trailer', MediaType: 'Video' },
+                html
+            )
+        ).toBe(true);
+        expect(
+            isSessionVideoCandidate(
+                { Id: ITEM, Type: 'Recording', MediaType: 'Video' },
+                html
+            )
+        ).toBe(false);
+        expect(
+            isSessionVideoCandidate(
+                { Id: ITEM, Type: 'ChannelVideoItem', MediaType: 'Video' },
                 html
             )
         ).toBe(false);
