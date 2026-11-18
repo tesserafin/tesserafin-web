@@ -8,6 +8,7 @@
  */
 export * from './generated';
 export * from './client';
+export * from './imageUrl';
 
 import type { TesserafinApi } from './client';
 import { AuthenticationApi } from './generated/api/authentication-api';
@@ -15,6 +16,7 @@ import { DeviceApi } from './generated/api/device-api';
 import { ChannelApi } from './generated/api/channel-api';
 import { GenreApi } from './generated/api/genre-api';
 import { LibraryApi } from './generated/api/library-api';
+import { LibraryStructureApi } from './generated/api/library-structure-api';
 import { LocalizationApi } from './generated/api/localization-api';
 import { MovieApi } from './generated/api/movie-api';
 import { SessionApi } from './generated/api/session-api';
@@ -110,3 +112,12 @@ export const getChannelApi = (api: TesserafinApi): ChannelApi =>
 
 export const getLocalizationApi = (api: TesserafinApi): LocalizationApi =>
     new LocalizationApi(api.configuration, undefined, api.axiosInstance);
+
+/**
+ * Added for the dashboard libraries feature (`apps/dashboard/features/libraries/`, consolidation
+ * step 3). Reached only through the dashboard's async route chunks.
+ */
+export const getLibraryStructureApi = (
+    api: TesserafinApi
+): LibraryStructureApi =>
+    new LibraryStructureApi(api.configuration, undefined, api.axiosInstance);

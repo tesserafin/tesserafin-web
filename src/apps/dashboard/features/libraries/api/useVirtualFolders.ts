@@ -1,12 +1,14 @@
-import { Api } from '@jellyfin/sdk';
+import { getLibraryStructureApi, type TesserafinApi } from 'lib/tesserafin-sdk';
 import { useQuery } from '@tanstack/react-query';
 import { useApi } from 'hooks/useApi';
 import type { AxiosRequestConfig } from 'axios';
-import { getLibraryStructureApi } from '@jellyfin/sdk/lib/utils/api/library-structure-api';
 
 export const QUERY_KEY = 'VirtualFolders';
 
-const fetchVirtualFolders = async (api: Api, options?: AxiosRequestConfig) => {
+const fetchVirtualFolders = async (
+    api: TesserafinApi,
+    options?: AxiosRequestConfig
+) => {
     const response =
         await getLibraryStructureApi(api).getVirtualFolders(options);
 
@@ -14,11 +16,11 @@ const fetchVirtualFolders = async (api: Api, options?: AxiosRequestConfig) => {
 };
 
 export const useVirtualFolders = () => {
-    const { api } = useApi();
+    const { reefinApi } = useApi();
 
     return useQuery({
         queryKey: [QUERY_KEY],
-        queryFn: ({ signal }) => fetchVirtualFolders(api!, { signal }),
-        enabled: !!api
+        queryFn: ({ signal }) => fetchVirtualFolders(reefinApi!, { signal }),
+        enabled: !!reefinApi
     });
 };
