@@ -1,7 +1,6 @@
 import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
 import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-item-kind';
-import type { DeviceInfoDto } from '@jellyfin/sdk/lib/generated-client/models/device-info-dto';
-import type { SessionInfoDto } from '@jellyfin/sdk/lib/generated-client/models/session-info-dto';
+import type { DeviceInfoDto, SessionInfoDto } from 'lib/tesserafin-sdk';
 
 const BASE_DEVICE_IMAGE_URL = 'assets/img/devices/';
 

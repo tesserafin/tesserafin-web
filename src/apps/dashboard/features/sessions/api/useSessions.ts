@@ -1,7 +1,9 @@
-import type { SessionApiGetSessionsRequest } from '@jellyfin/sdk/lib/generated-client/api/session-api';
+import {
+    getSessionApi,
+    type SessionApiGetSessionsRequest,
+    type TesserafinApi
+} from 'lib/tesserafin-sdk';
 import type { AxiosRequestConfig } from 'axios';
-import type { Api } from '@jellyfin/sdk';
-import { getSessionApi } from '@jellyfin/sdk/lib/utils/api/session-api';
 import { useQuery } from '@tanstack/react-query';
 
 import { useApi } from 'hooks/useApi';
@@ -9,7 +11,7 @@ import { useApi } from 'hooks/useApi';
 export const QUERY_KEY = 'Sessions';
 
 const fetchSessions = async (
-    api: Api,
+    api: TesserafinApi,
     requestParams?: SessionApiGetSessionsRequest,
     options?: AxiosRequestConfig
 ) => {
@@ -21,11 +23,12 @@ const fetchSessions = async (
 };
 
 export const useSessions = (requestParams: SessionApiGetSessionsRequest) => {
-    const { api } = useApi();
+    const { reefinApi } = useApi();
     return useQuery({
         queryKey: [QUERY_KEY, requestParams],
-        queryFn: ({ signal }) => fetchSessions(api!, requestParams, { signal }),
-        enabled: !!api,
+        queryFn: ({ signal }) =>
+            fetchSessions(reefinApi!, requestParams, { signal }),
+        enabled: !!reefinApi,
         refetchOnWindowFocus: false
     });
 };
