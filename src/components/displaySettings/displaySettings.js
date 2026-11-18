@@ -460,7 +460,7 @@ class DisplaySettings {
         loading.show();
 
         const userId = self.options.userId;
-        const api = ServerConnections.getApi(self.options.serverId);
+        const api = ServerConnections.getTesserafinApi(self.options.serverId);
         const apiClient = ServerConnections.getApiClient(self.options.serverId);
         const userSettings = self.options.userSettings;
 

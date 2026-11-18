@@ -1,7 +1,7 @@
-import type { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
-import { ImageType } from '@jellyfin/sdk/lib/generated-client/models/image-type';
-import { ItemFields } from '@jellyfin/sdk/lib/generated-client/models/item-fields';
-import type { UserDto } from '@jellyfin/sdk/lib/generated-client/models/user-dto';
+import { ImageType } from 'lib/tesserafin-sdk/generated/models/image-type';
+import { ItemFields } from 'lib/tesserafin-sdk/generated/models/item-fields';
+import type { BaseItemDto } from 'lib/tesserafin-sdk/generated/models/base-item-dto';
+import type { UserDto } from 'lib/tesserafin-sdk/generated/models/user-dto';
 import type { ApiClient } from 'jellyfin-apiclient';
 
 import { getRecommendedProgramsQuery } from 'apps/legacy/features/liveTv/api/useRecommendedPrograms';
@@ -17,7 +17,7 @@ import type { SectionContainerElement, SectionOptions } from './section';
 
 function getOnNowFetchFn(apiClient: ApiClient) {
     return function () {
-        const api = ServerConnections.getApi(apiClient.serverId());
+        const api = ServerConnections.getTesserafinApi(apiClient.serverId());
         return queryClient.fetchQuery(
             getRecommendedProgramsQuery(api, {
                 userId: apiClient.getCurrentUserId(),
@@ -222,7 +222,7 @@ export function loadLiveTV(
         return Promise.resolve();
     }
 
-    const api = ServerConnections.getApi(apiClient.serverId());
+    const api = ServerConnections.getTesserafinApi(apiClient.serverId());
     return queryClient
         .fetchQuery(
             getRecommendedProgramsQuery(api, {

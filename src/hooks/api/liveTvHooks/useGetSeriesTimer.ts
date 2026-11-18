@@ -1,6 +1,8 @@
+import {
+    LiveTvApi,
+    type LiveTvApiGetSeriesTimerRequest
+} from 'lib/tesserafin-sdk/generated/api/live-tv-api';
 import type { AxiosRequestConfig } from 'axios';
-import type { LiveTvApiGetSeriesTimerRequest } from '@jellyfin/sdk/lib/generated-client';
-import { getLiveTvApi } from '@jellyfin/sdk/lib/utils/api/live-tv-api';
 import { queryOptions, useQuery } from '@tanstack/react-query';
 import { type TesserafinApiContext, useApi } from 'hooks/useApi';
 
@@ -9,11 +11,15 @@ const getSeriesTimer = async (
     params: LiveTvApiGetSeriesTimerRequest,
     options?: AxiosRequestConfig
 ) => {
-    const { api } = apiContext;
+    const { reefinApi: api } = apiContext;
 
     if (!api) throw new Error('[getSeriesTimer] No API instance available');
 
-    const response = await getLiveTvApi(api).getSeriesTimer(params, options);
+    const response = await new LiveTvApi(
+        api.configuration,
+        undefined,
+        api.axiosInstance
+    ).getSeriesTimer(params, options);
     return response.data;
 };
 
@@ -24,7 +30,8 @@ export const getSeriesTimerQuery = (
     queryOptions({
         queryKey: ['SeriesTimer', params.timerId],
         queryFn: ({ signal }) => getSeriesTimer(apiContext, params, { signal }),
-        enabled: !!apiContext.api && !!apiContext.user?.Id && !!params.timerId
+        enabled:
+            !!apiContext.reefinApi && !!apiContext.user?.Id && !!params.timerId
     });
 
 export const useGetSeriesTimer = (

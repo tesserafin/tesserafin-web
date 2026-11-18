@@ -1,6 +1,6 @@
-import type { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
-import { ImageType } from '@jellyfin/sdk/lib/generated-client/models/image-type';
-import { ItemFields } from '@jellyfin/sdk/lib/generated-client/models/item-fields';
+import { ImageType } from 'lib/tesserafin-sdk/generated/models/image-type';
+import { ItemFields } from 'lib/tesserafin-sdk/generated/models/item-fields';
+import type { BaseItemDto } from 'lib/tesserafin-sdk/generated/models/base-item-dto';
 import type { ApiClient } from 'jellyfin-apiclient';
 
 import { getNextUpQuery } from 'apps/legacy/features/libraries/api/useNextUp';
@@ -22,7 +22,7 @@ function getNextUpFetchFn(
     { enableOverflow }: SectionOptions
 ) {
     return function () {
-        const api = ServerConnections.getApi(apiClient.serverId());
+        const api = ServerConnections.getTesserafinApi(apiClient.serverId());
         const oldestDateForNextUp = new Date();
         oldestDateForNextUp.setDate(
             oldestDateForNextUp.getDate() - userSettings.maxDaysForNextUp()

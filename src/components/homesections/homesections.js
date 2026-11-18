@@ -54,7 +54,7 @@ function getAllSectionsToShow(userSettings) {
 }
 
 export function loadSections(elem, apiClient, user, userSettings) {
-    const api = ServerConnections.getApi(apiClient.serverId());
+    const api = ServerConnections.getTesserafinApi(apiClient.serverId());
     const userId = user.Id || apiClient.getCurrentUserId();
     return queryClient
         .fetchQuery(getUserViewsQuery(api, { userId }))

@@ -1,21 +1,30 @@
-import type { Api } from '@jellyfin/sdk/lib/api';
-import type { ShowApiGetNextUpRequest } from '@jellyfin/sdk/lib/generated-client/api/show-api';
-import { getShowApi } from '@jellyfin/sdk/lib/utils/api/show-api';
+import {
+    ShowApi,
+    type ShowApiGetNextUpRequest
+} from 'lib/tesserafin-sdk/generated/api/show-api';
+import type { TesserafinApi } from 'lib/tesserafin-sdk/client';
 import { queryOptions, useQuery } from '@tanstack/react-query';
 import type { AxiosRequestConfig } from 'axios';
 
 import { useApi } from 'hooks/useApi';
 
 const fetchNextUp = async (
-    api: Api,
+    api: TesserafinApi,
     params?: ShowApiGetNextUpRequest,
     options?: AxiosRequestConfig
 ) => {
-    const response = await getShowApi(api).getNextUp(params, options);
+    const response = await new ShowApi(
+        api.configuration,
+        undefined,
+        api.axiosInstance
+    ).getNextUp(params, options);
     return response.data;
 };
 
-export const getNextUpQuery = (api?: Api, params?: ShowApiGetNextUpRequest) =>
+export const getNextUpQuery = (
+    api?: TesserafinApi,
+    params?: ShowApiGetNextUpRequest
+) =>
     queryOptions({
         queryKey: ['User', params?.userId, 'NextUp', params],
         queryFn: ({ signal }) => fetchNextUp(api!, params, { signal }),
@@ -23,7 +32,7 @@ export const getNextUpQuery = (api?: Api, params?: ShowApiGetNextUpRequest) =>
     });
 
 export const useNextUp = (params?: ShowApiGetNextUpRequest) => {
-    const { api, user } = useApi();
+    const { reefinApi: api, user } = useApi();
     return useQuery(
         getNextUpQuery(api, {
             ...params,

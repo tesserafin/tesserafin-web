@@ -1,9 +1,9 @@
-import type { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
-import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-item-kind';
-import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
-import { ImageType } from '@jellyfin/sdk/lib/generated-client/models/image-type';
-import { ItemFields } from '@jellyfin/sdk/lib/generated-client/models/item-fields';
-import type { UserDto } from '@jellyfin/sdk/lib/generated-client/models/user-dto';
+import { BaseItemKind } from 'lib/tesserafin-sdk/generated/models/base-item-kind';
+import { CollectionType } from 'lib/tesserafin-sdk/generated/models/collection-type';
+import { ImageType } from 'lib/tesserafin-sdk/generated/models/image-type';
+import { ItemFields } from 'lib/tesserafin-sdk/generated/models/item-fields';
+import type { BaseItemDto } from 'lib/tesserafin-sdk/generated/models/base-item-dto';
+import type { UserDto } from 'lib/tesserafin-sdk/generated/models/user-dto';
 import escapeHtml from 'escape-html';
 import type { ApiClient } from 'jellyfin-apiclient';
 
@@ -30,7 +30,7 @@ function getFetchLatestItemsFn(
     { enableOverflow }: SectionOptions
 ) {
     return function () {
-        const api = ServerConnections.getApi(apiClient.serverId());
+        const api = ServerConnections.getTesserafinApi(apiClient.serverId());
 
         let limit = 16;
 

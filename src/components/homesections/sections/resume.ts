@@ -1,7 +1,7 @@
-import type { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
-import { ImageType } from '@jellyfin/sdk/lib/generated-client/models/image-type';
-import { ItemFields } from '@jellyfin/sdk/lib/generated-client/models/item-fields';
-import type { MediaType } from '@jellyfin/sdk/lib/generated-client/models/media-type';
+import { ImageType } from 'lib/tesserafin-sdk/generated/models/image-type';
+import { ItemFields } from 'lib/tesserafin-sdk/generated/models/item-fields';
+import type { BaseItemDto } from 'lib/tesserafin-sdk/generated/models/base-item-dto';
+import type { MediaType } from 'lib/tesserafin-sdk/generated/models/media-type';
 import type { ApiClient } from 'jellyfin-apiclient';
 
 import { getResumeItemsQuery } from 'apps/legacy/features/libraries/api/useResumeItems';
@@ -28,7 +28,7 @@ function getItemsToResumeFn(
     { enableOverflow }: SectionOptions
 ) {
     return function () {
-        const api = ServerConnections.getApi(apiClient.serverId());
+        const api = ServerConnections.getTesserafinApi(apiClient.serverId());
         const limit = enableOverflow ? 12 : 5;
 
         const options = {

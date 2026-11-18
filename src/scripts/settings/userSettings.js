@@ -98,7 +98,7 @@ export class UserSettings {
 
         const self = this;
 
-        const api = ServerConnections.getApi(apiClient.serverId());
+        const api = ServerConnections.getTesserafinApi(apiClient.serverId());
         return queryClient
             .fetchQuery(
                 getDisplayPreferencesQuery(api, {
@@ -170,7 +170,7 @@ export class UserSettings {
                 });
         }
 
-        const api = ServerConnections.getApi(apiClient.serverId());
+        const api = ServerConnections.getTesserafinApi(apiClient.serverId());
         return queryClient
             .fetchQuery(getUserQuery(api, { userId: this.currentUserId }))
             .then((user) => user.Configuration);
