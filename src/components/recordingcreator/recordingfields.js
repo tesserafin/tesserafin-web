@@ -1,6 +1,6 @@
 import globalize from '../../lib/globalize';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
-import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket';
+import { ServerMessageType } from 'lib/tesserafin-sdk/serverMessages';
 import loading from '../loading/loading';
 import dom from '../../utils/dom';
 import recordingHelper from './recordinghelper';
@@ -105,20 +105,19 @@ class RecordingEditor {
 
         const apiClient = ServerConnections.getApiClient(options.serverId);
         this._unsubscribeTimers = [
+            apiClient?.subscribe([ServerMessageType.TimerCreated], ({ Data }) =>
+                onTimerChangedExternally(Data, this)
+            ),
             apiClient?.subscribe(
-                [OutboundWebSocketMessageType.TimerCreated],
+                [ServerMessageType.TimerCancelled],
                 ({ Data }) => onTimerChangedExternally(Data, this)
             ),
             apiClient?.subscribe(
-                [OutboundWebSocketMessageType.TimerCancelled],
-                ({ Data }) => onTimerChangedExternally(Data, this)
-            ),
-            apiClient?.subscribe(
-                [OutboundWebSocketMessageType.SeriesTimerCreated],
+                [ServerMessageType.SeriesTimerCreated],
                 ({ Data }) => onSeriesTimerChangedExternally(Data, this)
             ),
             apiClient?.subscribe(
-                [OutboundWebSocketMessageType.SeriesTimerCancelled],
+                [ServerMessageType.SeriesTimerCancelled],
                 ({ Data }) => onSeriesTimerChangedExternally(Data, this)
             )
         ].filter(Boolean);

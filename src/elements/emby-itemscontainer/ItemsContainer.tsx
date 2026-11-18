@@ -1,6 +1,9 @@
-import type { LibraryUpdateInfo } from '@jellyfin/sdk/lib/generated-client/models/library-update-info';
-import { MediaType } from '@jellyfin/sdk/lib/generated-client/models/media-type';
-import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket';
+import type { LibraryUpdateInfo } from 'lib/tesserafin-sdk/generated/models/library-update-info';
+import { MediaType } from 'lib/tesserafin-sdk/generated/models/media-type';
+import {
+    ServerMessageType,
+    subscribeServerMessages
+} from 'lib/tesserafin-sdk/serverMessages';
 import React, {
     type FC,
     type PropsWithChildren,
@@ -73,7 +76,7 @@ const ItemsContainer: FC<PropsWithChildren<ItemsContainerProps>> = ({
     const multiSelectref = useRef<MultiSelect | null>(null);
     const sortableref = useRef<Sortable | null>(null);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const unsubscribeRef = useRef<Array<() => void>>([]);
+    const unsubscribeRef = useRef<Array<(() => void) | undefined>>([]);
 
     const onClick = useCallback((e: MouseEvent) => {
         const itemsContainer = itemsContainerRef.current as HTMLDivElement;
@@ -205,7 +208,7 @@ const ItemsContainer: FC<PropsWithChildren<ItemsContainerProps>> = ({
     );
 
     const onLibraryChanged = useCallback(
-        ({ Data }: { Data?: LibraryUpdateInfo }) => {
+        ({ Data }: { Data?: LibraryUpdateInfo | null }) => {
             if (
                 eventsToMonitor.includes('seriestimers') ||
                 eventsToMonitor.includes('timers')
@@ -290,28 +293,34 @@ const ItemsContainer: FC<PropsWithChildren<ItemsContainerProps>> = ({
     const subscribe = useCallback(() => {
         if (api) {
             unsubscribeRef.current = [
-                api.subscribe(
-                    [OutboundWebSocketMessageType.UserDataChanged],
+                subscribeServerMessages(
+                    api,
+                    [ServerMessageType.UserDataChanged],
                     invalidateQueries
                 ),
-                api.subscribe(
-                    [OutboundWebSocketMessageType.TimerCreated],
+                subscribeServerMessages(
+                    api,
+                    [ServerMessageType.TimerCreated],
                     invalidateQueries
                 ),
-                api.subscribe(
-                    [OutboundWebSocketMessageType.TimerCancelled],
+                subscribeServerMessages(
+                    api,
+                    [ServerMessageType.TimerCancelled],
                     invalidateQueries
                 ),
-                api.subscribe(
-                    [OutboundWebSocketMessageType.SeriesTimerCreated],
+                subscribeServerMessages(
+                    api,
+                    [ServerMessageType.SeriesTimerCreated],
                     invalidateQueries
                 ),
-                api.subscribe(
-                    [OutboundWebSocketMessageType.SeriesTimerCancelled],
+                subscribeServerMessages(
+                    api,
+                    [ServerMessageType.SeriesTimerCancelled],
                     invalidateQueries
                 ),
-                api.subscribe(
-                    [OutboundWebSocketMessageType.LibraryChanged],
+                subscribeServerMessages(
+                    api,
+                    [ServerMessageType.LibraryChanged],
                     onLibraryChanged
                 )
             ];
@@ -378,7 +387,7 @@ const ItemsContainer: FC<PropsWithChildren<ItemsContainerProps>> = ({
 
         const unSubAll = () => {
             unsubscribeRef.current.forEach((unsub) => {
-                unsub();
+                unsub?.();
             });
             unsubscribeRef.current = [];
         };

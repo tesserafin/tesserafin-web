@@ -1,9 +1,12 @@
-import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, type FC } from 'react';
 
 import { EventType } from 'constants/eventType';
 import { useApi } from 'hooks/useApi';
+import {
+    ServerMessageType,
+    subscribeServerMessages
+} from 'lib/tesserafin-sdk/serverMessages';
 import Events from 'utils/events';
 
 /** Component that handles mapping events to query client actions. */
@@ -41,10 +44,11 @@ const QueryClientEventHandler: FC = () => {
     useEffect(() => {
         if (!api || !user?.Id) return;
 
-        return api.subscribe(
+        return subscribeServerMessages(
+            api,
             [
-                OutboundWebSocketMessageType.LibraryChanged,
-                OutboundWebSocketMessageType.UserDataChanged
+                ServerMessageType.LibraryChanged,
+                ServerMessageType.UserDataChanged
             ],
             ({ MessageType }) => {
                 void queryClient.invalidateQueries({
@@ -52,9 +56,7 @@ const QueryClientEventHandler: FC = () => {
                 });
                 // Play state moves on every progress report; only a library change is worth
                 // re-asking for lists and views.
-                if (
-                    MessageType === OutboundWebSocketMessageType.LibraryChanged
-                ) {
+                if (MessageType === ServerMessageType.LibraryChanged) {
                     void invalidateItemQueries();
                     void queryClient.invalidateQueries({
                         queryKey: ['User', user.Id, 'Views']

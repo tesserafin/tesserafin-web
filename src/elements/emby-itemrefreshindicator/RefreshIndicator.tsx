@@ -10,8 +10,11 @@ import { toPercentString } from 'utils/number';
 import { getCurrentDateTimeLocale } from 'lib/globalize';
 import type { ItemDto } from 'types/base/models/item-dto';
 import { useApi } from 'hooks/useApi';
-import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket';
-import type { RefreshProgressMessage } from '@jellyfin/sdk/lib/generated-client/models/refresh-progress-message';
+import type { RefreshProgressMessage } from 'lib/tesserafin-sdk/generated/models/refresh-progress-message';
+import {
+    ServerMessageType,
+    subscribeServerMessages
+} from 'lib/tesserafin-sdk/serverMessages';
 
 function CircularProgressWithLabel(
     props: CircularProgressProps & { value: number }
@@ -77,8 +80,9 @@ const RefreshIndicator: FC<RefreshIndicatorProps> = ({ item, className }) => {
     );
 
     useEffect(() => {
-        return api?.subscribe(
-            [OutboundWebSocketMessageType.RefreshProgress],
+        return subscribeServerMessages(
+            api,
+            [ServerMessageType.RefreshProgress],
             onRefreshProgress
         );
     }, [api, onRefreshProgress]);

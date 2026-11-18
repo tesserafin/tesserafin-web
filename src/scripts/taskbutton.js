@@ -1,6 +1,6 @@
 import globalize from 'lib/globalize';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
-import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket';
+import { ServerMessageType } from 'lib/tesserafin-sdk/serverMessages';
 
 import 'elements/emby-button/emby-button';
 
@@ -92,7 +92,7 @@ function taskbutton(options) {
     function subscribe() {
         const api = ServerConnections.getApi(serverId);
         return api.subscribe(
-            [OutboundWebSocketMessageType.ScheduledTasksInfo],
+            [ServerMessageType.ScheduledTasksInfo],
             onScheduledTasksUpdate
         );
     }

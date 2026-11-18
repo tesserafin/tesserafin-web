@@ -1,6 +1,6 @@
 import globalize from '../../lib/globalize';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
-import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket';
+import { ServerMessageType } from 'lib/tesserafin-sdk/serverMessages';
 import EmbyButtonPrototype from '../../elements/emby-button/emby-button';
 
 function onClick() {
@@ -86,7 +86,7 @@ function bindEvents(button) {
     const serverId = button.dataset.serverid;
     const apiClient = ServerConnections.getApiClient(serverId);
     button._unsubscribeUserData = apiClient?.subscribe(
-        [OutboundWebSocketMessageType.UserDataChanged],
+        [ServerMessageType.UserDataChanged],
         (msg) => onUserDataChanged(msg, button)
     );
 }

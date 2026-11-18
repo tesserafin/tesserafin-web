@@ -11,7 +11,7 @@ import dom from '../../utils/dom';
 import loading from '../../components/loading/loading';
 import focusManager from '../../components/focusManager';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
-import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket';
+import { ServerMessageType } from 'lib/tesserafin-sdk/serverMessages';
 
 const ItemsContainerPrototype = Object.create(HTMLDivElement.prototype);
 
@@ -323,29 +323,24 @@ ItemsContainerPrototype.attachedCallback = function () {
 
     const subscribeToApiClient = (apiClient) =>
         [
-            apiClient.subscribe(
-                [OutboundWebSocketMessageType.UserDataChanged],
-                (msg) => onUserDataChanged(msg, this)
+            apiClient.subscribe([ServerMessageType.UserDataChanged], (msg) =>
+                onUserDataChanged(msg, this)
+            ),
+            apiClient.subscribe([ServerMessageType.TimerCreated], (msg) =>
+                onTimerCreated(msg, this)
+            ),
+            apiClient.subscribe([ServerMessageType.SeriesTimerCreated], (msg) =>
+                onSeriesTimerCreated(msg, this)
+            ),
+            apiClient.subscribe([ServerMessageType.TimerCancelled], (msg) =>
+                onTimerCancelled(msg, this)
             ),
             apiClient.subscribe(
-                [OutboundWebSocketMessageType.TimerCreated],
-                (msg) => onTimerCreated(msg, this)
-            ),
-            apiClient.subscribe(
-                [OutboundWebSocketMessageType.SeriesTimerCreated],
-                (msg) => onSeriesTimerCreated(msg, this)
-            ),
-            apiClient.subscribe(
-                [OutboundWebSocketMessageType.TimerCancelled],
-                (msg) => onTimerCancelled(msg, this)
-            ),
-            apiClient.subscribe(
-                [OutboundWebSocketMessageType.SeriesTimerCancelled],
+                [ServerMessageType.SeriesTimerCancelled],
                 (msg) => onSeriesTimerCancelled(msg, this)
             ),
-            apiClient.subscribe(
-                [OutboundWebSocketMessageType.LibraryChanged],
-                (msg) => onLibraryChanged(msg, this)
+            apiClient.subscribe([ServerMessageType.LibraryChanged], (msg) =>
+                onLibraryChanged(msg, this)
             )
         ].filter(Boolean);
 

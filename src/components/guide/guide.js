@@ -2,7 +2,7 @@ import escapeHtml from 'escape-html';
 
 import { ItemAction } from 'constants/itemAction';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
-import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket';
+import { ServerMessageType } from 'lib/tesserafin-sdk/serverMessages';
 
 import inputManager from '../../scripts/inputManager';
 import browser from '../../scripts/browser';
@@ -1528,15 +1528,15 @@ function Guide(options) {
     const _guideApiClient = ServerConnections.getApiClient(options.serverId);
     self._wsUnsubscribers = [
         _guideApiClient?.subscribe(
-            [OutboundWebSocketMessageType.TimerCreated],
+            [ServerMessageType.TimerCreated],
             ({ Data }) => onTimerCreated(Data)
         ),
         _guideApiClient?.subscribe(
-            [OutboundWebSocketMessageType.TimerCancelled],
+            [ServerMessageType.TimerCancelled],
             ({ Data }) => onTimerCancelled(Data)
         ),
         _guideApiClient?.subscribe(
-            [OutboundWebSocketMessageType.SeriesTimerCancelled],
+            [ServerMessageType.SeriesTimerCancelled],
             ({ Data }) => onSeriesTimerCancelled(Data)
         )
     ].filter(Boolean);

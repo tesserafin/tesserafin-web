@@ -1,7 +1,7 @@
 import EmbyProgressRing from '../emby-progressring/emby-progressring';
 import dom from '../../utils/dom';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
-import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket';
+import { ServerMessageType } from 'lib/tesserafin-sdk/serverMessages';
 
 import 'webcomponents.js/webcomponents-lite';
 
@@ -37,7 +37,7 @@ EmbyItemRefreshIndicatorPrototype.createdCallback = function () {
 
     this._wsApiClientCreatedHandler = (e, newApiClient) => {
         const unsub = newApiClient.subscribe(
-            [OutboundWebSocketMessageType.RefreshProgress],
+            [ServerMessageType.RefreshProgress],
             handler
         );
         if (unsub) this._wsUnsubscribers.push(unsub);
@@ -45,10 +45,7 @@ EmbyItemRefreshIndicatorPrototype.createdCallback = function () {
 
     this._wsUnsubscribers = ServerConnections.getApiClients()
         .map((apiClient) =>
-            apiClient.subscribe(
-                [OutboundWebSocketMessageType.RefreshProgress],
-                handler
-            )
+            apiClient.subscribe([ServerMessageType.RefreshProgress], handler)
         )
         .filter(Boolean);
 };
