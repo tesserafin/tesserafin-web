@@ -1,9 +1,9 @@
 import React, { ChangeEvent, useCallback, useEffect, useState } from 'react';
-import { getSystemApi } from '@jellyfin/sdk/lib/utils/api/system-api';
 import Loading from 'components/loading/LoadingComponent';
 import Page from 'components/Page';
 import globalize from 'lib/globalize';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
+import { getSystemApi, type ServerConfiguration } from 'lib/tesserafin-sdk';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -20,12 +20,11 @@ import {
 } from 'react-router-dom';
 import { useServerLogs } from 'apps/dashboard/features/logs/api/useServerLogs';
 import { useConfiguration } from 'hooks/useConfiguration';
-import type { ServerConfiguration } from '@jellyfin/sdk/lib/generated-client/models/server-configuration';
 import { ActionData } from 'types/actionData';
 import LogItemList from 'apps/dashboard/features/logs/components/LogItemList';
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-    const api = ServerConnections.getApi();
+    const api = ServerConnections.getTesserafinApi();
     if (!api) throw new Error('No Api instance available');
 
     const formData = await request.formData();

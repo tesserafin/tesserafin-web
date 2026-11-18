@@ -10,6 +10,7 @@ export * from './generated';
 export * from './client';
 
 import type { TesserafinApi } from './client';
+import { AuthenticationApi } from './generated/api/authentication-api';
 import { GenreApi } from './generated/api/genre-api';
 import { LibraryApi } from './generated/api/library-api';
 import { MovieApi } from './generated/api/movie-api';
@@ -65,3 +66,10 @@ export const getStudioApi = (api: TesserafinApi): StudioApi =>
  */
 export const getMovieApi = (api: TesserafinApi): MovieApi =>
     new MovieApi(api.configuration, undefined, api.axiosInstance);
+
+/**
+ * Added for the dashboard API keys feature (`apps/dashboard/features/keys/api/`, consolidation step
+ * 3). Reached only through the dashboard's async route chunks.
+ */
+export const getAuthenticationApi = (api: TesserafinApi): AuthenticationApi =>
+    new AuthenticationApi(api.configuration, undefined, api.axiosInstance);

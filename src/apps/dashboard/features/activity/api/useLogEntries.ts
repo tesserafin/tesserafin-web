@@ -1,13 +1,15 @@
-import type { SystemApiGetLogEntriesRequest } from '@jellyfin/sdk/lib/generated-client/api/system-api';
-import type { AxiosRequestConfig } from 'axios';
-import type { Api } from '@jellyfin/sdk';
-import { getSystemApi } from '@jellyfin/sdk/lib/utils/api/system-api';
 import { useQuery } from '@tanstack/react-query';
+import type { AxiosRequestConfig } from 'axios';
 
 import { useApi } from 'hooks/useApi';
+import {
+    getSystemApi,
+    type SystemApiGetLogEntriesRequest,
+    type TesserafinApi
+} from 'lib/tesserafin-sdk';
 
 const fetchLogEntries = async (
-    api: Api,
+    api: TesserafinApi,
     requestParams?: SystemApiGetLogEntriesRequest,
     options?: AxiosRequestConfig
 ) => {
@@ -19,12 +21,12 @@ const fetchLogEntries = async (
 };
 
 export const useLogEntries = (requestParams: SystemApiGetLogEntriesRequest) => {
-    const { api } = useApi();
+    const { reefinApi } = useApi();
     return useQuery({
         queryKey: ['ActivityLogEntries', requestParams],
         queryFn: ({ signal }) =>
-            fetchLogEntries(api!, requestParams, { signal }),
-        enabled: !!api,
+            fetchLogEntries(reefinApi!, requestParams, { signal }),
+        enabled: !!reefinApi,
         refetchOnMount: false,
         staleTime: 0 // ensure we load the latest log entries
     });
