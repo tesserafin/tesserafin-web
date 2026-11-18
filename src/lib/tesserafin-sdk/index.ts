@@ -11,9 +11,11 @@ export * from './client';
 
 import type { TesserafinApi } from './client';
 import { AuthenticationApi } from './generated/api/authentication-api';
+import { DeviceApi } from './generated/api/device-api';
 import { GenreApi } from './generated/api/genre-api';
 import { LibraryApi } from './generated/api/library-api';
 import { MovieApi } from './generated/api/movie-api';
+import { SessionApi } from './generated/api/session-api';
 import { ShowApi } from './generated/api/show-api';
 import { StudioApi } from './generated/api/studio-api';
 import { SystemApi } from './generated/api/system-api';
@@ -73,3 +75,14 @@ export const getMovieApi = (api: TesserafinApi): MovieApi =>
  */
 export const getAuthenticationApi = (api: TesserafinApi): AuthenticationApi =>
     new AuthenticationApi(api.configuration, undefined, api.axiosInstance);
+
+/**
+ * Added for the dashboard devices and sessions features (`apps/dashboard/features/devices/`,
+ * `apps/dashboard/features/sessions/`, consolidation step 3). Reached only through the dashboard's
+ * async route chunks.
+ */
+export const getDeviceApi = (api: TesserafinApi): DeviceApi =>
+    new DeviceApi(api.configuration, undefined, api.axiosInstance);
+
+export const getSessionApi = (api: TesserafinApi): SessionApi =>
+    new SessionApi(api.configuration, undefined, api.axiosInstance);

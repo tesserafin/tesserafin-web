@@ -1,4 +1,4 @@
-import type { SessionInfoDto } from '@jellyfin/sdk/lib/generated-client/models/session-info-dto';
+import { type SessionInfoDto } from 'lib/tesserafin-sdk';
 import itemHelper from 'components/itemHelper';
 import formatDistanceToNow from 'date-fns/formatDistanceToNow';
 import globalize from 'lib/globalize';

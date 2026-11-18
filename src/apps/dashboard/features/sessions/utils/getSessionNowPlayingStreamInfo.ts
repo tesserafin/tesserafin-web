@@ -1,4 +1,4 @@
-import type { SessionInfoDto } from '@jellyfin/sdk/lib/generated-client/models/session-info-dto';
+import { type SessionInfoDto } from 'lib/tesserafin-sdk';
 import playmethodhelper from 'components/playback/playmethodhelper';
 import globalize from 'lib/globalize';
 

@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import type { SessionInfoDto } from '@jellyfin/sdk/lib/generated-client/models/session-info-dto';
+import { PlaystateCommand, type SessionInfoDto } from 'lib/tesserafin-sdk';
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
 import CardMedia from '@mui/material/CardMedia';
@@ -22,7 +22,6 @@ import playmethodhelper from 'components/playback/playmethodhelper';
 import globalize from 'lib/globalize';
 import getSessionNowPlayingStreamInfo from '../../sessions/utils/getSessionNowPlayingStreamInfo';
 import { useSendPlayStateCommand } from '../../sessions/api/usePlayPauseSession';
-import { PlaystateCommand } from '@jellyfin/sdk/lib/generated-client/models/playstate-command';
 import InputDialog from 'components/InputDialog';
 import { useSendMessage } from '../../sessions/api/useSendMessage';
 

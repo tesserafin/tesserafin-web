@@ -1,4 +1,4 @@
-import type { DeviceInfoDto } from '@jellyfin/sdk/lib/generated-client/models/device-info-dto';
+import { type DeviceInfoDto } from 'lib/tesserafin-sdk';
 import Delete from '@mui/icons-material/Delete';
 import Edit from '@mui/icons-material/Edit';
 import Box from '@mui/material/Box/Box';
@@ -47,7 +47,7 @@ const getUserCell = (users: UsersRecords) =>
     };
 
 export const Component = () => {
-    const { api } = useApi();
+    const { reefinApi } = useApi();
     const {
         data,
         isLoading: isDevicesLoading,
@@ -112,7 +112,11 @@ export const Component = () => {
         if (devices) {
             Promise.all(
                 devices.map((item) => {
-                    if (api && item.Id && api.deviceInfo.id === item.Id) {
+                    if (
+                        reefinApi &&
+                        item.Id &&
+                        reefinApi.deviceInfo.id === item.Id
+                    ) {
                         return deleteDevice.mutateAsync({ id: [item.Id] });
                     }
                     return Promise.resolve();
@@ -128,7 +132,7 @@ export const Component = () => {
                     onCloseDeleteAllConfirmDialog();
                 });
         }
-    }, [api, deleteDevice, devices, onCloseDeleteAllConfirmDialog]);
+    }, [reefinApi, deleteDevice, devices, onCloseDeleteAllConfirmDialog]);
 
     const UserCell = getUserCell(users);
 
@@ -239,7 +243,9 @@ export const Component = () => {
         },
         renderRowActions: ({ row, table }) => {
             const isDeletable =
-                api && row.original.Id && api.deviceInfo.id === row.original.Id;
+                reefinApi &&
+                row.original.Id &&
+                reefinApi.deviceInfo.id === row.original.Id;
             return (
                 <Box
                     sx={{

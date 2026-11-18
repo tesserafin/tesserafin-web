@@ -1,5 +1,5 @@
-import type { SessionInfoDto } from '@jellyfin/sdk/lib/generated-client/models/session-info-dto';
 import { useApi } from 'hooks/useApi';
+import type { SessionInfoDto } from 'lib/tesserafin-sdk';
 import { useCallback, useEffect } from 'react';
 import { QUERY_KEY, useSessions } from '../api/useSessions';
 import { queryClient } from 'utils/query/queryClient';
@@ -47,7 +47,9 @@ const useLiveSessions = () => {
             ({ Data }) => {
                 queryClient.setQueryData(
                     [QUERY_KEY, QUERY_PARAMS],
-                    updateSessions(Data ?? [])
+                    // The WebSocket (still on @jellyfin/sdk: the generated client has no socket) delivers
+                    // the same wire payload GET /Sessions returns; re-type it at this boundary.
+                    updateSessions((Data ?? []) as unknown as SessionInfoDto[])
                 );
             }
         );
