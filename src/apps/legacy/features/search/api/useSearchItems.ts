@@ -1,6 +1,8 @@
-import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-item-kind';
-import type { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
-import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
+import {
+    BaseItemKind,
+    CollectionType,
+    type BaseItemDto
+} from 'lib/tesserafin-sdk';
 import { useQuery } from '@tanstack/react-query';
 import { useApi } from '../../../../../hooks/useApi';
 import {
@@ -56,7 +58,7 @@ export const useSearchItems = (
     );
     const { data: liveTvSections, isPending: isLiveTvPending } =
         useLiveTvSearch(parentId, collectionType, searchTerm);
-    const { api, user } = useApi();
+    const { reefinApi: api, user } = useApi();
     const userId = user?.Id;
 
     const isArtistsEnabled =

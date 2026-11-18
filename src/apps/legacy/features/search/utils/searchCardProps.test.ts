@@ -1,4 +1,4 @@
-import type { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
+import { type BaseItemDto } from 'lib/tesserafin-sdk';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('lib/globalize', () => ({

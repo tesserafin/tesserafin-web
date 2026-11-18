@@ -1,5 +1,3 @@
-import { ItemFields } from '@jellyfin/sdk/lib/generated-client/models/item-fields';
-
 export const QUERY_OPTIONS = {
     limit: 100,
     fields: [
@@ -10,3 +8,4 @@ export const QUERY_OPTIONS = {
     enableTotalRecordCount: false,
     imageTypeLimit: 1
 };
+import { ItemFields } from 'lib/tesserafin-sdk';

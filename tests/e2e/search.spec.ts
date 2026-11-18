@@ -176,6 +176,68 @@ test.describe('search (B1)', () => {
         }
     });
 
+    test('every search call carries the session token and succeeds (generated SDK, #306)', async ({
+        page
+    }) => {
+        await signIn(page, USER, PASSWORD);
+        const field = await openSearch(page);
+        await expect(field).toBeVisible({ timeout: 15_000 });
+
+        // Every query the search page issues for a term, through the generated SDK.
+        const searchCalls: Promise<void>[] = [];
+        page.on('response', (response) => {
+            const url = new URL(response.url());
+            if (
+                url.searchParams.get('searchTerm') !== MOVIE_TITLE ||
+                !/\/(Items|Artists|Persons|Studios|LiveTv\/Programs)$/i.test(
+                    url.pathname
+                )
+            ) {
+                return;
+            }
+            searchCalls.push(
+                response
+                    .request()
+                    .headerValue('authorization')
+                    .then((auth) => {
+                        expect(
+                            auth,
+                            `${url.pathname} must carry the session token`
+                        ).toMatch(/^MediaBrowser .*Token="[^"]+"/);
+                        expect(
+                            response.status(),
+                            `${url.pathname} must succeed`
+                        ).toBeLessThan(300);
+                    })
+            );
+        });
+        const image = page.waitForResponse(
+            (res) =>
+                /\/Items\/[^/]+\/Images\/\w+$/i.test(
+                    new URL(res.url()).pathname
+                ),
+            { timeout: 25_000 }
+        );
+
+        await field.fill(MOVIE_TITLE);
+        await expect(
+            page.locator('.searchResults a[href*="details"]').first()
+        ).toBeVisible({ timeout: 25_000 });
+
+        expect(
+            searchCalls.length,
+            'the search page must query the server for the term'
+        ).toBeGreaterThan(0);
+        await Promise.all(searchCalls);
+
+        const imageResponse = await image;
+        expect(imageResponse.status(), 'result artwork must load').toBe(200);
+        expect(
+            new URL(imageResponse.url()).searchParams.has('api_key'),
+            'an image URL never carries the access token'
+        ).toBe(false);
+    });
+
     test('a query that matches nothing reports no results rather than an empty screen', async ({
         page
     }) => {

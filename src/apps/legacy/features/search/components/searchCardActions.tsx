@@ -1,4 +1,4 @@
-import type { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
+import { type BaseItemDto } from 'lib/tesserafin-sdk';
 import { useQueryClient } from '@tanstack/react-query';
 import React, { type MouseEvent, useCallback } from 'react';
 

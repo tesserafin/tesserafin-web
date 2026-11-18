@@ -1,7 +1,10 @@
-import type { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
-import { getImageApi } from '@jellyfin/sdk/lib/utils/api/image-api';
+import {
+    getItemImageUrl,
+    type BaseItemDto,
+    type CollectionType,
+    type ImageType
+} from 'lib/tesserafin-sdk';
 import React, { type FC, useEffect, useMemo, useRef } from 'react';
-import type { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
 import { Link } from 'react-router-dom';
 
 import layoutManager from 'components/layoutManager';
@@ -82,7 +85,7 @@ const SearchResults: FC<SearchResultsProps> = ({
         collectionType,
         query?.trim()
     );
-    const { api } = useApi();
+    const { reefinApi: api } = useApi();
     const { getActions, onContextMenu, runCommand } = useSearchCardActions();
     const selection = useSearchSelection();
     const density = usePresentation().page.home.shelfDensity;
@@ -100,13 +103,10 @@ const SearchResults: FC<SearchResultsProps> = ({
         () =>
             api &&
             ((itemId, imageType, tag) =>
-                getImageApi(api).getItemImageUrlById(
-                    itemId,
-                    imageType as Parameters<
-                        ReturnType<typeof getImageApi>['getItemImageUrlById']
-                    >[1],
-                    { quality: 96, tag }
-                )),
+                getItemImageUrl(api, itemId, imageType as ImageType, {
+                    quality: 96,
+                    tag
+                })),
         [api]
     );
 

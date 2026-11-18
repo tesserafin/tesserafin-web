@@ -1,4 +1,4 @@
-import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-item-kind';
+import { BaseItemKind } from 'lib/tesserafin-sdk';
 import { useQueryClient } from '@tanstack/react-query';
 import React, { type FC, type MouseEvent, useCallback, useState } from 'react';
 
