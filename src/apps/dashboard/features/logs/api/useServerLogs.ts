@@ -1,22 +1,25 @@
-import { Api } from '@jellyfin/sdk';
-import { getSystemApi } from '@jellyfin/sdk/lib/utils/api/system-api';
 import { useQuery } from '@tanstack/react-query';
-import { useApi } from 'hooks/useApi';
 import type { AxiosRequestConfig } from 'axios';
 
-const fetchServerLogs = async (api: Api, options?: AxiosRequestConfig) => {
-    const response = await getSystemApi(api!).getServerLogs(options);
+import { useApi } from 'hooks/useApi';
+import { getSystemApi, type TesserafinApi } from 'lib/tesserafin-sdk';
+
+const fetchServerLogs = async (
+    api: TesserafinApi,
+    options?: AxiosRequestConfig
+) => {
+    const response = await getSystemApi(api).getServerLogs(options);
 
     return response.data;
 };
 
 export const useServerLogs = () => {
-    const { api } = useApi();
+    const { reefinApi } = useApi();
 
     return useQuery({
         queryKey: ['ServerLogs'],
-        queryFn: ({ signal }) => fetchServerLogs(api!, { signal }),
-        enabled: !!api,
+        queryFn: ({ signal }) => fetchServerLogs(reefinApi!, { signal }),
+        enabled: !!reefinApi,
         staleTime: 0 // ensure we load the latest log entries
     });
 };

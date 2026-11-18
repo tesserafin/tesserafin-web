@@ -1,17 +1,17 @@
-import { Api } from '@jellyfin/sdk';
-import { getSystemApi } from '@jellyfin/sdk/lib/utils/api/system-api';
 import { useQuery } from '@tanstack/react-query';
-import { useApi } from 'hooks/useApi';
 import type { AxiosRequestConfig } from 'axios';
 
+import { useApi } from 'hooks/useApi';
+import { getSystemApi, type TesserafinApi } from 'lib/tesserafin-sdk';
+
 const fetchServerLog = async (
-    api: Api,
+    api: TesserafinApi,
     name: string,
     options?: AxiosRequestConfig
 ) => {
     const response = await getSystemApi(api).getLogFile({ name }, options);
 
-    // FIXME: TypeScript SDK thinks it is returning a File but in reality it is a string
+    // The generated client types this as a File, but the server sends text (or JSON).
     const data = response.data as never as string | object;
 
     if (typeof data === 'object') {
@@ -20,13 +20,14 @@ const fetchServerLog = async (
         return data;
     }
 };
+
 export const useServerLog = (name: string, refetchInterval: false | number) => {
-    const { api } = useApi();
+    const { reefinApi } = useApi();
 
     return useQuery({
         queryKey: ['ServerLog', name],
-        queryFn: ({ signal }) => fetchServerLog(api!, name, { signal }),
-        enabled: !!api,
+        queryFn: ({ signal }) => fetchServerLog(reefinApi!, name, { signal }),
+        enabled: !!reefinApi,
         refetchInterval,
         staleTime: 0 // ensure we load the latest log data
     });

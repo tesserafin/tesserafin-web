@@ -1,23 +1,26 @@
-import { Api } from '@jellyfin/sdk';
-import { getAuthenticationApi } from '@jellyfin/sdk/lib/utils/api/authentication-api';
 import { useQuery } from '@tanstack/react-query';
-import { AxiosRequestConfig } from 'axios';
+import type { AxiosRequestConfig } from 'axios';
+
 import { useApi } from 'hooks/useApi';
+import { getAuthenticationApi, type TesserafinApi } from 'lib/tesserafin-sdk';
 
 export const QUERY_KEY = 'ApiKeys';
 
-const fetchApiKeys = async (api: Api, options?: AxiosRequestConfig) => {
+const fetchApiKeys = async (
+    api: TesserafinApi,
+    options?: AxiosRequestConfig
+) => {
     const response = await getAuthenticationApi(api).getKeys(options);
 
     return response.data;
 };
 
 export const useApiKeys = () => {
-    const { api } = useApi();
+    const { reefinApi } = useApi();
 
     return useQuery({
         queryKey: [QUERY_KEY],
-        queryFn: ({ signal }) => fetchApiKeys(api!, { signal }),
-        enabled: !!api
+        queryFn: ({ signal }) => fetchApiKeys(reefinApi!, { signal }),
+        enabled: !!reefinApi
     });
 };
