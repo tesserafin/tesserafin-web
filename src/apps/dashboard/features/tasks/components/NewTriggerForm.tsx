@@ -12,9 +12,11 @@ import DialogTitle from '@mui/material/DialogTitle';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
-import type { TaskTriggerInfo } from '@jellyfin/sdk/lib/generated-client/models/task-trigger-info';
-import { TaskTriggerInfoType } from '@jellyfin/sdk/lib/generated-client/models/task-trigger-info-type';
-import { DayOfWeek } from '@jellyfin/sdk/lib/generated-client/models/day-of-week';
+import {
+    DayOfWeek,
+    type TaskTriggerInfo,
+    TaskTriggerInfoType
+} from 'lib/tesserafin-sdk';
 import globalize from 'lib/globalize';
 import { getIntervalOptions, getTimeOfDayOptions } from '../utils/edit';
 import { useLocale } from 'hooks/useLocale';

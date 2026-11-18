@@ -17,7 +17,7 @@ import {
     type MRT_Theme,
     useMaterialReactTable
 } from 'material-react-table';
-import type { TaskTriggerInfo } from '@jellyfin/sdk/lib/generated-client/models/task-trigger-info';
+import { type TaskTriggerInfo } from 'lib/tesserafin-sdk';
 import globalize from '../../../../lib/globalize';
 import { useTask } from 'apps/dashboard/features/tasks/api/useTask';
 import { useUpdateTask } from 'apps/dashboard/features/tasks/api/useUpdateTask';

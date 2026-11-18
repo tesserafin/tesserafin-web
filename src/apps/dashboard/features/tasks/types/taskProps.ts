@@ -1,4 +1,4 @@
-import type { TaskInfo } from '@jellyfin/sdk/lib/generated-client/models/task-info';
+import { type TaskInfo } from 'lib/tesserafin-sdk';
 
 export type TaskProps = {
     task: TaskInfo;
