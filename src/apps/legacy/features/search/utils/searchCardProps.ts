@@ -1,5 +1,4 @@
-import type { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
-
+import { type BaseItemDto } from 'lib/tesserafin-sdk';
 import itemHelper from 'components/itemHelper';
 import { appRouter } from 'components/router/appRouter';
 import datetime from 'scripts/datetime';

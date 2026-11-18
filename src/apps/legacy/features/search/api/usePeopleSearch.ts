@@ -1,16 +1,18 @@
-import { Api } from '@jellyfin/sdk';
-import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
+import {
+    CollectionType,
+    PersonApiGetPersonsRequest,
+    PersonKind,
+    getPersonApi,
+    type TesserafinApi
+} from 'lib/tesserafin-sdk';
 import { useQuery } from '@tanstack/react-query';
 import { AxiosRequestConfig } from 'axios';
 import { useApi } from 'hooks/useApi';
 import { QUERY_OPTIONS } from '../constants/queryOptions';
 import { isMovies, isTVShows } from '../utils/search';
-import { PersonApiGetPersonsRequest } from '@jellyfin/sdk/lib/generated-client/api/person-api';
-import { getPersonApi } from '@jellyfin/sdk/lib/utils/api/person-api';
-import { PersonKind } from '@jellyfin/sdk/lib/generated-client/models/person-kind';
 
 const fetchPeople = async (
-    api: Api,
+    api: TesserafinApi,
     userId: string,
     params?: PersonApiGetPersonsRequest,
     options?: AxiosRequestConfig
@@ -31,7 +33,7 @@ export const usePeopleSearch = (
     collectionType?: CollectionType,
     searchTerm?: string
 ) => {
-    const { api, user } = useApi();
+    const { reefinApi: api, user } = useApi();
     const userId = user?.Id;
 
     const isPeopleEnabled =

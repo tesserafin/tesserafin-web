@@ -1,14 +1,16 @@
+import {
+    BaseItemKind,
+    ItemSortBy,
+    getLibraryApi,
+    type TesserafinApi
+} from 'lib/tesserafin-sdk';
 import type { AxiosRequestConfig } from 'axios';
-import type { Api } from '@jellyfin/sdk';
-import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-item-kind';
-import { ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models/item-sort-by';
-import { getLibraryApi } from '@jellyfin/sdk/lib/utils/api/library-api';
 import { useQuery } from '@tanstack/react-query';
 
 import { useApi } from 'hooks/useApi';
 
 const fetchGetItems = async (
-    api: Api,
+    api: TesserafinApi,
     userId: string,
     parentId?: string,
     options?: AxiosRequestConfig
@@ -35,7 +37,7 @@ const fetchGetItems = async (
 };
 
 export const useSearchSuggestions = (parentId?: string) => {
-    const { api, user } = useApi();
+    const { reefinApi: api, user } = useApi();
     const userId = user?.Id;
 
     return useQuery({

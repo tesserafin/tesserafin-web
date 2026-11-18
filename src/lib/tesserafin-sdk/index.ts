@@ -11,6 +11,7 @@ export * from './client';
 export * from './imageUrl';
 
 import type { TesserafinApi } from './client';
+import { ArtistApi } from './generated/api/artist-api';
 import { AuthenticationApi } from './generated/api/authentication-api';
 import { DeviceApi } from './generated/api/device-api';
 import { BackupApi } from './generated/api/backup-api';
@@ -25,6 +26,7 @@ import { LocalizationApi } from './generated/api/localization-api';
 import { MovieApi } from './generated/api/movie-api';
 import { SessionApi } from './generated/api/session-api';
 import { ScheduledTaskApi } from './generated/api/scheduled-task-api';
+import { PersonApi } from './generated/api/person-api';
 import { ShowApi } from './generated/api/show-api';
 import { StudioApi } from './generated/api/studio-api';
 import { SystemApi } from './generated/api/system-api';
@@ -141,3 +143,9 @@ export const getImageApi = (api: TesserafinApi): ImageApi =>
 
 export const getLiveTvApi = (api: TesserafinApi): LiveTvApi =>
     new LiveTvApi(api.configuration, undefined, api.axiosInstance);
+
+export const getArtistApi = (api: TesserafinApi): ArtistApi =>
+    new ArtistApi(api.configuration, undefined, api.axiosInstance);
+
+export const getPersonApi = (api: TesserafinApi): PersonApi =>
+    new PersonApi(api.configuration, undefined, api.axiosInstance);

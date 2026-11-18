@@ -1,11 +1,13 @@
-import { Api } from '@jellyfin/sdk/lib/api';
-import { LibraryApiGetItemsRequest } from '@jellyfin/sdk/lib/generated-client/api/library-api';
-import { getLibraryApi } from '@jellyfin/sdk/lib/utils/api/library-api';
+import {
+    LibraryApiGetItemsRequest,
+    getLibraryApi,
+    type TesserafinApi
+} from 'lib/tesserafin-sdk';
 import { AxiosRequestConfig } from 'axios';
 import { QUERY_OPTIONS } from '../constants/queryOptions';
 
 export const fetchItemsByType = async (
-    api: Api,
+    api: TesserafinApi,
     userId?: string,
     params?: LibraryApiGetItemsRequest,
     options?: AxiosRequestConfig

@@ -1,15 +1,17 @@
-import { Api } from '@jellyfin/sdk';
-import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
+import {
+    BaseItemKind,
+    CollectionType,
+    type TesserafinApi
+} from 'lib/tesserafin-sdk';
 import { useQuery } from '@tanstack/react-query';
 import { useApi } from 'hooks/useApi';
 import { addSection, isLivetv } from '../utils/search';
-import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-item-kind';
 import { LIVETV_CARD_OPTIONS } from '../constants/liveTvCardOptions';
 import { Section } from '../types';
 import { fetchItemsByType } from './fetchItemsByType';
 
 const fetchLiveTv = (
-    api: Api,
+    api: TesserafinApi,
     userId: string | undefined,
     searchTerm: string | undefined,
     signal: AbortSignal
@@ -150,7 +152,7 @@ export const useLiveTvSearch = (
     collectionType?: CollectionType,
     searchTerm?: string
 ) => {
-    const { api, user } = useApi();
+    const { reefinApi: api, user } = useApi();
     const userId = user?.Id;
 
     return useQuery({
