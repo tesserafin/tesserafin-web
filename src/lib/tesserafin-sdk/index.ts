@@ -12,14 +12,17 @@ export * from './client';
 import type { TesserafinApi } from './client';
 import { AuthenticationApi } from './generated/api/authentication-api';
 import { DeviceApi } from './generated/api/device-api';
+import { ChannelApi } from './generated/api/channel-api';
 import { GenreApi } from './generated/api/genre-api';
 import { LibraryApi } from './generated/api/library-api';
+import { LocalizationApi } from './generated/api/localization-api';
 import { MovieApi } from './generated/api/movie-api';
 import { SessionApi } from './generated/api/session-api';
 import { ScheduledTaskApi } from './generated/api/scheduled-task-api';
 import { ShowApi } from './generated/api/show-api';
 import { StudioApi } from './generated/api/studio-api';
 import { SystemApi } from './generated/api/system-api';
+import { UserApi } from './generated/api/user-api';
 import { UserViewApi } from './generated/api/user-view-api';
 
 /**
@@ -94,3 +97,16 @@ export const getSessionApi = (api: TesserafinApi): SessionApi =>
  */
 export const getScheduledTaskApi = (api: TesserafinApi): ScheduledTaskApi =>
     new ScheduledTaskApi(api.configuration, undefined, api.axiosInstance);
+
+/**
+ * Added for the dashboard users feature (`apps/dashboard/features/users/`, consolidation step 3).
+ * Reached only through the dashboard's async route chunks.
+ */
+export const getUserApi = (api: TesserafinApi): UserApi =>
+    new UserApi(api.configuration, undefined, api.axiosInstance);
+
+export const getChannelApi = (api: TesserafinApi): ChannelApi =>
+    new ChannelApi(api.configuration, undefined, api.axiosInstance);
+
+export const getLocalizationApi = (api: TesserafinApi): LocalizationApi =>
+    new LocalizationApi(api.configuration, undefined, api.axiosInstance);

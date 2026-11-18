@@ -1,9 +1,9 @@
-import type {
-    BaseItemDto,
-    NameIdPair,
-    SyncPlayUserAccessType,
-    UserDto
-} from '@jellyfin/sdk/lib/generated-client';
+import {
+    type BaseItemDto,
+    type NameIdPair,
+    type SyncPlayUserAccessType,
+    type UserDto
+} from 'lib/tesserafin-sdk';
 import escapeHTML from 'escape-html';
 import React, {
     useCallback,

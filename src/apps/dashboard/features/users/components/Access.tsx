@@ -1,8 +1,8 @@
-import type {
-    BaseItemDto,
-    DeviceInfoDto,
-    UserDto
-} from '@jellyfin/sdk/lib/generated-client';
+import {
+    type BaseItemDto,
+    type DeviceInfoDto,
+    type UserDto
+} from 'lib/tesserafin-sdk';
 import React, {
     useCallback,
     useEffect,
