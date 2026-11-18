@@ -22,14 +22,14 @@ import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
-import { getSystemApi } from '@jellyfin/sdk/lib/utils/api/system-api';
-import { TrickplayScanBehavior } from '@jellyfin/sdk/lib/generated-client/models/trickplay-scan-behavior';
-import { ProcessPriorityClass } from '@jellyfin/sdk/lib/generated-client/models/process-priority-class';
+import { getSystemApi } from 'lib/tesserafin-sdk';
+import { TrickplayScanBehavior } from 'lib/tesserafin-sdk';
+import { ProcessPriorityClass } from 'lib/tesserafin-sdk';
 import { ActionData } from 'types/actionData';
 import { queryClient } from 'utils/query/queryClient';
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-    const api = ServerConnections.getApi();
+    const api = ServerConnections.getTesserafinApi();
     if (!api) throw new Error('No Api instance available');
 
     const formData = await request.formData();

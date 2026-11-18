@@ -2,11 +2,13 @@ import { useMutation } from '@tanstack/react-query';
 
 import { useApi } from 'hooks/useApi';
 import { queryClient } from 'utils/query/queryClient';
-import { getLiveTvApi } from '@jellyfin/sdk/lib/utils/api/live-tv-api';
-import { LiveTvApiDeleteListingProviderRequest } from '@jellyfin/sdk/lib/generated-client/api/live-tv-api';
+import {
+    getLiveTvApi,
+    type LiveTvApiDeleteListingProviderRequest
+} from 'lib/tesserafin-sdk';
 
 export const useDeleteProvider = () => {
-    const { api } = useApi();
+    const { reefinApi: api } = useApi();
 
     return useMutation({
         mutationFn: (params: LiveTvApiDeleteListingProviderRequest) =>

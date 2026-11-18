@@ -27,10 +27,10 @@ import {
     useSubmit
 } from 'react-router-dom';
 import { QUERY_KEY, useNamedConfiguration } from 'hooks/useNamedConfiguration';
-import type { EncodingOptions } from '@jellyfin/sdk/lib/generated-client/models/encoding-options';
-import { HardwareAccelerationType } from '@jellyfin/sdk/lib/generated-client/models/hardware-acceleration-type';
+import type { EncodingOptions } from 'lib/tesserafin-sdk';
+import { HardwareAccelerationType } from 'lib/tesserafin-sdk';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
-import { getSystemApi } from '@jellyfin/sdk/lib/utils/api/system-api';
+import { getSystemApi } from 'lib/tesserafin-sdk';
 import { queryClient } from 'utils/query/queryClient';
 import { ActionData } from 'types/actionData';
 import {
@@ -43,7 +43,7 @@ import SimpleAlert from 'components/SimpleAlert';
 const CONFIG_KEY = 'encoding';
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-    const api = ServerConnections.getApi();
+    const api = ServerConnections.getTesserafinApi();
     if (!api) throw new Error('No Api instance available');
 
     const data = (await request.json()) as EncodingOptions;

@@ -20,6 +20,7 @@ import { GenreApi } from './generated/api/genre-api';
 import { ImageApi } from './generated/api/image-api';
 import { LibraryApi } from './generated/api/library-api';
 import { LibraryStructureApi } from './generated/api/library-structure-api';
+import { LiveTvApi } from './generated/api/live-tv-api';
 import { LocalizationApi } from './generated/api/localization-api';
 import { MovieApi } from './generated/api/movie-api';
 import { SessionApi } from './generated/api/session-api';
@@ -137,3 +138,6 @@ export const getBrandingApi = (api: TesserafinApi): BrandingApi =>
 
 export const getImageApi = (api: TesserafinApi): ImageApi =>
     new ImageApi(api.configuration, undefined, api.axiosInstance);
+
+export const getLiveTvApi = (api: TesserafinApi): LiveTvApi =>
+    new LiveTvApi(api.configuration, undefined, api.axiosInstance);

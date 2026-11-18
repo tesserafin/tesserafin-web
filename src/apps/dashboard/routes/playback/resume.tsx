@@ -17,11 +17,11 @@ import {
 import { ActionData } from 'types/actionData';
 import { QUERY_KEY, useConfiguration } from 'hooks/useConfiguration';
 import Loading from 'components/loading/LoadingComponent';
-import { getSystemApi } from '@jellyfin/sdk/lib/utils/api/system-api';
+import { getSystemApi } from 'lib/tesserafin-sdk';
 import { queryClient } from 'utils/query/queryClient';
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-    const api = ServerConnections.getApi();
+    const api = ServerConnections.getTesserafinApi();
     if (!api) throw new Error('No Api instance available');
 
     const { data: config } = await getSystemApi(api).getConfiguration();

@@ -11,7 +11,7 @@ export const QUERY_KEY = 'PlaybackDiagnosticsSessions';
  * design doc §9 Q3 leaves that decision to a later PR if manual refresh proves insufficient.
  */
 export const usePlaybackSessions = () => {
-    const { api } = useApi();
+    const { reefinApi: api } = useApi();
     return useQuery({
         queryKey: [QUERY_KEY],
         queryFn: ({ signal }) => fetchPlaybackSessions(api!, signal),

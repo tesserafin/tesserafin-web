@@ -12,7 +12,7 @@ export const QUERY_KEY = 'PlaybackDiagnosticsSessionDetail';
  * the design doc §5.2.
  */
 export const usePlaybackSessionDetail = (id: string | undefined) => {
-    const { api } = useApi();
+    const { reefinApi: api } = useApi();
     return useQuery({
         queryKey: [QUERY_KEY, id],
         queryFn: ({ signal }) => fetchPlaybackSessionDetail(api!, id!, signal),

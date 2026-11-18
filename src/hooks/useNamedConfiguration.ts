@@ -1,5 +1,4 @@
-import { Api } from '@jellyfin/sdk';
-import { getSystemApi } from '@jellyfin/sdk/lib/utils/api/system-api';
+import { getSystemApi, type TesserafinApi } from 'lib/tesserafin-sdk';
 import { useQuery } from '@tanstack/react-query';
 import { useApi } from 'hooks/useApi';
 import type { AxiosRequestConfig } from 'axios';
@@ -11,7 +10,7 @@ export interface NamedConfiguration {
 }
 
 const fetchNamedConfiguration = async (
-    api: Api,
+    api: TesserafinApi,
     key: string,
     options?: AxiosRequestConfig
 ) => {
@@ -26,7 +25,7 @@ const fetchNamedConfiguration = async (
 export const useNamedConfiguration = <ConfigType = NamedConfiguration>(
     key: string
 ) => {
-    const { api } = useApi();
+    const { reefinApi: api } = useApi();
 
     return useQuery({
         queryKey: [QUERY_KEY, key],
