@@ -14,7 +14,7 @@ import {
     useNavigation,
     useSubmit
 } from 'react-router-dom';
-import type { LiveTvOptions } from '@jellyfin/sdk/lib/generated-client/models/live-tv-options';
+import type { LiveTvOptions } from 'lib/tesserafin-sdk';
 import Loading from 'components/loading/LoadingComponent';
 import Alert from '@mui/material/Alert';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -27,14 +27,14 @@ import Checkbox from '@mui/material/Checkbox';
 import FormHelperText from '@mui/material/FormHelperText';
 import Button from '@mui/material/Button';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
-import { getSystemApi } from '@jellyfin/sdk/lib/utils/api/system-api';
+import { getSystemApi } from 'lib/tesserafin-sdk';
 import { queryClient } from 'utils/query/queryClient';
 import { ActionData } from 'types/actionData';
 
 const CONFIG_KEY = 'livetv';
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-    const api = ServerConnections.getApi();
+    const api = ServerConnections.getTesserafinApi();
     if (!api) throw new Error('No Api instance available');
 
     const data = (await request.json()) as LiveTvOptions;

@@ -11,7 +11,7 @@ import { fetchPlaybackSessionFixture } from './playbackDiagnosticsApi';
  * 422 as a distinct, expected outcome rather than a generic failure.
  */
 export const useExportFixture = () => {
-    const { api } = useApi();
+    const { reefinApi: api } = useApi();
     return useMutation({
         mutationFn: (sessionId: string) =>
             fetchPlaybackSessionFixture(api!, sessionId)

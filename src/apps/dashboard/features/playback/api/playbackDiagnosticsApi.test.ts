@@ -1,5 +1,7 @@
-import type { Api } from '@jellyfin/sdk';
+import type { AxiosInstance } from 'axios';
 import { describe, expect, it, vi } from 'vitest';
+
+import { TesserafinApi } from 'lib/tesserafin-sdk/client';
 
 import {
     fetchPlaybackSessionFixture,
@@ -8,22 +10,18 @@ import {
 import type { PlaybackSessionListItem } from './types';
 
 /**
- * Tests the fetch functions in isolation against a minimal mocked `Api`, per design doc §7.3 —
- * avoids introducing `@testing-library/react-hooks` for a need that doesn't justify it yet.
- *
- * Since PR2 (docs/tesserafin/design-tesserafin-api-layer.md), these functions call through the generated
- * `SystemApi` class rather than `axiosInstance.get()` directly. The generated client always
- * dispatches through `axiosInstance.request(...)` (see `src/lib/tesserafin-sdk/generated/common.ts`'s
- * `createRequestFunction`), so the mock shape changed from `{ get }` to `{ request, defaults }` —
- * `defaults` is read (`axios.defaults.baseURL`) by that same helper before `request` is ever
- * called, so it has to exist on the mock even though its value doesn't matter here.
+ * Tests the fetch functions in isolation against a real `TesserafinApi` over a mocked axios
+ * instance. The generated client dispatches through `axiosInstance.request(...)` and reads
+ * `axios.defaults` first, so the mock carries both.
  */
-const createMockApi = (request: ReturnType<typeof vi.fn>): Api =>
-    ({
-        axiosInstance: { request, defaults: {} },
-        basePath: 'https://example.com',
-        authorizationHeader: 'MediaBrowser Token="test-token"'
-    }) as unknown as Api;
+const createMockApi = (request: ReturnType<typeof vi.fn>): TesserafinApi =>
+    new TesserafinApi(
+        'https://example.com',
+        { name: 'Tesserafin Web', version: '0.0.0' },
+        { name: 'test', id: 'device' },
+        'test-token',
+        { request, defaults: {} } as unknown as AxiosInstance
+    );
 
 describe('fetchPlaybackSessions()', () => {
     it('requests the diagnostics sessions route with the auth header attached', async () => {
@@ -38,7 +36,9 @@ describe('fetchPlaybackSessions()', () => {
                 url: 'https://example.com/System/PlaybackDiagnostics/Sessions',
                 method: 'GET',
                 headers: expect.objectContaining({
-                    Authorization: 'MediaBrowser Token="test-token"'
+                    Authorization: expect.stringMatching(
+                        /^MediaBrowser .*Token="test-token"/
+                    )
                 })
             })
         );
@@ -73,7 +73,9 @@ describe('fetchPlaybackSessionFixture()', () => {
                 url: 'https://example.com/System/PlaybackDiagnostics/Sessions/session-1/Fixture',
                 method: 'GET',
                 headers: expect.objectContaining({
-                    Authorization: 'MediaBrowser Token="test-token"'
+                    Authorization: expect.stringMatching(
+                        /^MediaBrowser .*Token="test-token"/
+                    )
                 }),
                 responseType: 'blob'
             })

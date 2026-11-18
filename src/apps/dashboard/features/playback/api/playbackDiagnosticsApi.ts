@@ -1,38 +1,14 @@
-import type { Api } from '@jellyfin/sdk';
-
-import { Configuration, SystemApi } from 'lib/tesserafin-sdk';
+import { getSystemApi, type TesserafinApi } from 'lib/tesserafin-sdk';
 import type {
     PlaybackDiagnosticDetail,
     PlaybackSessionListItem
 } from './types';
 
 /**
- * Generated client for the Reefin-specific admin playback diagnostics routes
- * (`Reefin.Api/Controllers/PlaybackDiagnosticsSessionsController.cs`, `[Authorize(Policy =
- * Policies.RequiresElevation)]`) — `docs/tesserafin/design-tesserafin-api-layer.md` §4.1/§8 PR2, replacing
- * the hand-mirrored-types + raw-axios pattern this file used before (still the right pattern for a
- * Reefin route with no generated client at all — see `src/utils/bitrateTest.ts` — just no longer
- * this one's situation now that `src/lib/tesserafin-sdk/generated/` covers it).
- *
- * `systemApiFor()` configures the generated `SystemApi` class from the CURRENT `@jellyfin/sdk`
- * session (`api.basePath`/`api.axiosInstance`/`api.authorizationHeader`) rather than through
- * `lib/tesserafin-sdk`'s forward-looking `createTesserafinApi()` construction wrapper: that wrapper isn't
- * wired into `useApi()`/the connection layer yet (see its doc comment), so building a *second*,
- * independent client identity here would risk the server seeing two different `DeviceId`s for the
- * same browser session. This bridge — reuse the session that already exists, just call it through
- * the generated class — goes away once a later PR migrates the connection layer itself (design doc
- * §8 PR3), at which point `useApi()` can hand out a `TesserafinApi` directly.
+ * Generated client for the Tesserafin-specific admin playback diagnostics routes
+ * (`PlaybackDiagnosticsSessionsController`, `[Authorize(Policy = Policies.RequiresElevation)]`),
+ * called through the session's `TesserafinApi` (`useApi().reefinApi`).
  */
-const systemApiFor = (api: Api): SystemApi =>
-    new SystemApi(
-        new Configuration({
-            basePath: api.basePath,
-            baseOptions: { headers: { Authorization: api.authorizationHeader } }
-        }),
-        api.basePath,
-        api.axiosInstance
-    );
-
 /**
  * Every generated model property is optional (see `./types.ts`'s file-level comment on
  * `DeepRequired`) even though the wire contract guarantees these fields — asserting through
@@ -43,20 +19,20 @@ const asContract = <T>(data: unknown): T => data as T;
 
 /** Gets a snapshot of all currently tracked playback sessions. */
 export async function fetchPlaybackSessions(
-    api: Api,
+    api: TesserafinApi,
     signal?: AbortSignal
 ): Promise<PlaybackSessionListItem[]> {
-    const { data } = await systemApiFor(api).getPlaybackSessions({ signal });
+    const { data } = await getSystemApi(api).getPlaybackSessions({ signal });
     return asContract<PlaybackSessionListItem[]>(data);
 }
 
 /** Gets a single tracked playback session's diagnostic detail. */
 export async function fetchPlaybackSessionDetail(
-    api: Api,
+    api: TesserafinApi,
     id: string,
     signal?: AbortSignal
 ): Promise<PlaybackDiagnosticDetail> {
-    const { data } = await systemApiFor(api).getPlaybackSession(
+    const { data } = await getSystemApi(api).getPlaybackSession(
         { id },
         { signal }
     );
@@ -73,10 +49,10 @@ export async function fetchPlaybackSessionDetail(
  * result is asserted to `Blob` for the same reason as `asContract` above.
  */
 export async function fetchPlaybackSessionFixture(
-    api: Api,
+    api: TesserafinApi,
     id: string
 ): Promise<Blob> {
-    const { data } = await systemApiFor(api).exportFixture(
+    const { data } = await getSystemApi(api).exportFixture(
         { id },
         { responseType: 'blob' }
     );
