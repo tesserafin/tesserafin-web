@@ -1,5 +1,4 @@
-import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
-import { ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models/item-sort-by';
+import { CollectionType, ItemSortBy } from 'lib/tesserafin-sdk';
 import React, { FC, useCallback } from 'react';
 import Shuffle from '@mui/icons-material/Shuffle';
 import Button from '@mui/material/Button';

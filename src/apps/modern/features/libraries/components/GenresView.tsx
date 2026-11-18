@@ -1,5 +1,4 @@
-import type { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-item-kind';
-import type { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
+import { type BaseItemKind, type CollectionType } from 'lib/tesserafin-sdk';
 import React, { FC } from 'react';
 import GenresItemsContainer from './GenresItemsContainer';
 import type { ParentId } from 'types/library';
