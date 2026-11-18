@@ -28,14 +28,6 @@ export const HelpLinks = [
         url: 'https://jellyfin.org/docs/general/server/transcoding'
     },
     {
-        paths: ['/dashboard/plugins'],
-        url: 'https://jellyfin.org/docs/general/server/plugins/'
-    },
-    {
-        paths: ['/dashboard/plugins/repositories'],
-        url: 'https://jellyfin.org/docs/general/server/plugins/#repositories'
-    },
-    {
         paths: ['/dashboard/branding', '/dashboard/settings'],
         url: 'https://jellyfin.org/docs/general/server/settings'
     },

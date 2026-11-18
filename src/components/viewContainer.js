@@ -4,33 +4,10 @@ import { importModule } from '@uupaa/dynamic-import-polyfill';
 // Used below for $(view).appendTo(...) - no longer implicitly loaded via lib/legacy.
 import 'jquery';
 import './viewManager/viewContainer.scss';
-import Dashboard from '../utils/dashboard';
 
 const getMainAnimatedPages = () => {
     return document.querySelector('.mainAnimatedPages');
 };
-
-function setControllerClass(view, options) {
-    if (options.controllerFactory) {
-        return Promise.resolve();
-    }
-
-    let controllerUrl = view.getAttribute('data-controller');
-
-    if (controllerUrl) {
-        if (controllerUrl.indexOf('__plugin/') === 0) {
-            controllerUrl = controllerUrl.substring('__plugin/'.length);
-        }
-
-        controllerUrl = Dashboard.getPluginUrl(controllerUrl);
-        const apiUrl = ApiClient.getUrl('/web/' + controllerUrl);
-        return importModule(apiUrl).then((ControllerFactory) => {
-            options.controllerFactory = ControllerFactory;
-        });
-    }
-
-    return Promise.resolve();
-}
 
 export function loadView(options) {
     if (!options.cancel) {
@@ -42,8 +19,7 @@ export function loadView(options) {
             pageIndex = 0;
         }
 
-        const isPluginpage = options.url.includes('configurationpage');
-        const newViewInfo = normalizeNewView(options, isPluginpage);
+        const newViewInfo = normalizeNewView(options);
         const newView = newViewInfo.elem;
 
         const currentPage = allPages[pageIndex];
@@ -100,29 +76,27 @@ export function loadView(options) {
         allPages[pageIndex] = view;
 
         return (
-            setControllerClass(view, options)
-                // Timeout for polyfilled CustomElements (webOS 1.2)
-                .then(() => new Promise((resolve) => setTimeout(resolve, 0)))
-                .then(() => {
-                    if (onBeforeChange) {
-                        onBeforeChange(view, false, options);
-                    }
+            // Timeout for polyfilled CustomElements (webOS 1.2)
+            new Promise((resolve) => setTimeout(resolve, 0)).then(() => {
+                if (onBeforeChange) {
+                    onBeforeChange(view, false, options);
+                }
 
-                    beforeAnimate(allPages, pageIndex, selected);
-                    selectedPageIndex = pageIndex;
-                    currentUrls[pageIndex] = options.url;
+                beforeAnimate(allPages, pageIndex, selected);
+                selectedPageIndex = pageIndex;
+                currentUrls[pageIndex] = options.url;
 
-                    if (!options.cancel && previousAnimatable) {
-                        afterAnimate(allPages, pageIndex);
-                    }
+                if (!options.cancel && previousAnimatable) {
+                    afterAnimate(allPages, pageIndex);
+                }
 
-                    if (window.$) {
-                        $.mobile = $.mobile || {};
-                        $.mobile.activePage = view;
-                    }
+                if (window.$) {
+                    $.mobile = $.mobile || {};
+                    $.mobile.activePage = view;
+                }
 
-                    return view;
-                })
+                return view;
+            })
         );
     }
 }
@@ -139,7 +113,7 @@ function parseHtml(html, hasScript) {
     return wrapper.querySelector('div[data-role="page"]');
 }
 
-function normalizeNewView(options, isPluginpage) {
+function normalizeNewView(options) {
     const viewHtml = options.view;
 
     if (viewHtml.indexOf('data-role="page"') === -1) {
@@ -153,25 +127,9 @@ function normalizeNewView(options, isPluginpage) {
         hasScript = elem.querySelector('script') != null;
     }
 
-    let hasjQuery = false;
-    let hasjQuerySelect = false;
-    let hasjQueryChecked = false;
-
-    if (isPluginpage) {
-        hasjQuery =
-            viewHtml.indexOf('jQuery') != -1 ||
-            viewHtml.indexOf('$(') != -1 ||
-            viewHtml.indexOf('$.') != -1;
-        hasjQueryChecked = viewHtml.indexOf('.checked(') != -1;
-        hasjQuerySelect = viewHtml.indexOf('.selectmenu(') != -1;
-    }
-
     return {
         elem: elem,
-        hasScript: hasScript,
-        hasjQuerySelect: hasjQuerySelect,
-        hasjQueryChecked: hasjQueryChecked,
-        hasjQuery: hasjQuery
+        hasScript: hasScript
     };
 }
 
@@ -212,7 +170,7 @@ export function tryRestoreView(options) {
             const selected = selectedPageIndex;
             const previousAnimatable =
                 selected === -1 ? null : allPages[selected];
-            return setControllerClass(view, options).then(() => {
+            return Promise.resolve().then(() => {
                 if (onBeforeChange) {
                     onBeforeChange(view, true, options);
                 }

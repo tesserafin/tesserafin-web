@@ -23,13 +23,6 @@ export const ASYNC_ADMIN_ROUTES: AsyncRoute[] = [
     { path: 'playback/streaming', type: AppType.Dashboard },
     { path: 'playback/transcoding', type: AppType.Dashboard },
     { path: 'playback/trickplay', type: AppType.Dashboard },
-    { path: 'plugins', type: AppType.Dashboard },
-    {
-        path: 'plugins/:pluginId',
-        page: 'plugins/plugin',
-        type: AppType.Dashboard
-    },
-    { path: 'plugins/repositories', type: AppType.Dashboard },
     { path: 'tasks', type: AppType.Dashboard },
     { path: 'tasks/:id', page: 'tasks/task', type: AppType.Dashboard },
     { path: 'users', type: AppType.Dashboard },

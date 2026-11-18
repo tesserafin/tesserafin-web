@@ -11,7 +11,6 @@ import ServerDrawerSection from './sections/ServerDrawerSection';
 import DevicesDrawerSection from './sections/DevicesDrawerSection';
 import LiveTvDrawerSection from './sections/LiveTvDrawerSection';
 import AdvancedDrawerSection from './sections/AdvancedDrawerSection';
-import PluginDrawerSection from './sections/PluginDrawerSection';
 
 const AppDrawer: FC<ResponsiveDrawerProps> = ({
     open = false,
@@ -27,7 +26,6 @@ const AppDrawer: FC<ResponsiveDrawerProps> = ({
         <ServerDrawerSection />
         <DevicesDrawerSection />
         <LiveTvDrawerSection />
-        <PluginDrawerSection />
         <AdvancedDrawerSection />
     </ResponsiveDrawer>
 );
