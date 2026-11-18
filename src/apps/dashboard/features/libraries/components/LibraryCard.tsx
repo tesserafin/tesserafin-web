@@ -1,5 +1,9 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import type { VirtualFolderInfo } from '@jellyfin/sdk/lib/generated-client/models/virtual-folder-info';
+import {
+    getItemImageUrl,
+    ImageType,
+    type VirtualFolderInfo
+} from 'lib/tesserafin-sdk';
 import BaseCard from 'apps/dashboard/components/BaseCard';
 import getCollectionTypeOptions from '../utils/collectionTypeOptions';
 import globalize from 'lib/globalize';
@@ -22,9 +26,7 @@ import { useRenameVirtualFolder } from '../api/useRenameVirtualFolder';
 import RefreshDialog from 'components/refreshdialog/refreshdialog';
 import ConfirmDialog from 'components/ConfirmDialog';
 import { useRemoveVirtualFolder } from '../api/useRemoveVirtualFolder';
-import { getImageApi } from '@jellyfin/sdk/lib/utils/api/image-api';
 import { useApi } from 'hooks/useApi';
-import { ImageType } from '@jellyfin/sdk/lib/generated-client/models/image-type';
 import dom from 'utils/dom';
 import { invalidateVirtualFolders } from '../api/invalidateVirtualFolders';
 
@@ -33,7 +35,7 @@ type LibraryCardProps = {
 };
 
 const LibraryCard = ({ virtualFolder }: LibraryCardProps) => {
-    const { api, user } = useApi();
+    const { reefinApi, user } = useApi();
     const actionRef = useRef<HTMLButtonElement | null>(null);
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -45,9 +47,14 @@ const LibraryCard = ({ virtualFolder }: LibraryCardProps) => {
     const removeVirtualFolder = useRemoveVirtualFolder();
 
     const imageUrl = useMemo(() => {
-        if (virtualFolder.PrimaryImageItemId && virtualFolder.ItemId && api) {
+        if (
+            virtualFolder.PrimaryImageItemId &&
+            virtualFolder.ItemId &&
+            reefinApi
+        ) {
             const dpr = window?.devicePixelRatio || 1;
-            return getImageApi(api).getItemImageUrlById(
+            return getItemImageUrl(
+                reefinApi,
                 virtualFolder.ItemId,
                 ImageType.Primary,
                 {
@@ -55,7 +62,7 @@ const LibraryCard = ({ virtualFolder }: LibraryCardProps) => {
                 }
             );
         }
-    }, [api, virtualFolder]);
+    }, [reefinApi, virtualFolder]);
 
     const typeName =
         getCollectionTypeOptions().filter(function (t) {

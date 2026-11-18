@@ -1,5 +1,4 @@
-import type { UserDto } from '@jellyfin/sdk/lib/generated-client/models/user-dto';
-import type { VirtualFolderInfo } from '@jellyfin/sdk/lib/generated-client/models/virtual-folder-info';
+import { type UserDto, type VirtualFolderInfo } from 'lib/tesserafin-sdk';
 
 import { queryClient } from 'utils/query/queryClient';
 

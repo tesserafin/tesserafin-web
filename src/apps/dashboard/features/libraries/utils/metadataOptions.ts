@@ -1,4 +1,4 @@
-import { ImageResolution } from '@jellyfin/sdk/lib/generated-client/models/image-resolution';
+import { ImageResolution } from 'lib/tesserafin-sdk';
 import globalize from 'lib/globalize';
 
 export function getImageResolutionOptions() {
