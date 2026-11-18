@@ -1,6 +1,8 @@
-import type { BrandingOptionsDto } from '@jellyfin/sdk/lib/generated-client/models/branding-options-dto';
-import { getSystemApi } from '@jellyfin/sdk/lib/utils/api/system-api';
-import { getImageApi } from '@jellyfin/sdk/lib/utils/api/image-api';
+import {
+    type BrandingOptionsDto,
+    getImageApi,
+    getSystemApi
+} from 'lib/tesserafin-sdk';
 import Delete from '@mui/icons-material/Delete';
 import Upload from '@mui/icons-material/Upload';
 import Alert from '@mui/material/Alert';
@@ -42,7 +44,7 @@ const BrandingOption = {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-    const api = ServerConnections.getApi();
+    const api = ServerConnections.getTesserafinApi();
     if (!api) throw new Error('No Api instance available');
 
     const formData = await request.formData();
@@ -69,14 +71,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export const loader = async () => {
-    const api = ServerConnections.getApi();
+    const api = ServerConnections.getTesserafinApi();
     if (!api) return {};
 
     return queryClient.ensureQueryData(getBrandingOptionsQuery(api));
 };
 
 export const Component = () => {
-    const { api } = useApi();
+    const { reefinApi: api } = useApi();
     const navigation = useNavigation();
     const actionData = useActionData() as ActionData | undefined;
     const isSubmitting = navigation.state === 'submitting';

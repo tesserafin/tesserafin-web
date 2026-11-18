@@ -11,7 +11,7 @@ import {
     useNavigation
 } from 'react-router-dom';
 import { useNamedConfiguration } from 'hooks/useNamedConfiguration';
-import type { NetworkConfiguration } from '@jellyfin/sdk/lib/generated-client/models/network-configuration';
+import { getSystemApi, type NetworkConfiguration } from 'lib/tesserafin-sdk';
 import TextField from '@mui/material/TextField/TextField';
 import Loading from 'components/loading/LoadingComponent';
 import Alert from '@mui/material/Alert';
@@ -26,7 +26,6 @@ import DirectoryBrowser from 'components/directorybrowser/directorybrowser';
 import MenuItem from '@mui/material/MenuItem';
 import Button from '@mui/material/Button';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
-import { getSystemApi } from '@jellyfin/sdk/lib/utils/api/system-api';
 import { QUERY_KEY as CONFIG_QUERY_KEY } from 'hooks/useConfiguration';
 import { queryClient } from 'utils/query/queryClient';
 import {
@@ -41,7 +40,7 @@ import Switch from '@mui/material/Switch';
 const CONFIG_KEY = 'network';
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-    const api = ServerConnections.getApi();
+    const api = ServerConnections.getTesserafinApi();
     if (!api) throw new Error('No Api instance available');
 
     const formData = await request.formData();

@@ -1,10 +1,10 @@
-import { getBackupApi } from '@jellyfin/sdk/lib/utils/api/backup-api';
+import { getBackupApi } from 'lib/tesserafin-sdk';
 import { useMutation } from '@tanstack/react-query';
 
 import { useApi } from 'hooks/useApi';
 
 export const useRestoreBackup = () => {
-    const { api } = useApi();
+    const { reefinApi: api } = useApi();
 
     return useMutation({
         mutationFn: (fileName: string) =>

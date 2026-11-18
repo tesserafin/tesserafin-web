@@ -1,9 +1,9 @@
-import { getSystemApi } from '@jellyfin/sdk/lib/utils/api/system-api';
+import { getSystemApi } from 'lib/tesserafin-sdk';
 import { useMutation } from '@tanstack/react-query';
 import { useApi } from 'hooks/useApi';
 
 const useShutdownServer = () => {
-    const { api } = useApi();
+    const { reefinApi: api } = useApi();
 
     return useMutation({
         mutationFn: () => {

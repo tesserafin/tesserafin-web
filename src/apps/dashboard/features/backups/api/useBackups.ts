@@ -1,5 +1,4 @@
-import type { Api } from '@jellyfin/sdk';
-import { getBackupApi } from '@jellyfin/sdk/lib/utils/api/backup-api';
+import { getBackupApi, type TesserafinApi } from 'lib/tesserafin-sdk';
 import { useQuery } from '@tanstack/react-query';
 import type { AxiosRequestConfig } from 'axios';
 
@@ -7,7 +6,10 @@ import { useApi } from 'hooks/useApi';
 
 export const QUERY_KEY = 'Backups';
 
-const fetchBackups = async (api: Api, options?: AxiosRequestConfig) => {
+const fetchBackups = async (
+    api: TesserafinApi,
+    options?: AxiosRequestConfig
+) => {
     const response = await getBackupApi(api).listBackups(options);
 
     const backups = response.data;
@@ -27,7 +29,7 @@ const fetchBackups = async (api: Api, options?: AxiosRequestConfig) => {
 };
 
 export const useBackups = () => {
-    const { api } = useApi();
+    const { reefinApi: api } = useApi();
 
     return useQuery({
         queryKey: [QUERY_KEY],
