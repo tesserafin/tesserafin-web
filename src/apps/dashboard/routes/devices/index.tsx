@@ -115,7 +115,7 @@ export const Component = () => {
                     if (
                         reefinApi &&
                         item.Id &&
-                        reefinApi.deviceInfo.id === item.Id
+                        reefinApi.deviceInfo.id !== item.Id
                     ) {
                         return deleteDevice.mutateAsync({ id: [item.Id] });
                     }
