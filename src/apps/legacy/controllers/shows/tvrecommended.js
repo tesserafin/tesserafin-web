@@ -13,8 +13,8 @@ import * as userSettings from 'scripts/settings/userSettings';
 import { LibraryTab } from 'types/libraryTab';
 import Dashboard from 'utils/dashboard';
 import Events from 'utils/events';
-import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
-import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket';
+import { CollectionType } from 'lib/tesserafin-sdk/generated/models/collection-type';
+import { ServerMessageType } from 'lib/tesserafin-sdk/serverMessages';
 
 import 'elements/emby-itemscontainer/emby-itemscontainer';
 import 'elements/emby-button/emby-button';
@@ -403,7 +403,7 @@ export default function (view, params) {
 
         Events.on(playbackManager, 'playbackstop', onPlaybackStop);
         self._unsubscribeUserData = ApiClient.subscribe(
-            [OutboundWebSocketMessageType.UserDataChanged],
+            [ServerMessageType.UserDataChanged],
             onUserDataChanged
         );
         inputManager.on(window, onInputCommand);

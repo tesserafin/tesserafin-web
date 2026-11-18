@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket/types';
+import { ServerMessageType } from 'lib/tesserafin-sdk/serverMessages';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react-dom/test-utils';
@@ -73,14 +73,14 @@ afterEach(() => {
 describe('QueryClientEventHandler', () => {
     it('listens for library and play-state changes', () => {
         expect(subscribedTypes).toEqual([
-            OutboundWebSocketMessageType.LibraryChanged,
-            OutboundWebSocketMessageType.UserDataChanged
+            ServerMessageType.LibraryChanged,
+            ServerMessageType.UserDataChanged
         ]);
     });
 
     it('refreshes the home page, item lists and views when the library changes', () => {
         serverSays({
-            MessageType: OutboundWebSocketMessageType.LibraryChanged
+            MessageType: ServerMessageType.LibraryChanged
         });
 
         expect(isInvalidated(['Home', 'u1', 'LatestMedia', 'lib'])).toBe(true);
@@ -91,7 +91,7 @@ describe('QueryClientEventHandler', () => {
 
     it('refreshes only the home page when play state changes', () => {
         serverSays({
-            MessageType: OutboundWebSocketMessageType.UserDataChanged
+            MessageType: ServerMessageType.UserDataChanged
         });
 
         expect(isInvalidated(['Home', 'u1', 'ResumeItems'])).toBe(true);
@@ -101,7 +101,7 @@ describe('QueryClientEventHandler', () => {
 
     it('leaves other users, shuffled lists and unrelated queries alone', () => {
         serverSays({
-            MessageType: OutboundWebSocketMessageType.LibraryChanged
+            MessageType: ServerMessageType.LibraryChanged
         });
 
         expect(isInvalidated(['Home', 'someone-else', 'ResumeItems'])).toBe(

@@ -3,7 +3,7 @@ import Events from '../../utils/events.ts';
 import globalize from '../../lib/globalize';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
 import { getItems } from '../../utils/jellyfin-apiclient/getItems.ts';
-import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket';
+import { ServerMessageType } from 'lib/tesserafin-sdk/serverMessages';
 
 import NotificationIcon from 'assets/branding/notification.png';
 
@@ -244,89 +244,80 @@ const subscriptions = [];
 function subscribeToApiClient(apiClient) {
     const clientSubscriptions = [
         apiClient.subscribe?.(
-            [OutboundWebSocketMessageType.LibraryChanged],
+            [ServerMessageType.LibraryChanged],
             ({ Data }) => {
                 onLibraryChanged(Data, apiClient);
             }
         ),
         apiClient.subscribe?.(
-            [OutboundWebSocketMessageType.PackageInstallationCompleted],
+            [ServerMessageType.PackageInstallationCompleted],
             ({ Data }) => {
                 showPackageInstallNotification(apiClient, Data, 'completed');
             }
         ),
         apiClient.subscribe?.(
-            [OutboundWebSocketMessageType.PackageInstallationFailed],
+            [ServerMessageType.PackageInstallationFailed],
             ({ Data }) => {
                 showPackageInstallNotification(apiClient, Data, 'failed');
             }
         ),
         apiClient.subscribe?.(
-            [OutboundWebSocketMessageType.PackageInstallationCancelled],
+            [ServerMessageType.PackageInstallationCancelled],
             ({ Data }) => {
                 showPackageInstallNotification(apiClient, Data, 'cancelled');
             }
         ),
         apiClient.subscribe?.(
-            [OutboundWebSocketMessageType.PackageInstalling],
+            [ServerMessageType.PackageInstalling],
             ({ Data }) => {
                 showPackageInstallNotification(apiClient, Data, 'progress');
             }
         ),
 
-        apiClient.subscribe?.(
-            [OutboundWebSocketMessageType.ServerShuttingDown],
-            () => {
-                const serverId = apiClient.serverInfo().Id;
-                const notification = {
-                    tag: 'restart' + serverId,
-                    title: globalize.translate(
-                        'ServerNameIsShuttingDown',
-                        apiClient.serverInfo().Name
-                    )
-                };
-                showNotification(notification, 0, apiClient);
-            }
-        ),
+        apiClient.subscribe?.([ServerMessageType.ServerShuttingDown], () => {
+            const serverId = apiClient.serverInfo().Id;
+            const notification = {
+                tag: 'restart' + serverId,
+                title: globalize.translate(
+                    'ServerNameIsShuttingDown',
+                    apiClient.serverInfo().Name
+                )
+            };
+            showNotification(notification, 0, apiClient);
+        }),
 
-        apiClient.subscribe?.(
-            [OutboundWebSocketMessageType.ServerRestarting],
-            () => {
-                const serverId = apiClient.serverInfo().Id;
-                const notification = {
-                    tag: 'restart' + serverId,
-                    title: globalize.translate(
-                        'ServerNameIsRestarting',
-                        apiClient.serverInfo().Name
-                    )
-                };
-                showNotification(notification, 0, apiClient);
-            }
-        ),
+        apiClient.subscribe?.([ServerMessageType.ServerRestarting], () => {
+            const serverId = apiClient.serverInfo().Id;
+            const notification = {
+                tag: 'restart' + serverId,
+                title: globalize.translate(
+                    'ServerNameIsRestarting',
+                    apiClient.serverInfo().Name
+                )
+            };
+            showNotification(notification, 0, apiClient);
+        }),
 
-        apiClient.subscribe?.(
-            [OutboundWebSocketMessageType.RestartRequired],
-            () => {
-                const serverId = apiClient.serverInfo().Id;
-                const notification = {
-                    tag: 'restart' + serverId,
-                    title: globalize.translate(
-                        'PleaseRestartServerName',
-                        apiClient.serverInfo().Name
-                    )
-                };
+        apiClient.subscribe?.([ServerMessageType.RestartRequired], () => {
+            const serverId = apiClient.serverInfo().Id;
+            const notification = {
+                tag: 'restart' + serverId,
+                title: globalize.translate(
+                    'PleaseRestartServerName',
+                    apiClient.serverInfo().Name
+                )
+            };
 
-                notification.actions = [
-                    {
-                        action: 'restart',
-                        title: globalize.translate('Restart'),
-                        icon: NotificationIcon
-                    }
-                ];
+            notification.actions = [
+                {
+                    action: 'restart',
+                    title: globalize.translate('Restart'),
+                    icon: NotificationIcon
+                }
+            ];
 
-                showNotification(notification, 0, apiClient);
-            }
-        )
+            showNotification(notification, 0, apiClient);
+        })
     ].filter(Boolean);
 
     return () =>
