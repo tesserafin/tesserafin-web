@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useApi } from 'hooks/useApi';
 import { QUERY_KEY, useTasks } from '../api/useTasks';
-import type { ScheduledTaskApiGetTasksRequest } from '@jellyfin/sdk/lib/generated-client/api/scheduled-task-api';
+import { type ScheduledTaskApiGetTasksRequest } from 'lib/tesserafin-sdk';
 import { queryClient } from 'utils/query/queryClient';
 import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket';
 

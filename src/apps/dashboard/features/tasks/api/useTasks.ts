@@ -1,7 +1,9 @@
-import type { ScheduledTaskApiGetTasksRequest } from '@jellyfin/sdk/lib/generated-client/api/scheduled-task-api';
+import {
+    getScheduledTaskApi,
+    type ScheduledTaskApiGetTasksRequest,
+    type TesserafinApi
+} from 'lib/tesserafin-sdk';
 import type { AxiosRequestConfig } from 'axios';
-import type { Api } from '@jellyfin/sdk';
-import { getScheduledTaskApi } from '@jellyfin/sdk/lib/utils/api/scheduled-task-api';
 import { useQuery } from '@tanstack/react-query';
 
 import { useApi } from 'hooks/useApi';
@@ -9,7 +11,7 @@ import { useApi } from 'hooks/useApi';
 export const QUERY_KEY = 'Tasks';
 
 const fetchTasks = async (
-    api: Api,
+    api: TesserafinApi,
     params?: ScheduledTaskApiGetTasksRequest,
     options?: AxiosRequestConfig
 ) => {
@@ -19,11 +21,11 @@ const fetchTasks = async (
 };
 
 export const useTasks = (params?: ScheduledTaskApiGetTasksRequest) => {
-    const { api } = useApi();
+    const { reefinApi } = useApi();
 
     return useQuery({
         queryKey: [QUERY_KEY],
-        queryFn: ({ signal }) => fetchTasks(api!, params, { signal }),
-        enabled: !!api
+        queryFn: ({ signal }) => fetchTasks(reefinApi!, params, { signal }),
+        enabled: !!reefinApi
     });
 };
