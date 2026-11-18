@@ -11,8 +11,12 @@ import Loading from 'components/loading/LoadingComponent';
 import Alert from '@mui/material/Alert';
 import List from '@mui/material/List';
 import CreateBackupForm from 'apps/dashboard/features/backups/components/CreateBackupForm';
-import type { BackupOptionsDto } from '@jellyfin/sdk/lib/generated-client/models/backup-options-dto';
-import type { BackupManifestDto } from '@jellyfin/sdk/lib/generated-client/models/backup-manifest-dto';
+import {
+    type BackupManifestDto,
+    type BackupOptionsDto,
+    getSystemApi,
+    TaskState
+} from 'lib/tesserafin-sdk';
 import { useCreateBackup } from 'apps/dashboard/features/backups/api/useCreateBackup';
 import BackupProgressDialog from 'apps/dashboard/features/backups/components/BackupProgressDialog';
 import Backup from 'apps/dashboard/features/backups/components/Backup';
@@ -21,13 +25,11 @@ import RestoreConfirmationDialog from 'apps/dashboard/features/backups/component
 import { useRestoreBackup } from 'apps/dashboard/features/backups/api/useRestoreBackup';
 import RestoreProgressDialog from 'apps/dashboard/features/backups/components/RestoreProgressDialog';
 import { useApi } from 'hooks/useApi';
-import { getSystemApi } from '@jellyfin/sdk/lib/utils/api/system-api';
 import useLiveTasks from 'apps/dashboard/features/tasks/hooks/useLiveTasks';
-import { TaskState } from '@jellyfin/sdk/lib/generated-client/models/task-state';
 import ConfirmDialog from 'components/ConfirmDialog';
 
 export const Component = () => {
-    const { api } = useApi();
+    const { reefinApi: api } = useApi();
     const { data: backups, isPending, isError } = useBackups();
     const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
     const [backupInProgress, setBackupInProgress] = useState(false);

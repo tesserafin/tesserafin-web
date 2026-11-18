@@ -146,6 +146,22 @@ export class TesserafinApi {
      * alongside `basePath`/`axiosInstance`. Same shape as `@jellyfin/sdk`'s `Api.configuration`
      * getter.
      */
+    /**
+     * Absolute URL for a server path on this connection, with optional query parameters - the
+     * `@jellyfin/sdk` `Api.getUri` equivalent, for places that need a plain URL (an `<img src>`)
+     * rather than a request. No credential is added to the URL.
+     */
+    getUri(path: string, params?: Record<string, unknown>): string {
+        const query = new URLSearchParams();
+        for (const [key, value] of Object.entries(params ?? {})) {
+            if (value !== undefined && value !== null) {
+                query.set(key, String(value));
+            }
+        }
+        const search = query.toString();
+        return `${this._basePath}${path}${search ? `?${search}` : ''}`;
+    }
+
     get configuration(): Configuration {
         return new Configuration({
             basePath: this._basePath,

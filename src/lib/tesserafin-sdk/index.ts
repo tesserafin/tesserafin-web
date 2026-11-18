@@ -13,8 +13,11 @@ export * from './imageUrl';
 import type { TesserafinApi } from './client';
 import { AuthenticationApi } from './generated/api/authentication-api';
 import { DeviceApi } from './generated/api/device-api';
+import { BackupApi } from './generated/api/backup-api';
+import { BrandingApi } from './generated/api/branding-api';
 import { ChannelApi } from './generated/api/channel-api';
 import { GenreApi } from './generated/api/genre-api';
+import { ImageApi } from './generated/api/image-api';
 import { LibraryApi } from './generated/api/library-api';
 import { LibraryStructureApi } from './generated/api/library-structure-api';
 import { LocalizationApi } from './generated/api/localization-api';
@@ -121,3 +124,16 @@ export const getLibraryStructureApi = (
     api: TesserafinApi
 ): LibraryStructureApi =>
     new LibraryStructureApi(api.configuration, undefined, api.axiosInstance);
+
+/**
+ * Added for the dashboard configuration pages (backups, branding; consolidation step 3). Reached
+ * only through the dashboard's async route chunks.
+ */
+export const getBackupApi = (api: TesserafinApi): BackupApi =>
+    new BackupApi(api.configuration, undefined, api.axiosInstance);
+
+export const getBrandingApi = (api: TesserafinApi): BrandingApi =>
+    new BrandingApi(api.configuration, undefined, api.axiosInstance);
+
+export const getImageApi = (api: TesserafinApi): ImageApi =>
+    new ImageApi(api.configuration, undefined, api.axiosInstance);

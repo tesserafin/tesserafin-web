@@ -79,7 +79,7 @@ function showBackdrop(type, parentId) {
 }
 
 async function showSplashScreen() {
-    const api = ServerConnections.getApi();
+    const api = ServerConnections.getTesserafinApi();
     const brandingOptions = await queryClient.fetchQuery(
         getBrandingOptionsQuery(api)
     );

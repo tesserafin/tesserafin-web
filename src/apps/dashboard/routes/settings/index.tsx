@@ -30,12 +30,12 @@ import Checkbox from '@mui/material/Checkbox';
 import Button from '@mui/material/Button';
 import Link from '@mui/material/Link';
 import DirectoryBrowser from 'components/directorybrowser/directorybrowser';
-import { getSystemApi } from '@jellyfin/sdk/lib/utils/api/system-api';
+import { getSystemApi } from 'lib/tesserafin-sdk';
 import { queryClient } from 'utils/query/queryClient';
 import { ActionData } from 'types/actionData';
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-    const api = ServerConnections.getApi();
+    const api = ServerConnections.getTesserafinApi();
     if (!api) throw new Error('No Api instance available');
 
     const { data: config } = await getSystemApi(api).getConfiguration();

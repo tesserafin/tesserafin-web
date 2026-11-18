@@ -1,9 +1,9 @@
 import React, { type FC } from 'react';
-import type { UserDto } from '@jellyfin/sdk/lib/generated-client/models/user-dto';
 import Avatar, { type AvatarProps } from '@mui/material/Avatar';
 import type {} from '@mui/material/themeCssVarsAugmentation';
 
 import { useApi } from 'hooks/useApi';
+import type { UserDto } from 'lib/tesserafin-sdk';
 
 interface UserAvatarProps extends AvatarProps {
     user?: UserDto;
@@ -11,7 +11,7 @@ interface UserAvatarProps extends AvatarProps {
 }
 
 const UserAvatar: FC<UserAvatarProps> = ({ user, size }) => {
-    const { api } = useApi();
+    const { reefinApi: api } = useApi();
 
     return user ? (
         <Avatar

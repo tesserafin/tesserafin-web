@@ -1,11 +1,10 @@
-import { Api } from '@jellyfin/sdk';
-import { getLocalizationApi } from '@jellyfin/sdk/lib/utils/api/localization-api';
+import { getLocalizationApi, type TesserafinApi } from 'lib/tesserafin-sdk';
 import { useQuery } from '@tanstack/react-query';
 import { useApi } from 'hooks/useApi';
 import type { AxiosRequestConfig } from 'axios';
 
 const fetchLocalizationOptions = async (
-    api: Api,
+    api: TesserafinApi,
     options?: AxiosRequestConfig
 ) => {
     const response =
@@ -15,7 +14,7 @@ const fetchLocalizationOptions = async (
 };
 
 export const useLocalizationOptions = () => {
-    const { api } = useApi();
+    const { reefinApi: api } = useApi();
 
     return useQuery({
         queryKey: ['LocalizationOptions'],

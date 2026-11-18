@@ -1,13 +1,15 @@
-import type { Api } from '@jellyfin/sdk';
-import type { LibraryApiGetItemCountsRequest } from '@jellyfin/sdk/lib/generated-client/api/library-api';
-import { getLibraryApi } from '@jellyfin/sdk/lib/utils/api/library-api';
+import {
+    getLibraryApi,
+    type LibraryApiGetItemCountsRequest,
+    type TesserafinApi
+} from 'lib/tesserafin-sdk';
 import { queryOptions, useQuery } from '@tanstack/react-query';
 import type { AxiosRequestConfig } from 'axios';
 
 import { useApi } from 'hooks/useApi';
 
 const fetchItemCounts = async (
-    api: Api,
+    api: TesserafinApi,
     params?: LibraryApiGetItemCountsRequest,
     options?: AxiosRequestConfig
 ) => {
@@ -16,7 +18,7 @@ const fetchItemCounts = async (
 };
 
 const getItemCountsQuery = (
-    api?: Api,
+    api?: TesserafinApi,
     params?: LibraryApiGetItemCountsRequest
 ) =>
     queryOptions({
@@ -27,6 +29,6 @@ const getItemCountsQuery = (
     });
 
 export const useItemCounts = (params?: LibraryApiGetItemCountsRequest) => {
-    const { api } = useApi();
+    const { reefinApi: api } = useApi();
     return useQuery(getItemCountsQuery(api, params));
 };
