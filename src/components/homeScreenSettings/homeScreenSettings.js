@@ -414,10 +414,13 @@ function loadForm(context, user, userSettings, apiClient) {
     updateHomeSectionValues(context, userSettings);
 
     const promise1 = queryClient.fetchQuery(
-        getUserViewsQuery(ServerConnections.getApi(apiClient.serverId()), {
-            userId: user.Id,
-            includeHidden: true
-        })
+        getUserViewsQuery(
+            ServerConnections.getTesserafinApi(apiClient.serverId()),
+            {
+                userId: user.Id,
+                includeHidden: true
+            }
+        )
     );
     const promise2 = apiClient.getJSON(
         apiClient.getUrl(`Users/${user.Id}/GroupingOptions`)

@@ -1,25 +1,28 @@
-import type { Api } from '@jellyfin/sdk/lib/api';
-import { DisplayPreferenceApiGetDisplayPreferencesRequest } from '@jellyfin/sdk/lib/generated-client/api/display-preference-api';
-import { getDisplayPreferenceApi } from '@jellyfin/sdk/lib/utils/api/display-preference-api';
+import {
+    DisplayPreferenceApiGetDisplayPreferencesRequest,
+    DisplayPreferenceApi
+} from 'lib/tesserafin-sdk/generated/api/display-preference-api';
+import type { TesserafinApi } from 'lib/tesserafin-sdk/client';
 import { queryOptions, useQuery } from '@tanstack/react-query';
 import type { AxiosRequestConfig } from 'axios';
 
 import { useApi } from 'hooks/useApi';
 
 const fetchDisplayPreferences = async (
-    api: Api,
+    api: TesserafinApi,
     params: DisplayPreferenceApiGetDisplayPreferencesRequest,
     options?: AxiosRequestConfig
 ) => {
-    const response = await getDisplayPreferenceApi(api).getDisplayPreferences(
-        params,
-        options
-    );
+    const response = await new DisplayPreferenceApi(
+        api.configuration,
+        undefined,
+        api.axiosInstance
+    ).getDisplayPreferences(params, options);
     return response.data;
 };
 
 export const getDisplayPreferencesQuery = (
-    api?: Api,
+    api?: TesserafinApi,
     params?: DisplayPreferenceApiGetDisplayPreferencesRequest
 ) =>
     queryOptions({
@@ -38,7 +41,7 @@ export const getDisplayPreferencesQuery = (
 export const useDisplayPreferences = (
     params: DisplayPreferenceApiGetDisplayPreferencesRequest
 ) => {
-    const { api, user } = useApi();
+    const { reefinApi: api, user } = useApi();
     return useQuery(
         getDisplayPreferencesQuery(api, {
             ...params,

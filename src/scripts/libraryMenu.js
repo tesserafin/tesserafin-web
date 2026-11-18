@@ -410,7 +410,7 @@ function onSidebarLinkClick() {
 }
 
 function getUserViews(apiClient, userId) {
-    const api = ServerConnections.getApi(apiClient.serverId());
+    const api = ServerConnections.getTesserafinApi(apiClient.serverId());
 
     return queryClient
         .fetchQuery(getUserViewsQuery(api, { userId }))

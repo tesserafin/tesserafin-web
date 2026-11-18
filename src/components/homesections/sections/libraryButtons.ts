@@ -1,4 +1,4 @@
-import type { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
+import type { BaseItemDto } from 'lib/tesserafin-sdk/generated/models/base-item-dto';
 import escapeHtml from 'escape-html';
 
 import imageLoader from 'components/images/imageLoader';

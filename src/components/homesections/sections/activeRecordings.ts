@@ -1,5 +1,5 @@
-import type { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
-import { ItemFields } from '@jellyfin/sdk/lib/generated-client/models/item-fields';
+import { ItemFields } from 'lib/tesserafin-sdk/generated/models/item-fields';
+import type { BaseItemDto } from 'lib/tesserafin-sdk/generated/models/base-item-dto';
 import type { ApiClient } from 'jellyfin-apiclient';
 
 import { getRecordingsQuery } from 'apps/legacy/features/liveTv/api/useRecordings';
@@ -16,7 +16,7 @@ function getLatestRecordingsFetchFn(
     { enableOverflow }: SectionOptions
 ) {
     return function () {
-        const api = ServerConnections.getApi(serverId);
+        const api = ServerConnections.getTesserafinApi(serverId);
         const apiClient = ServerConnections.getApiClient(serverId);
         return queryClient.fetchQuery(
             getRecordingsQuery(api, {

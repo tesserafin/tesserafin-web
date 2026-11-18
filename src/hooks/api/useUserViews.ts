@@ -1,22 +1,28 @@
-import type { Api } from '@jellyfin/sdk/lib/api';
-import type { UserViewApiGetUserViewsRequest } from '@jellyfin/sdk/lib/generated-client/api/user-view-api';
-import { getUserViewApi } from '@jellyfin/sdk/lib/utils/api/user-view-api';
+import {
+    UserViewApi,
+    type UserViewApiGetUserViewsRequest
+} from 'lib/tesserafin-sdk/generated/api/user-view-api';
+import type { TesserafinApi } from 'lib/tesserafin-sdk/client';
 import { queryOptions, useQuery } from '@tanstack/react-query';
 import type { AxiosRequestConfig } from 'axios';
 
 import { useApi } from '../useApi';
 
 const fetchUserViews = async (
-    api: Api,
+    api: TesserafinApi,
     params?: UserViewApiGetUserViewsRequest,
     options?: AxiosRequestConfig
 ) => {
-    const response = await getUserViewApi(api).getUserViews(params, options);
+    const response = await new UserViewApi(
+        api.configuration,
+        undefined,
+        api.axiosInstance
+    ).getUserViews(params, options);
     return response.data;
 };
 
 export const getUserViewsQuery = (
-    api?: Api,
+    api?: TesserafinApi,
     params?: UserViewApiGetUserViewsRequest
 ) =>
     queryOptions({
@@ -26,7 +32,7 @@ export const getUserViewsQuery = (
     });
 
 export const useUserViews = (params?: UserViewApiGetUserViewsRequest) => {
-    const { api, user } = useApi();
+    const { reefinApi: api, user } = useApi();
     return useQuery(
         getUserViewsQuery(api, {
             ...params,

@@ -1,6 +1,8 @@
+import {
+    LiveTvApi,
+    type LiveTvApiGetChannelRequest
+} from 'lib/tesserafin-sdk/generated/api/live-tv-api';
 import type { AxiosRequestConfig } from 'axios';
-import type { LiveTvApiGetChannelRequest } from '@jellyfin/sdk/lib/generated-client';
-import { getLiveTvApi } from '@jellyfin/sdk/lib/utils/api/live-tv-api';
 import { queryOptions, useQuery } from '@tanstack/react-query';
 import { type TesserafinApiContext, useApi } from 'hooks/useApi';
 
@@ -9,12 +11,16 @@ const getChannel = async (
     params: LiveTvApiGetChannelRequest,
     options?: AxiosRequestConfig
 ) => {
-    const { api, user } = apiContext;
+    const { reefinApi: api, user } = apiContext;
 
     if (!api) throw new Error('[getChannel] No API instance available');
     if (!user?.Id) throw new Error('[getChannel] No User ID provided');
 
-    const response = await getLiveTvApi(api).getChannel(
+    const response = await new LiveTvApi(
+        api.configuration,
+        undefined,
+        api.axiosInstance
+    ).getChannel(
         {
             userId: user.Id,
             ...params
@@ -31,7 +37,10 @@ export const getChannelQuery = (
     queryOptions({
         queryKey: ['Channel', params.channelId],
         queryFn: ({ signal }) => getChannel(apiContext, params, { signal }),
-        enabled: !!apiContext.api && !!apiContext.user?.Id && !!params.channelId
+        enabled:
+            !!apiContext.reefinApi &&
+            !!apiContext.user?.Id &&
+            !!params.channelId
     });
 
 export const useGetChannel = (params: LiveTvApiGetChannelRequest) => {
