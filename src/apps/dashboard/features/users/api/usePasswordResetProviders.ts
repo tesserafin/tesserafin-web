@@ -1,12 +1,11 @@
-import { Api } from '@jellyfin/sdk';
+import { getAuthenticationApi, type TesserafinApi } from 'lib/tesserafin-sdk';
 import { useQuery } from '@tanstack/react-query';
 import type { AxiosRequestConfig } from 'axios';
 
 import { useApi } from 'hooks/useApi';
-import { getAuthenticationApi } from 'utils/sdk/authentication-api';
 
 const fetchPasswordResetProviders = async (
-    api: Api,
+    api: TesserafinApi,
     options?: AxiosRequestConfig
 ) => {
     const response =
@@ -16,11 +15,12 @@ const fetchPasswordResetProviders = async (
 };
 
 export const usePasswordResetProviders = () => {
-    const { api } = useApi();
+    const { reefinApi } = useApi();
 
     return useQuery({
         queryKey: ['PasswordResetProviders'],
-        queryFn: ({ signal }) => fetchPasswordResetProviders(api!, { signal }),
-        enabled: !!api
+        queryFn: ({ signal }) =>
+            fetchPasswordResetProviders(reefinApi!, { signal }),
+        enabled: !!reefinApi
     });
 };

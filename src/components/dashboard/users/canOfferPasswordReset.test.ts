@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { UserDto } from '@jellyfin/sdk/lib/generated-client';
+import type { UserDto } from 'lib/tesserafin-sdk';
 import { canOfferPasswordReset } from './canOfferPasswordReset';
 
 const admin = { Policy: { IsAdministrator: true } } as UserDto;

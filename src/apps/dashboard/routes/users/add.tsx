@@ -1,7 +1,4 @@
-import type {
-    BaseItemDto,
-    CreateUserByName
-} from '@jellyfin/sdk/lib/generated-client';
+import { type BaseItemDto, type CreateUserByName } from 'lib/tesserafin-sdk';
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 
 import globalize from '../../../../lib/globalize';

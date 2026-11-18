@@ -5,7 +5,7 @@ import React, {
     useMemo,
     useRef
 } from 'react';
-import type { UserDto } from '@jellyfin/sdk/lib/generated-client';
+import type { UserDto } from 'lib/tesserafin-sdk';
 import Dashboard from '../../../utils/dashboard';
 import globalize from '../../../lib/globalize';
 import confirm from '../../confirm/confirm';

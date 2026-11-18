@@ -1,4 +1,4 @@
-import type { UserDto } from '@jellyfin/sdk/lib/generated-client';
+import type { UserDto } from 'lib/tesserafin-sdk';
 
 /**
  * Only an administrator may clear another account's credential without proving it.

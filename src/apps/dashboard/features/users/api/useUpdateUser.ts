@@ -1,16 +1,15 @@
-import { UserApiUpdateUserRequest } from '@jellyfin/sdk/lib/generated-client/api/user-api';
-import { getUserApi } from '@jellyfin/sdk/lib/utils/api/user-api';
+import { getUserApi, type UserApiUpdateUserRequest } from 'lib/tesserafin-sdk';
 import { useMutation } from '@tanstack/react-query';
 import { useApi } from 'hooks/useApi';
 import { queryClient } from 'utils/query/queryClient';
 import { QUERY_KEY } from 'hooks/api/useUser';
 
 export const useUpdateUser = () => {
-    const { api } = useApi();
+    const { reefinApi } = useApi();
 
     return useMutation({
         mutationFn: (params: UserApiUpdateUserRequest) =>
-            getUserApi(api!).updateUser(params),
+            getUserApi(reefinApi!).updateUser(params),
         onSuccess: (_, params) => {
             void queryClient.invalidateQueries({
                 queryKey: [QUERY_KEY, params.userId]

@@ -1,12 +1,14 @@
-import { Api } from '@jellyfin/sdk';
-import { LibraryApiGetMediaFoldersRequest } from '@jellyfin/sdk/lib/generated-client/api/library-api';
-import { getLibraryApi } from '@jellyfin/sdk/lib/utils/api/library-api';
+import {
+    getLibraryApi,
+    type LibraryApiGetMediaFoldersRequest,
+    type TesserafinApi
+} from 'lib/tesserafin-sdk';
 import { useQuery } from '@tanstack/react-query';
 import { useApi } from 'hooks/useApi';
 import type { AxiosRequestConfig } from 'axios';
 
 const fetchLibraryMediaFolders = async (
-    api: Api,
+    api: TesserafinApi,
     params?: LibraryApiGetMediaFoldersRequest,
     options?: AxiosRequestConfig
 ) => {
@@ -18,12 +20,12 @@ const fetchLibraryMediaFolders = async (
 export const useLibraryMediaFolders = (
     params?: LibraryApiGetMediaFoldersRequest
 ) => {
-    const { api } = useApi();
+    const { reefinApi } = useApi();
 
     return useQuery({
         queryKey: ['LibraryMediaFolders'],
         queryFn: ({ signal }) =>
-            fetchLibraryMediaFolders(api!, params, { signal }),
-        enabled: !!api
+            fetchLibraryMediaFolders(reefinApi!, params, { signal }),
+        enabled: !!reefinApi
     });
 };

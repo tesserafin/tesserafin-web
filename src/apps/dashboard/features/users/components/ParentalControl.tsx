@@ -1,10 +1,10 @@
-import type {
-    AccessSchedule,
-    ParentalRating,
-    UserDto
-} from '@jellyfin/sdk/lib/generated-client';
-import { UnratedItem } from '@jellyfin/sdk/lib/generated-client/models/unrated-item';
-import { DynamicDayOfWeek } from '@jellyfin/sdk/lib/generated-client/models/dynamic-day-of-week';
+import {
+    type AccessSchedule,
+    DynamicDayOfWeek,
+    type ParentalRating,
+    UnratedItem,
+    type UserDto
+} from 'lib/tesserafin-sdk';
 import escapeHTML from 'escape-html';
 import React, {
     useCallback,
