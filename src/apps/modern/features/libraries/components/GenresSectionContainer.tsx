@@ -1,9 +1,11 @@
-import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
-import { ItemFields } from '@jellyfin/sdk/lib/generated-client/models/item-fields';
-import { ImageType } from '@jellyfin/sdk/lib/generated-client/models/image-type';
-import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-item-kind';
-import { ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models/item-sort-by';
-import { SortOrder } from '@jellyfin/sdk/lib/generated-client/models/sort-order';
+import {
+    BaseItemKind,
+    CollectionType,
+    ImageType,
+    ItemFields,
+    ItemSortBy,
+    SortOrder
+} from 'lib/tesserafin-sdk';
 import React, { type FC } from 'react';
 
 import { CardShape } from 'components/cardbuilder/utils/shape';

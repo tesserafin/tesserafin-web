@@ -1,4 +1,4 @@
-import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
+import { CollectionType } from 'lib/tesserafin-sdk';
 import React, { FC, useCallback } from 'react';
 import Button from '@mui/material/Button';
 import PlayArrow from '@mui/icons-material/PlayArrow';

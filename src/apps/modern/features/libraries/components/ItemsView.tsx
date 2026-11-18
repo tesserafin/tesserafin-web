@@ -1,5 +1,4 @@
-import { ImageType } from '@jellyfin/sdk/lib/generated-client/models/image-type';
-import { ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models/item-sort-by';
+import { ImageType, ItemSortBy } from 'lib/tesserafin-sdk';
 import Box from '@mui/material/Box';
 import classNames from 'classnames';
 import React, { type FC, SetStateAction, useCallback, useMemo } from 'react';

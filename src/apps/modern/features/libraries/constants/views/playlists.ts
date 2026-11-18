@@ -1,6 +1,5 @@
-import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-item-kind';
-import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
-
+import { BaseItemKind } from 'lib/tesserafin-sdk/generated/models/base-item-kind';
+import { CollectionType } from 'lib/tesserafin-sdk/generated/models/collection-type';
 import { LibraryTab } from 'types/libraryTab';
 import type { LibraryTabContent } from 'types/libraryTabContent';
 

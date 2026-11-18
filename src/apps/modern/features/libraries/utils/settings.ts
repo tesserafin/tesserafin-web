@@ -1,7 +1,6 @@
-import { ImageType } from '@jellyfin/sdk/lib/generated-client/models/image-type';
-import { ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models/item-sort-by';
-import { SortOrder } from '@jellyfin/sdk/lib/generated-client/models/sort-order';
-
+import { ImageType } from 'lib/tesserafin-sdk/generated/models/image-type';
+import { ItemSortBy } from 'lib/tesserafin-sdk/generated/models/item-sort-by';
+import { SortOrder } from 'lib/tesserafin-sdk/generated/models/sort-order';
 import {
     type ParentId,
     ViewMode,

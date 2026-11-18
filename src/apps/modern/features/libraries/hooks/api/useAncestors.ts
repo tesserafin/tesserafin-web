@@ -1,6 +1,8 @@
-import type { Api } from '@jellyfin/sdk/lib/api';
-import type { LibraryApiGetAncestorsRequest } from '@jellyfin/sdk/lib/generated-client/api/library-api';
-import { getLibraryApi } from '@jellyfin/sdk/lib/utils/api/library-api';
+import {
+    getLibraryApi,
+    type LibraryApiGetAncestorsRequest,
+    type TesserafinApi
+} from 'lib/tesserafin-sdk';
 import { queryOptions, useQuery } from '@tanstack/react-query';
 import type { AxiosRequestConfig } from 'axios';
 
@@ -12,7 +14,7 @@ interface AncestorsParams {
 }
 
 const fetchAncestors = async (
-    api: Api,
+    api: TesserafinApi,
     params: LibraryApiGetAncestorsRequest,
     options?: AxiosRequestConfig
 ) => {
@@ -21,7 +23,10 @@ const fetchAncestors = async (
 };
 
 /** Query options for fetching the hierarchy of ancestors of a given item. */
-export const getAncestorsQuery = (api?: Api, params?: AncestorsParams) =>
+export const getAncestorsQuery = (
+    api?: TesserafinApi,
+    params?: AncestorsParams
+) =>
     queryOptions({
         queryKey: ['Items', params?.itemId, 'Ancestors'],
         queryFn: ({ signal }) =>
@@ -35,6 +40,6 @@ export const getAncestorsQuery = (api?: Api, params?: AncestorsParams) =>
 /** Hook to fetch the hierarchy of ancestors of a given item. */
 export const useAncestors = (params: AncestorsParams) => {
     const apiContext = useApi();
-    const { api } = apiContext;
+    const { reefinApi: api } = apiContext;
     return useQuery(getAncestorsQuery(api, params));
 };

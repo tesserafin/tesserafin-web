@@ -1,4 +1,4 @@
-import { VideoType } from '@jellyfin/sdk/lib/generated-client/models/video-type';
+import { VideoType } from 'lib/tesserafin-sdk';
 import React, { FC, useCallback } from 'react';
 import FormGroup from '@mui/material/FormGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
