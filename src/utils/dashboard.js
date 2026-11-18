@@ -121,16 +121,6 @@ export function logout() {
     });
 }
 
-export function getPluginUrl(name) {
-    return 'configurationpage?name=' + encodeURIComponent(name);
-}
-
-export function getConfigurationResourceUrl(name) {
-    return ApiClient.getUrl('web/ConfigurationPage', {
-        name: name
-    });
-}
-
 /**
  * Navigate to a url.
  * @param {string} url - The url to navigate to.
@@ -149,11 +139,6 @@ export function navigate(url, preserveQueryString) {
     }
 
     return appRouter.show(url);
-}
-
-export function processPluginConfigurationUpdateResult() {
-    loading.hide();
-    toast(globalize.translate('SettingsSaved'));
 }
 
 export function processServerConfigurationUpdateResult() {
@@ -296,8 +281,6 @@ const Dashboard = {
     alert,
     capabilities,
     confirm,
-    getPluginUrl,
-    getConfigurationResourceUrl,
     getCurrentUser,
     getCurrentUserId,
     hideLoadingMsg,
@@ -305,7 +288,6 @@ const Dashboard = {
     navigate,
     onServerChanged,
     processErrorResponse,
-    processPluginConfigurationUpdateResult,
     processServerConfigurationUpdateResult,
     selectServer,
     serverAddress,
@@ -316,9 +298,5 @@ const Dashboard = {
     itemIdentifier,
     setBackdropTransparency
 };
-
-// This is used in plugins and templates, so keep it defined for now.
-// TODO: Remove once plugins don't need it
-window.Dashboard = Dashboard;
 
 export default Dashboard;

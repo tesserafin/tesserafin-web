@@ -1,18 +1,16 @@
 import React from 'react';
-import { Navigate, RouteObject } from 'react-router-dom';
+import type { RouteObject } from 'react-router-dom';
 
 import ConnectionRequired from 'components/ConnectionRequired';
 import { ASYNC_ADMIN_ROUTES } from './_asyncRoutes';
 import { toAsyncPageRoute } from 'components/router/AsyncRoute';
 import { toViewManagerPageRoute } from 'components/router/LegacyRoute';
 import { LEGACY_ADMIN_ROUTES } from './_legacyRoutes';
-import ServerContentPage from 'components/ServerContentPage';
 import ErrorBoundary from 'components/router/ErrorBoundary';
 
 export const DASHBOARD_APP_PATHS = {
     Dashboard: 'dashboard',
-    MetadataManager: 'metadata',
-    PluginConfig: 'configurationpage'
+    MetadataManager: 'metadata'
 };
 
 export const DASHBOARD_APP_ROUTES: RouteObject[] = [
@@ -26,13 +24,7 @@ export const DASHBOARD_APP_ROUTES: RouteObject[] = [
                         path: DASHBOARD_APP_PATHS.Dashboard,
                         children: [
                             ...ASYNC_ADMIN_ROUTES.map(toAsyncPageRoute),
-                            ...LEGACY_ADMIN_ROUTES.map(toViewManagerPageRoute),
-                            {
-                                path: 'plugins/catalog',
-                                element: (
-                                    <Navigate replace to='/dashboard/plugins' />
-                                )
-                            }
+                            ...LEGACY_ADMIN_ROUTES.map(toViewManagerPageRoute)
                         ],
                         errorElement: (
                             <ErrorBoundary pageClasses={['type-interior']} />
@@ -46,14 +38,7 @@ export const DASHBOARD_APP_ROUTES: RouteObject[] = [
                             controller: 'edititemmetadata',
                             view: 'edititemmetadata.html'
                         }
-                    }),
-
-                    {
-                        path: DASHBOARD_APP_PATHS.PluginConfig,
-                        element: (
-                            <ServerContentPage view='/web/configurationpage' />
-                        )
-                    }
+                    })
                 ]
             }
         ]
