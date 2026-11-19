@@ -386,6 +386,65 @@ describe('planSessionMedia', () => {
         expect(calls.some((c) => /PlaybackInfo/i.test(c.url))).toBe(false);
     });
 
+    it('plans an audio transcode from the session HLS route as an audio stream', async () => {
+        const hls = `/Playback/Sessions/${SESSION}/Hls/main.m3u8?itemId=${ITEM}&mediaSourceId=${SOURCE}&playSessionId=ps`;
+        const { api, calls } = fakeApi({
+            create: () => ({
+                Id: SESSION,
+                Method: 'Transcode',
+                SelectedStreams: { Audio: 0, Subtitle: null }
+            }),
+            stream: () => ({
+                Url: hls,
+                MimeType: 'application/x-mpegURL',
+                Container: 'mp4',
+                Protocol: 'Hls'
+            }),
+            item: () => ({
+                Id: ITEM,
+                Name: 'Track',
+                Type: 'Audio',
+                MediaType: 'Audio',
+                MediaSources: [
+                    {
+                        Id: SOURCE,
+                        Container: 'asf',
+                        MediaStreams: [
+                            { Index: 0, Type: 'Audio', Codec: 'wmav2' }
+                        ]
+                    }
+                ]
+            })
+        });
+        const outcome = await planSessionMedia(params(api), {
+            mintMediaCapability: vi.fn(async () => 'CAP'),
+            authorizeSubtitle: subtitle,
+            logger: quiet
+        });
+
+        expect(outcome.kind).toBe('planned');
+        if (outcome.kind !== 'planned') return;
+        const { streamInfo } = outcome;
+        expect(streamInfo.mediaType).toBe('Audio');
+        expect(streamInfo.url).toBe(
+            `http://server:8096${hls}&playbackCapability=CAP`
+        );
+        expect(streamInfo.playMethod).toBe('Transcode');
+        expect(streamInfo.mediaSource.TranscodingSubProtocol).toBe('hls');
+        expect(streamInfo.mediaSource.DefaultAudioStreamIndex).toBe(0);
+        expect(streamInfo.textTracks).toEqual([]);
+        expect(streamInfo.executionDecision).toMatchObject({
+            source: 'v2',
+            sessionOwned: true,
+            method: 'Transcode',
+            playbackSessionId: SESSION
+        });
+        expect(streamInfo.url).not.toMatch(/\/Audio\/|universal|ApiKey/);
+        expect(calls.some((c) => /PlaybackInfo|\/Audio\//i.test(c.url))).toBe(
+            false
+        );
+    });
+
     it('declines a remux the server does not serve from the session, releasing it first', async () => {
         const { api, calls } = fakeApi({
             create: () => ({ Id: SESSION, Method: 'Remux' }),

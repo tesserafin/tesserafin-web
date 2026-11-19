@@ -53,12 +53,12 @@ export const FAMILY_CONTRACT: Record<string, FamilyEntry> = {
     'universal-audio': {
         status: 'required',
         owner: 'matrix.spec.ts',
-        note: "seedAudioLibrary(..., 'wma'): a track no browser decodes is transcoded through /universal; a track the browser plays as it is is served from the session's file route since consolidation step 1 (sessionAudio.spec.ts)"
+        note: "seedAudioLibrary(..., 'mka'): AAC in Matroska only needs a remux, which the session journey does not execute, so it reaches /universal. A track the browser plays as it is is served from the session's file route, and a track it does not decode (WMA) is transcoded on the session's HLS route (sessionAudio.spec.ts)"
     },
     'session-hls': {
         status: 'required',
         owner: 'migratedTrace.spec.ts',
-        note: 'consolidation step 1: Transcode Probe (a film, MPEG-4 Part 2 + AC-3) is transcoded from /Playback/Sessions/{id}/Hls/main.m3u8 and its hls1 segments'
+        note: 'consolidation step 1: Transcode Probe (a film, MPEG-4 Part 2 + AC-3) is transcoded from /Playback/Sessions/{id}/Hls/main.m3u8 and its hls1 segments; a WMA track is transcoded to AAC the same way (sessionAudio.spec.ts)'
     },
     'hls-master': {
         status: 'unreached',
@@ -67,12 +67,12 @@ export const FAMILY_CONTRACT: Record<string, FamilyEntry> = {
     'hls-variant': {
         status: 'required',
         owner: 'matrix.spec.ts',
-        note: "seedAudioLibrary(..., 'wma'): /Audio/{id}/universal answers a track no browser decodes with the existing chain's HLS transcode, /Audio/{id}/main.m3u8"
+        note: "seedAudioLibrary(..., 'mka'): /Audio/{id}/universal answers that audio remux with the existing chain's HLS output, /Audio/{id}/main.m3u8"
     },
     'hls-segment': {
         status: 'required',
         owner: 'matrix.spec.ts',
-        note: 'follows hls-variant: the hls1 segments of that audio transcode'
+        note: 'follows hls-variant: the hls1 segments of that audio remux'
     },
     subtitle: {
         status: 'required',
