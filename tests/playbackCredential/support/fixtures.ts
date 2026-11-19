@@ -17,9 +17,12 @@ import {
     existsSync,
     mkdirSync,
     mkdtempSync,
+    readFileSync,
     rmSync,
     writeFileSync
 } from 'node:fs';
+import { createServer } from 'node:http';
+import type { AddressInfo, Socket } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -474,6 +477,162 @@ export async function enableFallbackFont(
                 data: before
             });
             rmSync(fontDir, { recursive: true, force: true });
+        }
+    };
+}
+
+export interface SoftwareTuner {
+    /** The Live TV channel the tuner's playlist names, as the server indexed it. */
+    channelId: string;
+    /** Channel streams the server is reading from the tuner right now. */
+    openStreams: () => number;
+    /** Channel streams the server asked the tuner for so far. */
+    streamsOpened: () => number;
+    /** Unregister the tuner host, stop the tuner and remove its fixture. */
+    dispose: () => Promise<void>;
+}
+
+/**
+ * An M3U software tuner on loopback, registered with the rig's server. The channel body is paced
+ * at its own bitrate with no Content-Length, which is what a real tuner looks like: served at
+ * loopback speed, the server's shared stream reaches the end in milliseconds and deletes what it
+ * had just written (scripts/livetv-rig/tuner-server.py says why at length).
+ */
+export async function startSoftwareTuner(
+    a: Admin,
+    channelName = 'A1 Live One',
+    durationSeconds = 120
+): Promise<SoftwareTuner> {
+    const root = mkdtempSync(join(tmpdir(), 'a1-tuner-'));
+    const body = join(root, 'channel1.ts');
+    ffmpeg([
+        '-f',
+        'lavfi',
+        '-i',
+        `testsrc=size=640x360:rate=25:duration=${durationSeconds}`,
+        '-f',
+        'lavfi',
+        '-i',
+        `sine=frequency=440:duration=${durationSeconds}`,
+        '-c:v',
+        'libx264',
+        '-preset',
+        'ultrafast',
+        '-pix_fmt',
+        'yuv420p',
+        '-g',
+        '25',
+        '-c:a',
+        'aac',
+        '-shortest',
+        '-f',
+        'mpegts',
+        body
+    ]);
+    const bytes = readFileSync(body);
+    const perTick = Math.max(
+        188,
+        Math.floor(bytes.length / durationSeconds / 10 / 188) * 188
+    );
+    let open = 0;
+    let opened = 0;
+    const sockets = new Set<Socket>();
+    const server = createServer((req, res) => {
+        if (req.url === '/playlist.m3u') {
+            res.writeHead(200, { 'Content-Type': 'audio/x-mpegurl' });
+            res.end(
+                `#EXTM3U\n#EXTINF:-1 tvg-id="a1-live-1" tvg-name="${channelName}",${channelName}\nhttp://127.0.0.1:${port}/channel1.ts\n`
+            );
+            return;
+        }
+        if (req.url !== '/channel1.ts') {
+            res.writeHead(404).end();
+            return;
+        }
+        opened += 1;
+        open += 1;
+        res.writeHead(200, {
+            'Content-Type': 'video/mp2t',
+            Connection: 'close'
+        });
+        let offset = 0;
+        const timer = setInterval(() => {
+            if (offset >= bytes.length) {
+                clearInterval(timer);
+                res.end();
+                return;
+            }
+            res.write(bytes.subarray(offset, offset + perTick));
+            offset += perTick;
+        }, 100);
+        res.on('close', () => {
+            clearInterval(timer);
+            open -= 1;
+        });
+    });
+    server.on('connection', (socket) => {
+        sockets.add(socket);
+        socket.on('close', () => sockets.delete(socket));
+    });
+    await new Promise<void>((resolve) =>
+        server.listen(0, '127.0.0.1', resolve)
+    );
+    const port = (server.address() as AddressInfo).port;
+
+    const added = await a.api.post('/LiveTv/TunerHosts', {
+        headers: { ...authed(a), 'Content-Type': 'application/json' },
+        data: {
+            Url: `http://127.0.0.1:${port}/playlist.m3u`,
+            Type: 'm3u',
+            FriendlyName: `${channelName} Tuner`,
+            ImportFavoritesOnly: false,
+            AllowHWTranscoding: false,
+            AllowStreamSharing: true,
+            EnableStreamLooping: false,
+            TunerCount: 3,
+            IgnoreDts: true,
+            ReadAtNativeFramerate: false
+        }
+    });
+    expect(added.ok(), 'the software tuner must register').toBe(true);
+    const tunerHostId = String((await added.json()).Id);
+
+    let channelId = '';
+    await expect
+        .poll(
+            async () => {
+                const res = await a.api.get('/LiveTv/Channels', {
+                    headers: authed(a),
+                    params: { userId: a.userId }
+                });
+                const items = (await res.json()).Items as Array<{
+                    Id: string;
+                    Name: string;
+                }>;
+                channelId = items.find((i) => i.Name === channelName)?.Id ?? '';
+                return channelId;
+            },
+            {
+                timeout: 60_000,
+                message: `the channel "${channelName}" must be indexed`
+            }
+        )
+        .not.toBe('');
+
+    return {
+        channelId,
+        openStreams: () => open,
+        streamsOpened: () => opened,
+        dispose: async () => {
+            await a.api
+                .delete('/LiveTv/TunerHosts', {
+                    headers: authed(a),
+                    params: { id: tunerHostId }
+                })
+                .catch(() => undefined);
+            for (const socket of sockets) socket.destroy();
+            await new Promise<void>((resolve) => server.close(() => resolve()));
+            rmSync(root, { recursive: true, force: true });
         }
     };
 }

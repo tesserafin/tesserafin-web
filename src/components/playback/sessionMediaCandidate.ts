@@ -27,19 +27,22 @@ export interface SessionMediaCandidate {
 
 /**
  * Whether this journey owns the playback of `item` on `player`: a library video (film, episode,
- * home video, music video, trailer) on the local HTML video player, or a library audio track on the
- * local HTML audio player - on the server, not a cast or remote target, which plan for themselves.
+ * home video, music video, trailer) or a Live TV channel on the local HTML video player, or a
+ * library audio track on the local HTML audio player - on the server, not a cast or remote target,
+ * which plan for themselves.
  */
 export function isSessionMediaCandidate(
     item: SessionMediaCandidate | null | undefined,
     player: { id?: string; isLocalPlayer?: boolean } | null | undefined
 ): boolean {
-    if (
-        !item?.Id ||
-        (item.LocationType != null && item.LocationType !== 'FileSystem') ||
-        item.IsPlaceHolder ||
-        !player?.isLocalPlayer
-    ) {
+    if (!item?.Id || item.IsPlaceHolder || !player?.isLocalPlayer) {
+        return false;
+    }
+    // A Live TV channel: the session opens its tuner stream and plays it from its live HLS route.
+    if (item.Type === 'TvChannel') {
+        return player.id === 'htmlvideoplayer';
+    }
+    if (item.LocationType != null && item.LocationType !== 'FileSystem') {
         return false;
     }
     if (item.MediaType === 'Video') {

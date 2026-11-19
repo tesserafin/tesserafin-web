@@ -208,11 +208,28 @@ describe('isSessionMediaCandidate', () => {
                 { id: 'chromecast', isLocalPlayer: false }
             )
         ).toBe(false);
+    });
+
+    it('owns a Live TV channel on the local html video player only', () => {
+        const videoPlayer = { id: 'htmlvideoplayer', isLocalPlayer: true };
+        const channel = {
+            Id: ITEM,
+            Type: 'TvChannel',
+            MediaType: 'Video',
+            LocationType: 'Remote'
+        };
+        expect(isSessionMediaCandidate(channel, videoPlayer)).toBe(true);
         expect(
-            isSessionMediaCandidate(
-                { Id: ITEM, Type: 'TvChannel', MediaType: 'Video' },
-                html
-            )
+            isSessionMediaCandidate(channel, {
+                id: 'htmlaudioplayer',
+                isLocalPlayer: true
+            })
+        ).toBe(false);
+        expect(
+            isSessionMediaCandidate(channel, {
+                id: 'chromecast',
+                isLocalPlayer: false
+            })
         ).toBe(false);
     });
 
@@ -443,6 +460,55 @@ describe('planSessionMedia', () => {
         expect(calls.some((c) => /PlaybackInfo|\/Audio\//i.test(c.url))).toBe(
             false
         );
+    });
+
+    it('plays a Live TV channel from the session live playlist', async () => {
+        const live = `/Playback/Sessions/${SESSION}/Hls/live.m3u8?itemId=${ITEM}&mediaSourceId=${SOURCE}&playSessionId=ps`;
+        const { api, calls } = fakeApi({
+            create: () => ({
+                Id: SESSION,
+                Method: 'Remux',
+                SelectedStreams: { Audio: 1 }
+            }),
+            stream: () => ({
+                Url: live,
+                MimeType: 'application/x-mpegURL',
+                Container: 'mp4',
+                Protocol: 'Hls'
+            }),
+            // A channel lists no media source of its own.
+            item: () => ({
+                Id: ITEM,
+                Name: 'Channel',
+                Type: 'TvChannel',
+                MediaType: 'Video'
+            })
+        });
+        const outcome = await planSessionMedia(params(api), {
+            mintMediaCapability: vi.fn(async () => 'CAP'),
+            authorizeSubtitle: subtitle,
+            logger: quiet
+        });
+
+        expect(outcome.kind).toBe('planned');
+        if (outcome.kind !== 'planned') return;
+        expect(outcome.streamInfo.url).toBe(
+            `http://server:8096${live}&playbackCapability=CAP`
+        );
+        expect(outcome.streamInfo.playMethod).toBe('Transcode');
+        expect(outcome.streamInfo.mediaSource.TranscodingSubProtocol).toBe(
+            'hls'
+        );
+        expect(outcome.streamInfo.mediaSource).toMatchObject({
+            Id: SOURCE,
+            IsInfiniteStream: true
+        });
+        expect(outcome.streamInfo.liveStreamId).toBeUndefined();
+        expect(
+            calls.some((c) =>
+                /PlaybackInfo|LiveStreams|LiveStreamFiles/i.test(c.url)
+            )
+        ).toBe(false);
     });
 
     it('declines a remux the server does not serve from the session, releasing it first', async () => {
