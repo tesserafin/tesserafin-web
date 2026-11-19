@@ -182,9 +182,11 @@ export async function seedAudioLibrary(
     label = 'A1 Audio',
     /**
      * `mp3` is played as it is, from the session's file route. `wma` (WMA v2 in ASF) is decoded by
-     * no browser, so the server transcodes it and the client reaches `/Audio/{id}/universal`.
+     * no browser, so the server transcodes it to AAC on the session's HLS route. `mka` (AAC in
+     * Matroska) only needs its container changed: an audio remux, which the session journey does
+     * not execute, so the client reaches `/Audio/{id}/universal`.
      */
-    format: 'mp3' | 'wma' = 'mp3'
+    format: 'mp3' | 'wma' | 'mka' = 'mp3'
 ): Promise<SeededLibrary> {
     const root = mkdtempSync(join(tmpdir(), 'a1-audio-'));
     const name = `${label} Probe`;
@@ -196,7 +198,7 @@ export async function seedAudioLibrary(
         '-i',
         'sine=frequency=440:duration=8',
         '-c:a',
-        format === 'wma' ? 'wmav2' : 'libmp3lame',
+        { mp3: 'libmp3lame', wma: 'wmav2', mka: 'aac' }[format],
         '-b:a',
         '128k',
         '-metadata',
