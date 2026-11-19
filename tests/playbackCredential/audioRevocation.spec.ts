@@ -82,10 +82,15 @@ test.describe('#153-A1 universal-audio revocation', () => {
         const a = await admin();
         // Its OWN library. Sharing `A1 Audio` with matrix.spec.ts made whichever spec ran second
         // resolve the first one's disposed item and answer 404.
-        // A track that only needs a remux (AAC in Matroska): a direct play is served from the
-        // session's file route and an AAC transcode from its HLS route since consolidation step 1;
-        // an audio remux is what still reaches universal.
-        const audio = await seedAudioLibrary(a, 'A1 Revocation Audio', 'mka');
+        // An audiobook: every local music track plays through Playback/Sessions since
+        // consolidation step 1 (file route, or HLS for a remux or a transcode). An AudioBook is
+        // not that journey's, and is what still reaches universal in this client.
+        const audio = await seedAudioLibrary(
+            a,
+            'A1 Revocation Audio',
+            'wma',
+            'books'
+        );
 
         const requests: AudioRequest[] = [];
         const lifecycle: Lifecycle[] = [];
@@ -212,7 +217,7 @@ test.describe('#153-A1 universal-audio revocation', () => {
             const audioId = await mediaItemIdByName(
                 a,
                 'A1 Revocation Audio Probe',
-                'Audio'
+                'AudioBook'
             );
             await page.goto(`/#/details?id=${audioId}`);
             await expect(playControl(page)).toBeVisible({ timeout: 60_000 });

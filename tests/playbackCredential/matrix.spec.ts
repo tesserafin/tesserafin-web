@@ -104,7 +104,7 @@ test.describe('#153-A1 browser matrix', () => {
         test.setTimeout(600_000);
 
         const a = await admin();
-        const audio = await seedAudioLibrary(a, undefined, 'mka');
+        const audio = await seedAudioLibrary(a, undefined, 'wma', 'books');
         // Its OWN library, like the audio one above. `seedAssLibrary` derives the item name
         // from the label, so two specs sharing the default would share an item as well.
         const ass = await seedAssLibrary(a, 'A1 Matrix Subtitles');
@@ -234,7 +234,7 @@ test.describe('#153-A1 browser matrix', () => {
             const audioId = await mediaItemIdByName(
                 a,
                 'A1 Audio Probe',
-                'Audio'
+                'AudioBook'
             );
             const assId = await mediaItemIdByName(
                 a,

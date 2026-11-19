@@ -107,7 +107,7 @@ async function addLibrary(
 export async function mediaItemIdByName(
     a: Admin,
     name: string,
-    includeItemTypes: 'Video' | 'Audio'
+    includeItemTypes: 'Video' | 'Audio' | 'AudioBook'
 ): Promise<string> {
     const res = await a.api.get(`/Users/${a.userId}/Items`, {
         headers: authed(a),
@@ -183,10 +183,14 @@ export async function seedAudioLibrary(
     /**
      * `mp3` is played as it is, from the session's file route. `wma` (WMA v2 in ASF) is decoded by
      * no browser, so the server transcodes it to AAC on the session's HLS route. `mka` (AAC in
-     * Matroska) only needs its container changed: an audio remux, which the session journey does
-     * not execute, so the client reaches `/Audio/{id}/universal`.
+     * Matroska) only needs its container changed: an audio remux on the same route.
      */
-    format: 'mp3' | 'wma' | 'mka' = 'mp3'
+    format: 'mp3' | 'wma' | 'mka' = 'mp3',
+    /**
+     * `music` seeds an `Audio` track, which plays through `Playback/Sessions`. `books` seeds an
+     * `AudioBook`, which the session journey does not own: it still reaches `/Audio/{id}/universal`.
+     */
+    collectionType: 'music' | 'books' = 'music'
 ): Promise<SeededLibrary> {
     const root = mkdtempSync(join(tmpdir(), 'a1-audio-'));
     const name = `${label} Probe`;
@@ -205,7 +209,7 @@ export async function seedAudioLibrary(
         `title=${name}`,
         join(dir, `${name}.${format}`)
     ]);
-    await addLibrary(a, label, 'music', root);
+    await addLibrary(a, label, collectionType, root);
     await waitForItems(a, [name]);
     return {
         root,
