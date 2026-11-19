@@ -164,7 +164,9 @@ for (const theme of ['official.classic', 'official.glass']) {
         await expect(
             page.getByText('No cast targets available', { exact: true })
         ).toBeVisible();
-        expect(state.requests()).toBe(1);
+        // The empty menu is also what a pending discovery shows, before the SDK request has
+        // left: wait for the one request rather than reading the counter at that instant.
+        await expect.poll(() => state.requests(), { timeout: 12_000 }).toBe(1);
         await expect(page.locator('script[src*="gstatic.com"]')).toHaveCount(0);
         await page.keyboard.press('Escape');
         state.fail('');
@@ -184,12 +186,13 @@ test('loaded-but-unavailable SDK times out and can retry without reloading the a
     await expect(
         page.getByText('No cast targets available', { exact: true })
     ).toBeVisible({ timeout: 12_000 });
-    // The empty menu also appears while discovery is pending. Wait for the
-    // bounded loader to remove its failed script before issuing a fresh action.
+    // The empty menu also appears while discovery is pending, before the SDK
+    // request has left. Wait for that one request, then for the bounded loader
+    // to remove its failed script before issuing a fresh action.
+    await expect.poll(() => state.requests(), { timeout: 12_000 }).toBe(1);
     await expect(page.locator('script[src*="gstatic.com"]')).toHaveCount(0, {
         timeout: 12_000
     });
-    expect(state.requests()).toBe(1);
     await page.keyboard.press('Escape');
     state.fail('');
     await open(page);
