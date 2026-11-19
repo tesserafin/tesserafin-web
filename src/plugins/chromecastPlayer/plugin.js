@@ -63,6 +63,24 @@ const PLAYER_STATE = {
 
 const messageNamespace = 'urn:x-cast:com.connectsdk';
 
+const CURRENT_USER_WAIT_MS = 5000;
+
+/** Resolves `true` once the current server connection names a user, `false` after the bound. */
+function waitForCurrentUser() {
+    return new Promise((resolve) => {
+        const started = Date.now();
+        const poll = setInterval(() => {
+            if (ServerConnections.currentApiClient()?.getCurrentUserId()) {
+                clearInterval(poll);
+                resolve(true);
+            } else if (Date.now() - started >= CURRENT_USER_WAIT_MS) {
+                clearInterval(poll);
+                resolve(false);
+            }
+        }, 25);
+    });
+}
+
 class CastPlayer {
     constructor() {
         /* device variables */
@@ -757,7 +775,14 @@ class ChromecastPlayer {
 
     prepareCast() {
         this.syncCastIdentity();
-        if (!this._castUser) return Promise.resolve();
+        if (!this._castUser) {
+            // At startup the toolbar is usable before the signed-in user is known. An explicit
+            // action waits for that user, bounded, instead of answering "no targets" without
+            // ever trying; nothing is loaded for a session that has no user.
+            return waitForCurrentUser().then((known) =>
+                known ? this.prepareCast() : undefined
+            );
+        }
         if (!this._castInitialization) {
             const epoch = this._castEpoch;
             this._castInitialization = import('./castSenderApi')

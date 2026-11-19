@@ -131,6 +131,29 @@ describe('Cast discovery intent and lifecycle', () => {
         await expect(second).resolves.toHaveLength(1);
         expect(init).toHaveBeenCalledTimes(1);
     });
+    it('waits, bounded, for a signed-in user that is not known yet when the menu opens', async () => {
+        fixture.api.userId = '';
+        const player = new ChromecastPlayer();
+        const pending = player.getTargets({ enableDiscovery: true });
+        await vi.advanceTimersByTimeAsync(100);
+        expect(init).not.toHaveBeenCalled();
+        fixture.api.userId = 'user-a';
+        await vi.advanceTimersByTimeAsync(50);
+        await vi.dynamicImportSettled();
+        await vi.advanceTimersByTimeAsync(50);
+        await expect(pending).resolves.toHaveLength(1);
+        expect(init).toHaveBeenCalledTimes(1);
+    });
+    it('gives up without loading anything when no user appears within the bound', async () => {
+        fixture.api.userId = '';
+        const pending = new ChromecastPlayer().getTargets({
+            enableDiscovery: true
+        });
+        await vi.advanceTimersByTimeAsync(5_100);
+        await expect(pending).resolves.toEqual([]);
+        await vi.dynamicImportSettled();
+        expect(init).not.toHaveBeenCalled();
+    });
     it('does not expose a target when no receiver is available', async () => {
         sdk({ receivers: false });
         expect(await discover(new ChromecastPlayer())).toEqual([]);
