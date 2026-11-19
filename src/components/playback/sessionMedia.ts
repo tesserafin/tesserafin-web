@@ -2,8 +2,8 @@
  * Consolidation step 1, local media journeys (server `docs/playback-path-inventory.md` §4 to §7): a
  * library video (film, episode, home video, music video, trailer) read from a local file plays
  * through `Playback/Sessions` alone, as a direct play, a remux or an SDR transcode; a library audio
- * track plays the same way as a direct play or as an AAC transcode on the session's HLS route (an
- * audio remux is still the existing chain's, reached through `notApplicable`).
+ * track plays the same way, as a direct play or as a remux or an AAC transcode on the session's
+ * HLS route.
  *
  * The chain is `POST Playback/Sessions` → `GET .../Stream` → a route the session owns (its file
  * route for a direct play, its HLS route for a remux or a transcode), through the generated Tesserafin SDK
