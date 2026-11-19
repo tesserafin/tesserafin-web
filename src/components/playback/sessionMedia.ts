@@ -280,7 +280,7 @@ function mediaSourceIdOf(descriptorUrl: string): string | null {
 
 /**
  * Which of the session's own routes a descriptor names: its file route (direct play), its HLS
- * media playlist (remux, transcode), or neither - a url of the existing chain, which this journey never plays.
+ * media playlist (remux, transcode; live for a Live TV channel), or neither - a url of the existing chain, which this journey never plays.
  */
 function sessionRouteOf(
     sessionId: string,
@@ -293,7 +293,8 @@ function sessionRouteOf(
     if (
         (method === 'Remux' || method === 'Transcode') &&
         descriptor.Protocol === 'Hls' &&
-        path === `${own}Hls/main.m3u8`
+        // live.m3u8: a Live TV channel's tuner stream, remuxed or transcoded as it arrives.
+        (path === `${own}Hls/main.m3u8` || path === `${own}Hls/live.m3u8`)
     ) {
         return 'hls';
     }
@@ -486,9 +487,19 @@ export async function planSessionMedia(
             { itemId: params.itemId, userId: params.userId },
             requestOptions
         );
-        const mediaSource = item.MediaSources?.find(
-            (source) => source.Id === mediaSourceId
-        );
+        // A Live TV channel lists no media source of its own: the session plays the tuner stream it
+        // opened, which the player only needs to know is live and server-produced.
+        const mediaSource =
+            item.MediaSources?.find((source) => source.Id === mediaSourceId) ??
+            (item.Type === 'TvChannel'
+                ? {
+                      Id: mediaSourceId,
+                      Protocol: 'Http' as const,
+                      IsInfiniteStream: true,
+                      SupportsTranscoding: true,
+                      MediaStreams: []
+                  }
+                : undefined);
         if (!mediaSource) {
             throw new SessionMediaError(
                 'notFound',
