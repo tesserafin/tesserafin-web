@@ -28,7 +28,7 @@ export interface SessionMediaCandidate {
 /**
  * Whether this journey owns the playback of `item` on `player`: a library video (film, episode,
  * home video, music video, trailer) or a Live TV channel on the local HTML video player, or a
- * library audio track on the local HTML audio player - on the server, not a cast or remote target,
+ * library audio track or audiobook on the local HTML audio player - on the server, not a cast or remote target,
  * which plan for themselves.
  */
 export function isSessionMediaCandidate(
@@ -53,7 +53,7 @@ export function isSessionMediaCandidate(
     }
     return (
         item.MediaType === 'Audio' &&
-        item.Type === 'Audio' &&
+        (item.Type === 'Audio' || item.Type === 'AudioBook') &&
         player.id === 'htmlaudioplayer'
     );
 }

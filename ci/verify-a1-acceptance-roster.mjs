@@ -59,7 +59,6 @@ const BASELINE_SPEC = 'baselineTrace.spec.ts';
  * so the roster is a reviewed list rather than whatever happens to be on disk.
  */
 const ACCEPTANCE_ROSTER = [
-    'audioRevocation.spec.ts',
     'dependencyDisclosure.spec.ts',
     // tesserafin#129 consolidation step 1: the direct-play film journey on Playback/Sessions.
     'directPlayFilm.spec.ts',
