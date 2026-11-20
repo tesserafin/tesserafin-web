@@ -13,8 +13,9 @@ import type { SurfacePresentation } from './contract';
 /**
  * The vocabulary (§3). How the
  * bar looks, never what it holds: which actions, destinations and menus exist stays the product's.
- * Only the B1 keys are published; `layout`, `actions`, `overlap` (B2) and `anchor` (B3) are not in
- * this vocabulary until a renderer binds them.
+ * B1 published the bar's look; B2 adds its arrangement (`layout`), how actions are presented
+ * (`actions.labels`, `actions.grouping`) and its relation to the page (`overlap`). `anchor` (B3) is
+ * not in this vocabulary until a renderer binds it.
  *
  * Every default reproduces the bar as drawn before the key existed. `nav.style` has no fixed
  * default: absent, it is DERIVED from the resolved `surface.variant` (glass → `floating`, else
@@ -39,6 +40,14 @@ export const HEADER_NAV_STYLES = [
     'floating'
 ] as const;
 
+/** B2. Named compositions only: the DOM order is the visual order is the keyboard order. */
+export const HEADER_LAYOUTS = ['start', 'centered'] as const;
+export const HEADER_ACTION_LABELS = ['icons', 'iconsAndLabels'] as const;
+/** `overflow` may move SECONDARY actions into one "More" menu; never Search, the account or a live remote session. */
+export const HEADER_ACTION_GROUPINGS = ['inline', 'overflow'] as const;
+/** `hero`: the page starts under the bar, only on a page that declares a compatible lead image. */
+export const HEADER_OVERLAPS = ['none', 'hero'] as const;
+
 export interface HeaderPresentation {
     density?: (typeof HEADER_DENSITIES)[number];
     shape?: (typeof HEADER_SHAPES)[number];
@@ -53,13 +62,22 @@ export interface HeaderPresentation {
         label?: (typeof HEADER_BRAND_LABELS)[number];
     };
     nav?: { style?: (typeof HEADER_NAV_STYLES)[number] };
+    layout?: (typeof HEADER_LAYOUTS)[number];
+    actions?: {
+        labels?: (typeof HEADER_ACTION_LABELS)[number];
+        grouping?: (typeof HEADER_ACTION_GROUPINGS)[number];
+    };
+    overlap?: (typeof HEADER_OVERLAPS)[number];
 }
 
 export interface ResolvedHeader {
     density: NonNullable<HeaderPresentation['density']>;
     shape: NonNullable<HeaderPresentation['shape']>;
     separator: NonNullable<HeaderPresentation['separator']>;
+    layout: NonNullable<HeaderPresentation['layout']>;
+    overlap: NonNullable<HeaderPresentation['overlap']>;
     material: Required<NonNullable<HeaderPresentation['material']>>;
+    actions: Required<NonNullable<HeaderPresentation['actions']>>;
     brand: Required<NonNullable<HeaderPresentation['brand']>>;
     /** Always set once resolved: the theme's, or derived from `surface.variant`. */
     nav: Required<NonNullable<HeaderPresentation['nav']>>;
@@ -67,14 +85,18 @@ export interface ResolvedHeader {
 
 /**
  * The bar as drawn before the recipe existed: fixed, dense (48 px), transparent at rest, MUI's
- * default surface with an elevation shadow once scrolled, the mark and the server name. `nav.style`
+ * default surface with an elevation shadow once scrolled, the mark and the server name; brand and
+ * destinations at the start, icon actions all in the bar, and a spacer under it on every page. `nav.style`
  * here is only the opaque-surface value: {@link resolveHeader} derives it.
  */
 export const PLATFORM_DEFAULT_HEADER: ResolvedHeader = {
     density: 'compact',
     shape: 'bar',
     separator: 'shadow',
+    layout: 'start',
+    overlap: 'none',
     material: { rest: 'transparent', scrolled: 'surface' },
+    actions: { labels: 'icons', grouping: 'inline' },
     brand: { show: 'markAndName', size: 'medium', label: 'server' },
     nav: { style: 'plain' }
 };
@@ -82,7 +104,9 @@ export const PLATFORM_DEFAULT_HEADER: ResolvedHeader = {
 const TABLES = {
     density: HEADER_DENSITIES,
     shape: HEADER_SHAPES,
-    separator: HEADER_SEPARATORS
+    separator: HEADER_SEPARATORS,
+    layout: HEADER_LAYOUTS,
+    overlap: HEADER_OVERLAPS
 };
 const NESTED = {
     material: {
@@ -94,7 +118,11 @@ const NESTED = {
         size: HEADER_BRAND_SIZES,
         label: HEADER_BRAND_LABELS
     },
-    nav: { style: HEADER_NAV_STYLES }
+    nav: { style: HEADER_NAV_STYLES },
+    actions: {
+        labels: HEADER_ACTION_LABELS,
+        grouping: HEADER_ACTION_GROUPINGS
+    }
 };
 
 const pick = (
@@ -151,4 +179,52 @@ export function resolveHeader(
         };
     }
     return resolved;
+}
+
+/** The bar's actions the recipe may arrange, in the product's order. Which of them exist is not the theme's. */
+export type HeaderActionId = 'syncPlay' | 'cast' | 'search';
+/** One slot of the arranged bar: an action, or the "More" menu standing where the first moved one was. */
+export type HeaderActionSlot = HeaderActionId | 'more';
+
+/**
+ * Where each AVAILABLE action goes under `actions.grouping` (§3.5). Pure, so the bar and the Studio
+ * preview arrange from the same rule.
+ *
+ * - `inline`: every action in the bar, in the product's order.
+ * - `overflow`: SyncPlay and Cast (the secondary actions) go to one "More" menu, which takes the
+ *   place of the first of them. Search is never moved, and neither is a live remote session: while
+ *   `remoteActive`, Cast stays in the bar as the session's indicator, and goes back into "More"
+ *   only once the session ends. The account menu is not an action here and is never moved.
+ */
+export function arrangeHeaderActions(
+    available: readonly HeaderActionId[],
+    grouping: ResolvedHeader['actions']['grouping'],
+    remoteActive: boolean
+): { bar: HeaderActionSlot[]; more: HeaderActionId[] } {
+    if (grouping !== 'overflow') return { bar: [...available], more: [] };
+    const movable = (id: HeaderActionId) =>
+        id === 'syncPlay' || (id === 'cast' && !remoteActive);
+    const more = available.filter(movable);
+    const bar: HeaderActionSlot[] = [];
+    for (const id of available) {
+        if (!movable(id)) bar.push(id);
+        else if (id === more[0]) bar.push('more');
+    }
+    return { bar, more };
+}
+
+/**
+ * What the renderer actually draws, after the fixed compact-window fallbacks (§5.2) and the page's
+ * say on `overlap` (§3.6): `centered` → `start` and labels → icons on a compact window; `hero` only on
+ * a wide window AND a page that declares a compatible lead image.
+ */
+export function effectiveHeader(
+    header: ResolvedHeader,
+    { compact, lead }: { compact: boolean; lead: boolean }
+) {
+    return {
+        layout: compact ? ('start' as const) : header.layout,
+        labels: compact ? ('icons' as const) : header.actions.labels,
+        overlap: header.overlap === 'hero' && lead && !compact
+    };
 }

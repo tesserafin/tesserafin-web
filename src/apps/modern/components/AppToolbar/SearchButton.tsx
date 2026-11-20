@@ -7,8 +7,7 @@ import {
     useSearchParams
 } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
+import HeaderActionButton from 'components/toolbar/HeaderActionButton';
 import { useItem } from 'hooks/useItem';
 import globalize from 'lib/globalize';
 
@@ -34,7 +33,8 @@ const getUrlParams = (
     return params;
 };
 
-const SearchButton: FC = () => {
+/** Search is never moved into "More" (THEME-B2 §3.5); only its label is the recipe's. */
+const SearchButton: FC<{ labelled?: boolean }> = ({ labelled }) => {
     const location = useLocation();
     const [searchParams] = useSearchParams();
     // `/library/:libraryId` names its library in the path, not the query: without this the button
@@ -59,21 +59,14 @@ const SearchButton: FC = () => {
     };
 
     return (
-        <Tooltip
-            slotProps={{ popper: { disablePortal: true } }}
-            title={globalize.translate('Search')}
-        >
-            <IconButton
-                size='large'
-                aria-label={globalize.translate('Search')}
-                color='inherit'
-                component={Link}
-                disabled={isSearchPath}
-                to={createSearchLink}
-            >
-                <SearchIcon />
-            </IconButton>
-        </Tooltip>
+        <HeaderActionButton
+            label={globalize.translate('Search')}
+            labelled={labelled}
+            icon={<SearchIcon />}
+            component={Link}
+            disabled={isSearchPath}
+            to={createSearchLink}
+        />
     );
 };
 

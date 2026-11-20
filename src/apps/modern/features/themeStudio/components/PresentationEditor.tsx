@@ -35,11 +35,15 @@ import {
 import { PUBLISHED_FAMILIES } from 'apps/modern/features/details/utils/itemDetailsRecipe';
 import {
     GRID_CONTEXTS,
+    HEADER_ACTION_GROUPINGS,
+    HEADER_ACTION_LABELS,
     HEADER_BRAND_LABELS,
     HEADER_BRAND_SHOWS,
     HEADER_BRAND_SIZES,
     HEADER_DENSITIES,
+    HEADER_LAYOUTS,
     HEADER_NAV_STYLES,
+    HEADER_OVERLAPS,
     HEADER_REST_MATERIALS,
     HEADER_SCROLLED_MATERIALS,
     HEADER_SEPARATORS,
@@ -790,7 +794,11 @@ const HEADER_FIELDS = [
     ['brand', 'show', 'Brand', HEADER_BRAND_SHOWS],
     ['brand', 'size', 'Brand size', HEADER_BRAND_SIZES],
     ['brand', 'label', 'Brand name', HEADER_BRAND_LABELS],
-    ['nav', 'style', 'Destinations in the bar', ['auto', ...HEADER_NAV_STYLES]]
+    ['nav', 'style', 'Destinations in the bar', ['auto', ...HEADER_NAV_STYLES]],
+    [null, 'layout', 'Header layout', HEADER_LAYOUTS],
+    ['actions', 'labels', 'Action labels', HEADER_ACTION_LABELS],
+    ['actions', 'grouping', 'Secondary actions', HEADER_ACTION_GROUPINGS],
+    [null, 'overlap', 'Page under the bar', HEADER_OVERLAPS]
 ] as const;
 
 /**
@@ -840,7 +848,12 @@ const HeaderEditor: FC<{
                 changes how the bar looks, never which actions, destinations or
                 menus it holds. A floating bar falls back to a normal one on a
                 narrow window. Sign-in, setup and the administration keep their
-                own bar.
+                own bar. A narrow window also draws the start layout and icons
+                only (labels stay as accessible names). Overflow moves SyncPlay
+                and Cast into a More menu; Search, the account and an active
+                remote session always stay in the bar. A page under the bar
+                applies only on wide windows, to Item Details with the immersive
+                band; every other page keeps its space under the bar.
             </Scope>
         </>
     );

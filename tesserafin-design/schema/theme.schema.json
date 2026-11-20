@@ -385,7 +385,7 @@
         "headerVariant": {
             "type": "object",
             "additionalProperties": false,
-            "description": "The application header (THEME-B1). How the bar looks, never which actions, destinations or menus it holds. Absent `nav.style` is derived from `surface.variant` (glass: floating, else plain).",
+            "description": "The application header (THEME-B1, B2). How the bar looks and is arranged, never which actions, destinations or menus it holds. `layout` keeps DOM, visual and keyboard order identical; `actions.grouping: overflow` never moves Search, the account menu or an active remote session; `overlap: hero` applies only on pages with a compatible lead image. Absent `nav.style` is derived from `surface.variant` (glass: floating, else plain).",
             "properties": {
                 "density": { "enum": ["compact", "comfortable", "spacious"] },
                 "shape": { "enum": ["bar", "floating"] },
@@ -420,7 +420,17 @@
                             ]
                         }
                     }
-                }
+                },
+                "layout": { "enum": ["start", "centered"] },
+                "actions": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "labels": { "enum": ["icons", "iconsAndLabels"] },
+                        "grouping": { "enum": ["inline", "overflow"] }
+                    }
+                },
+                "overlap": { "enum": ["none", "hero"] }
             }
         },
         "gridItemSize": { "enum": ["small", "medium", "large"] },

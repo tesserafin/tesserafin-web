@@ -255,6 +255,25 @@ describe('Home composition — two shipped themes, two compositions', () => {
         ).not.toBeNull();
     });
 
+    it('never declares a header lead image: the tab strip, not the hero, opens Home (THEME-B2)', async () => {
+        const { useHeaderLead } = await import('components/toolbar/headerLead');
+        let lead: boolean | undefined;
+        const Probe = () => {
+            lead = useHeaderLead();
+            return null;
+        };
+        await render(
+            <PresentationProvider themeId='official.glass'>
+                <Probe />
+                <HomeTab />
+            </PresentationProvider>
+        );
+        expect(
+            container.querySelector('[data-rf-slot="home-hero"]')
+        ).not.toBeNull();
+        expect(lead).toBe(false);
+    });
+
     it('plays the Glass hero from its saved position, and says so', async () => {
         await render(
             <PresentationProvider themeId='official.glass'>

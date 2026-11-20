@@ -29,6 +29,12 @@ interface OffsetAppBarProps extends AppBarProps {
      * the bar is exactly what it always was.
      */
     recipe?: ResolvedHeader;
+    /**
+     * THEME-B2 `overlap: hero`, already decided by the shell (recipe, wide window, a page that
+     * declares a compatible lead image): no spacer, and the header's whole footprint published as
+     * `--rf-header-footprint` on `<html>`, with `data-rf-header-overlap`, for that page to clear.
+     */
+    overlap?: boolean;
 }
 
 /**
@@ -70,6 +76,7 @@ const OffsetAppBar: FC<PropsWithChildren<OffsetAppBarProps>> = ({
     elevation = 1,
     onHeightChange,
     recipe,
+    overlap = false,
     ...props
 }) => {
     const appBarRef = useRef<HTMLHtmlElement>(null);
@@ -121,6 +128,22 @@ const OffsetAppBar: FC<PropsWithChildren<OffsetAppBarProps>> = ({
         };
     }, []);
 
+    /*
+     * The footprint is the measured bottom edge of the outermost fixed element: the main row, any
+     * row the toolbar wrapped onto, the library toolbar and a floating bar's inset — kept current by
+     * the observer above. The page reads it; it never guesses the main row's height.
+     */
+    useLayoutEffect(() => {
+        if (!overlap) return;
+        const root = document.documentElement;
+        root.style.setProperty('--rf-header-footprint', `${height}px`);
+        root.setAttribute('data-rf-header-overlap', 'hero');
+        return () => {
+            root.style.removeProperty('--rf-header-footprint');
+            root.removeAttribute('data-rf-header-overlap');
+        };
+    }, [overlap, height]);
+
     return (
         <>
             <AppBar
@@ -128,6 +151,7 @@ const OffsetAppBar: FC<PropsWithChildren<OffsetAppBarProps>> = ({
                 ref={appBarRef}
                 position='fixed'
                 {...headerBarProps(recipe, scrollTrigger, elevation)}
+                data-rf-header-overlap={overlap ? 'hero' : undefined}
             >
                 {children}
             </AppBar>
@@ -135,7 +159,7 @@ const OffsetAppBar: FC<PropsWithChildren<OffsetAppBarProps>> = ({
             <div
                 aria-hidden='true'
                 style={{
-                    height,
+                    height: overlap ? 0 : height,
                     width: '100%',
                     flexShrink: 0
                 }}

@@ -66,6 +66,7 @@ import ScheduleList from './ScheduleList';
 import TrackSelections from './TrackSelections';
 import MetadataLists from './MetadataLists';
 import Overview from './Overview';
+import { useDeclareHeaderLead } from 'components/toolbar/headerLead';
 
 interface ItemDetailsViewProps {
     item: DetailItem;
@@ -256,6 +257,8 @@ const ItemDetailsView: FC<ItemDetailsViewProps> = ({ item, user, params }) => {
         itemHasBackdropImage:
             ((item.BackdropImageTags ?? []) as string[]).length > 0
     });
+    // THEME-B2: the immersive band is a lead image the header may overlap (`overlap: hero`).
+    useDeclareHeaderLead(hero.treatment === 'immersive');
 
     /**
      * Each published content family's surfaces.
