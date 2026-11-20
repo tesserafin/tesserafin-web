@@ -71,6 +71,8 @@ const ACCEPTANCE_ROSTER = [
     'sessionEpisode.spec.ts',
     // Audio: a track the browser plays as it is, from the session's file route.
     'sessionAudio.spec.ts',
+    // Live TV: a channel of a paced software tuner, from the session's live playlist.
+    'sessionLiveTv.spec.ts',
     'directPlayRevocation.spec.ts',
     'disclosure.spec.ts',
     'libassFamilies.spec.ts',
