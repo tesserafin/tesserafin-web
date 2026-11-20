@@ -22,7 +22,6 @@ import {
     mediaItemIdByName,
     seedAssLibrary
 } from './support/fixtures';
-import { checkFamilyContract, familiesOwnedBy } from './support/familyContract';
 import { admin, playControl, sessionToken } from './support/rig';
 
 interface Observed {
@@ -273,8 +272,6 @@ test.describe('#153-A1 browser matrix', () => {
             writeReport();
         }
 
-        const families = [...new Set(observed.map((o) => o.family))].sort();
-
         // Whatever was reached must be clean. A family that was NOT reached is reported above and
         // is not silently asserted as passing.
         expect(
@@ -300,26 +297,11 @@ test.describe('#153-A1 browser matrix', () => {
             ).toBe(true);
         }
 
-        // THE CONTRACT, not a disjunction over what happened to be reached.
-        //
-        // What stood here required `direct-audio || universal-audio` and nothing else, so this file
-        // passed having reached exactly two of the eleven families its own classifier can name. A
-        // branch that stopped reaching one went green by absence. `familyContract.ts` declares the
-        // status of every family, and both directions fail: a family this file owns and did not
-        // reach, and a family declared unreachable that it DID reach - the second because a stale
-        // excuse is how the first hole grows back.
-        const verdict = checkFamilyContract(
-            families,
-            familiesOwnedBy('matrix.spec.ts')
-        );
-        expect(
-            verdict.missing,
-            `families this file owns but did not reach; reached ${families.join(', ')}`
-        ).toEqual([]);
-        expect(
-            verdict.staleExcuses,
-            'a family declared unreachable in familyContract.ts was reached; promote it'
-        ).toEqual([]);
+        // The family contract is no longer this file's: the families it was written to reach
+        // (universal-audio and the existing chain's audio HLS) left the rig when every local audio
+        // item moved onto Playback/Sessions, and each required family is checked by the spec that
+        // owns it (familyContract.ts). What stays here is the request-level rule above for whatever
+        // this playback reaches, and the socket lifecycle below.
 
         // Socket lifecycle: more than one physical attempt, each with its OWN ticket.
         const ticketed = sockets.filter((s) => s.ticketDigest !== null);
