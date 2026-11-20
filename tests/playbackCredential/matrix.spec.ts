@@ -20,8 +20,7 @@ import { signIn } from '../e2e/support/b2';
 import {
     enableFallbackFont,
     mediaItemIdByName,
-    seedAssLibrary,
-    seedAudioLibrary
+    seedAssLibrary
 } from './support/fixtures';
 import { checkFamilyContract, familiesOwnedBy } from './support/familyContract';
 import { admin, playControl, sessionToken } from './support/rig';
@@ -104,9 +103,10 @@ test.describe('#153-A1 browser matrix', () => {
         test.setTimeout(600_000);
 
         const a = await admin();
-        const audio = await seedAudioLibrary(a, undefined, 'wma', 'books');
-        // Its OWN library, like the audio one above. `seedAssLibrary` derives the item name
-        // from the label, so two specs sharing the default would share an item as well.
+        // Its OWN library. `seedAssLibrary` derives the item name from the label, so two specs
+        // sharing the default would share an item as well. No audio here: every local audio item,
+        // audiobooks included, plays through Playback/Sessions (sessionAudio.spec.ts), so nothing
+        // of the rig reaches /Audio/{id}/universal any more.
         const ass = await seedAssLibrary(a, 'A1 Matrix Subtitles');
         const fallbackFont = await enableFallbackFont(a);
 
@@ -231,23 +231,11 @@ test.describe('#153-A1 browser matrix', () => {
             expect(token.length).toBeGreaterThan(0);
 
             // Ids, not search: see openDetailById.
-            const audioId = await mediaItemIdByName(
-                a,
-                'A1 Audio Probe',
-                'AudioBook'
-            );
             const assId = await mediaItemIdByName(
                 a,
                 'A1 Matrix Subtitles Probe',
                 'Video'
             );
-
-            // ── audio: universal and/or direct ────────────────────────────────────────────────
-            await openDetailById(page, audioId);
-            await playControl(page).click();
-            await page.waitForTimeout(8_000);
-            await page.keyboard.press('Escape');
-            await dismissDialogs(page);
 
             // ── ASS subtitles: unlocks attachments AND the fallback font list ─────────────────
             await openDetailById(page, assId);
@@ -280,7 +268,6 @@ test.describe('#153-A1 browser matrix', () => {
             await page.waitForTimeout(2_000);
         } finally {
             await fallbackFont.dispose();
-            await audio.dispose();
             await ass.dispose();
             await a.dispose();
             writeReport();

@@ -1,9 +1,10 @@
 /**
  * #153-A1 — a direct-play VIDEO capability must die with its play session too.
  *
- * `audioRevocation.spec.ts` proves the contract for `/Audio/{id}/universal`. This file asks the
- * same question of the family the rest of the suite already exercises, `/Videos/{id}/stream`,
- * because the two are built by different code with different play-session plumbing:
+ * `audioRevocation.spec.ts` proved the contract for `/Audio/{id}/universal` until every local audio
+ * item moved onto Playback/Sessions (consolidation step 1). This file asks the same question of
+ * the video family, `/Videos/{id}/stream`, because the two were built by different code with
+ * different play-session plumbing:
  *
  *   * the audio url is built by `getAudioStreamUrl`, which invents the play session and puts it in
  *     the url as `PlaySessionId`;

@@ -233,7 +233,7 @@ describe('isSessionMediaCandidate', () => {
         ).toBe(false);
     });
 
-    it('owns a library audio track on the local html audio player only', () => {
+    it('owns a library audio track or audiobook on the local html audio player only', () => {
         const audioPlayer = { id: 'htmlaudioplayer', isLocalPlayer: true };
         expect(
             isSessionMediaCandidate(
@@ -252,7 +252,7 @@ describe('isSessionMediaCandidate', () => {
                 { Id: ITEM, Type: 'AudioBook', MediaType: 'Audio' },
                 audioPlayer
             )
-        ).toBe(false);
+        ).toBe(true);
         expect(
             isSessionMediaCandidate(
                 {

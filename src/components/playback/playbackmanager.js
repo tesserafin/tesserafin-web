@@ -482,8 +482,9 @@ async function getAudioStreamUrl(
     // Re-measured on the real rig with the binding restored: the audio path reports exactly one
     // `/Sessions/Playing` at 0 ms, one `/Sessions/Playing/Progress`, and one
     // `/Sessions/Playing/Stopped` at the end of the track. There is no stop at 0 ms during start.
-    // `tests/playbackCredential/audioRevocation.spec.ts` plays the same item twice in one document
-    // and fails with a 401 if the release wiring is removed.
+    // `audioRevocation.spec.ts` played the same item twice in one document and failed with a 401
+    // when the release wiring was removed; no local audio item reaches this path any more
+    // (consolidation step 1), so that browser proof is gone with it.
     const capability = await (await brokerFor(apiClient)).mediaValue(
         item.Id,
         null,

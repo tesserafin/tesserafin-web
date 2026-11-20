@@ -51,9 +51,8 @@ export const FAMILY_CONTRACT: Record<string, FamilyEntry> = {
         note: 'consolidation step 1: Smoke Test Movie (a film) direct-plays from /Playback/Sessions/{id}/File, as every library video now does'
     },
     'universal-audio': {
-        status: 'required',
-        owner: 'matrix.spec.ts',
-        note: "seedAudioLibrary(..., 'wma', 'books'): an AudioBook is not the session journey's, so it reaches /universal. Every local music track plays from its session: the file route for a direct play, the HLS route for a remux (AAC in Matroska) or a transcode (WMA) (sessionAudio.spec.ts)"
+        status: 'unreached',
+        note: 'consolidation step 1 (tesserafin#129): every local audio item - music tracks and audiobooks - plays through Playback/Sessions (sessionAudio.spec.ts), so nothing of this rig reaches /Audio/{id}/universal. It is still built for channel-plugin audio and a player with no HLS output, neither of which this browser suite drives; server-side its authorization is MediaByteAuthorizationEndToEndTests and MediaRouteMetadataTests. Drop with the Web legacy chain.'
     },
     'session-hls': {
         status: 'required',
@@ -65,14 +64,12 @@ export const FAMILY_CONTRACT: Record<string, FamilyEntry> = {
         note: 'consolidation step 1 (tesserafin#129): every library video of the rig is now played from its session (session-file, session-hls). /Videos/{id}/master.m3u8 is still served to a plan the session journey does not execute (tone mapping, burn-in, a target other than H.264/AAC) and to PlaybackInfo clients, which this rig does not drive; server-side its contract is PlaybackUrlContractEndToEndTests and HlsOutputIsolationEndToEndTests. Promote with a non-film transcode fixture, or drop when step 2 removes the route.'
     },
     'hls-variant': {
-        status: 'required',
-        owner: 'matrix.spec.ts',
-        note: "seedAudioLibrary(..., 'wma', 'books'): /Audio/{id}/universal answers that WMA audiobook with the existing chain's HLS transcode, /Audio/{id}/main.m3u8"
+        status: 'unreached',
+        note: "consolidation step 1: the existing chain's audio HLS output (/Audio/{id}/main.m3u8) was reached through /universal only; see universal-audio. Every audio transcode or remux of the rig is now the session's (session-hls)."
     },
     'hls-segment': {
-        status: 'required',
-        owner: 'matrix.spec.ts',
-        note: 'follows hls-variant: the hls1 segments of that audiobook transcode'
+        status: 'unreached',
+        note: 'follows hls-variant: no hls1 segment of the existing chain is reached by this rig any more.'
     },
     subtitle: {
         status: 'required',
