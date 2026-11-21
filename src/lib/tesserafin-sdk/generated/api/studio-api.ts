@@ -30,6 +30,8 @@ import type { BaseItemKind } from '../models';
 import type { ImageType } from '../models';
 // @ts-ignore
 import type { ItemFields } from '../models';
+// @ts-ignore
+import type { ProblemDetails } from '../models';
 /**
  * StudioApi - axios parameter creator
  * @export

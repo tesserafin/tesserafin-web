@@ -18,7 +18,7 @@
         },
         {
             "path": "api/artist-api.ts",
-            "sha256": "18f38a1b6f9391805af18c20b98ca0e60e418cc1e957ace20d327dc1961cadca"
+            "sha256": "81e1447e03762cd0d225b6a22c3d92f2c064a5b8a11cc68cc0d65807c1a20c46"
         },
         {
             "path": "api/audio-api.ts",
@@ -66,7 +66,7 @@
         },
         {
             "path": "api/genre-api.ts",
-            "sha256": "6b5e9721cbf0084cb433c61443bd4f1276be4ad103cbea0c211dc841f99a825e"
+            "sha256": "60dc6d2ec5ef7e2e0978aa9219fa68c745be0905c375782674248da547c04e6b"
         },
         {
             "path": "api/image-api.ts",
@@ -118,7 +118,7 @@
         },
         {
             "path": "api/music-genre-api.ts",
-            "sha256": "77af94a5049c21cb551790d0add90ff7561a6eab64e1ea63c611831c87ae6f30"
+            "sha256": "22ba857f06ba7fc4a0fdd1554970fbe3903575b6e3b769be30dfc918f61cbfa5"
         },
         {
             "path": "api/person-api.ts",
@@ -170,7 +170,7 @@
         },
         {
             "path": "api/studio-api.ts",
-            "sha256": "4cc87925611fc3187e8263b35914595bee05da64e8f10de048887e85a1820f7e"
+            "sha256": "69ebcb91317e5e49247c792354aa713a6c36f90d3fef2c884ce5aa0eb4c2635b"
         },
         {
             "path": "api/subtitle-api.ts",

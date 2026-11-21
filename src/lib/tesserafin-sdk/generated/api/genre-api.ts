@@ -33,6 +33,8 @@ import type { ItemFields } from '../models';
 // @ts-ignore
 import type { ItemSortBy } from '../models';
 // @ts-ignore
+import type { ProblemDetails } from '../models';
+// @ts-ignore
 import type { SortOrder } from '../models';
 /**
  * GenreApi - axios parameter creator
