@@ -5,10 +5,9 @@
  */
 
 /**
- * The library video families this journey owns. Live TV channels, programmes and recordings, and
- * channel-plugin items, plan elsewhere.
+ * Video families supported by the session media journey, including items from channel plugins.
  */
-const LIBRARY_VIDEO_TYPES = new Set([
+const SESSION_VIDEO_TYPES = new Set([
     'Movie',
     'Episode',
     'Video',
@@ -22,14 +21,15 @@ export interface SessionMediaCandidate {
     Type?: string | null;
     MediaType?: string | null;
     LocationType?: string | null;
+    SourceType?: string | null;
     IsPlaceHolder?: boolean | null;
 }
 
 /**
  * Whether this journey owns the playback of `item` on `player`: a library video (film, episode,
  * home video, music video, trailer) or a Live TV channel on the local HTML video player, or a
- * library audio track or audiobook on the local HTML audio player - on the server, not a cast or remote target,
- * which plan for themselves.
+ * library audio track or audiobook on the local HTML audio player. Channel-plugin videos and
+ * audio use the same journey. Cast and remote players plan for themselves.
  */
 export function isSessionMediaCandidate(
     item: SessionMediaCandidate | null | undefined,
@@ -42,12 +42,16 @@ export function isSessionMediaCandidate(
     if (item.Type === 'TvChannel') {
         return player.id === 'htmlvideoplayer';
     }
-    if (item.LocationType != null && item.LocationType !== 'FileSystem') {
+    if (
+        item.LocationType != null &&
+        item.LocationType !== 'FileSystem' &&
+        !(item.LocationType === 'Remote' && item.SourceType === 'Channel')
+    ) {
         return false;
     }
     if (item.MediaType === 'Video') {
         return (
-            LIBRARY_VIDEO_TYPES.has(item.Type ?? '') &&
+            SESSION_VIDEO_TYPES.has(item.Type ?? '') &&
             player.id === 'htmlvideoplayer'
         );
     }

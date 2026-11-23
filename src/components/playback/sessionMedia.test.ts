@@ -210,6 +210,35 @@ describe('isSessionMediaCandidate', () => {
         ).toBe(false);
     });
 
+    it.each([
+        ['Movie', 'Video', 'htmlvideoplayer'],
+        ['Audio', 'Audio', 'htmlaudioplayer'],
+        ['AudioBook', 'Audio', 'htmlaudioplayer']
+    ])(
+        'owns a remote channel-plugin %s on the local HTML player',
+        (type, mediaType, playerId) => {
+            const item = {
+                Id: ITEM,
+                Type: type,
+                MediaType: mediaType,
+                LocationType: 'Remote',
+                SourceType: 'Channel'
+            };
+            expect(
+                isSessionMediaCandidate(item, {
+                    id: playerId,
+                    isLocalPlayer: true
+                })
+            ).toBe(true);
+            expect(
+                isSessionMediaCandidate(item, {
+                    id: 'chromecast',
+                    isLocalPlayer: false
+                })
+            ).toBe(false);
+        }
+    );
+
     it('owns a Live TV channel on the local html video player only', () => {
         const videoPlayer = { id: 'htmlvideoplayer', isLocalPlayer: true };
         const channel = {
