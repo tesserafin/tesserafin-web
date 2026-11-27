@@ -3,7 +3,7 @@
  *
  * Every assertion inspects the `playbackInfoDto` actually handed to
  * `getMediaInfoApi(api).getPostedPlaybackInfo(...)` by the real `PlaybackManager`, driven through
- * its public entry points (`play()`, `nextTrack()`, `getPlaybackInfo()`). Nothing here rebuilds
+ * its public entry points (`play()`, `nextTrack()`). Nothing here rebuilds
  * the request from a helper, and no test calls the selection predicate directly.
  *
  * See docs/tesserafin/live-tv-playbackinfo-source-selection.md for the frozen contract and for the
@@ -318,7 +318,8 @@ describe('Live TV PlaybackInfo source selection', { timeout: 60000 }, () => {
             // The assertion is about the request that went out. Whether the *response* can be
             // turned into a stream is a different property, covered by its own test.
             await manager
-                .getPlaybackInfo(channelItem({ Type: type }), {
+                .play({
+                    items: [channelItem({ Type: type })],
                     mediaSourceId: CHANNEL_ITEM_ID
                 })
                 .catch(() => undefined);
@@ -336,9 +337,7 @@ describe('Live TV PlaybackInfo source selection', { timeout: 60000 }, () => {
         const { manager } = mountManager();
 
         await manager
-            .getPlaybackInfo(channelItem(), {
-                mediaSourceId: TUNER_SOURCE_ID
-            })
+            .play({ items: [channelItem()], mediaSourceId: TUNER_SOURCE_ID })
             .catch(() => undefined);
         await waitForRequests(1);
 
@@ -349,7 +348,7 @@ describe('Live TV PlaybackInfo source selection', { timeout: 60000 }, () => {
     it('omits MediaSourceId for a Live TV channel when no source id is supplied', async () => {
         const { manager } = mountManager();
 
-        await manager.getPlaybackInfo(channelItem(), {}).catch(() => undefined);
+        await manager.play({ items: [channelItem()] }).catch(() => undefined);
         await waitForRequests(1);
 
         const body = requests()[0].playbackInfoDto as Record<string, unknown>;
@@ -365,12 +364,14 @@ describe('Live TV PlaybackInfo source selection', { timeout: 60000 }, () => {
         const { manager } = mountManager();
 
         await manager
-            .getPlaybackInfo(
-                videoItem({
-                    MediaSources: [videoSource({ Id: VIDEO_ITEM_ID })]
-                }),
-                { mediaSourceId: VIDEO_ITEM_ID }
-            )
+            .play({
+                items: [
+                    videoItem({
+                        MediaSources: [videoSource({ Id: VIDEO_ITEM_ID })]
+                    })
+                ],
+                mediaSourceId: VIDEO_ITEM_ID
+            })
             .catch(() => undefined);
         await waitForRequests(1);
 
@@ -391,10 +392,7 @@ describe('Live TV PlaybackInfo source selection', { timeout: 60000 }, () => {
             true;
 
         await manager
-            .getPlaybackInfo(audio, {
-                mediaSourceId: audio.Id as string,
-                mediaType: 'Audio'
-            })
+            .play({ items: [audio], mediaSourceId: audio.Id as string })
             .catch(() => undefined);
         await waitForRequests(1);
 
@@ -414,9 +412,7 @@ describe('Live TV PlaybackInfo source selection', { timeout: 60000 }, () => {
         const { manager } = mountManager();
 
         await manager
-            .getPlaybackInfo(recording, {
-                mediaSourceId: recording.Id as string
-            })
+            .play({ items: [recording], mediaSourceId: recording.Id as string })
             .catch(() => undefined);
         await waitForRequests(1);
 
