@@ -4,8 +4,6 @@ import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-ite
 import { ItemFilter } from '@jellyfin/sdk/lib/generated-client/models/item-filter';
 import { ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models/item-sort-by';
 import { MediaType } from '@jellyfin/sdk/lib/generated-client/models/media-type';
-import { PlaybackErrorCode } from '@jellyfin/sdk/lib/generated-client/models/playback-error-code';
-import { getMediaInfoApi } from '@jellyfin/sdk/lib/utils/api/media-info-api';
 import merge from 'lodash-es/merge';
 import Screenfull from 'screenfull';
 
@@ -40,27 +38,16 @@ import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket';
 import { MediaError } from 'types/mediaError';
 import { getMediaError } from 'utils/mediaError';
 import { bindSkipSegment } from './skipsegment.ts';
-import { getParam } from './getUrlParam.ts';
 import * as bitrateTest from 'utils/bitrateTest';
 // Static import is safe for the bundle budget: `playbackAttemptId.ts` has zero imports of its own
 // (see its file-level comment), so it pulls no `lib/tesserafin-sdk` scope into the main chunk and the
 // v2 path stays behind its lazy trigger.
-import {
-    applyPlaybackAttemptId,
-    beginPlaybackAttempt
-} from '../../scripts/playbackAttemptId.ts';
-import { triggerShadowPlaybackSession } from '../../scripts/playbackSessionShadowTrigger.ts';
-import { applyV2PlaybackUrlIfEnabled } from '../../scripts/playbackSessionV2UrlTrigger.ts';
-// reefin #43: the retry path's re-entry into v2 (PUT re-plan). Same lazy-boundary discipline as
-// the POST trigger above: this module is an eager, dependency-light gate and everything
-// SDK-touching stays behind the shared `playback-v2-url` chunk.
-import { applyV2PlaybackReplanIfEnabled } from '../../scripts/playbackSessionV2ReplanTrigger.ts';
+import { beginPlaybackAttempt } from '../../scripts/playbackAttemptId.ts';
 // reefin #43: static import is safe for the bundle budget - the module it pulls in
 // (`playbackSessionTeardown.ts`) has zero imports of its own, same constraint
 // `playbackAttemptId.ts` documents, so `lib/tesserafin-sdk` stays behind the lazy boundary.
 import {
     adoptPlaybackSessionForTeardown,
-    adoptedV2PlaybackSessionId,
     releasePlaybackSessionOnStop
 } from '../../scripts/playbackSessionTeardownTrigger.ts';
 // Static import is deliberate and does NOT reintroduce bundle anchor 2 (reefin#44 §5):
@@ -264,40 +251,6 @@ function mergePlaybackQueries(obj1, obj2) {
     return query;
 }
 
-function getMimeType(type, container) {
-    container = (container || '').toLowerCase();
-
-    if (type === 'audio') {
-        if (container === 'opus') {
-            return 'audio/ogg';
-        }
-        if (container === 'webma') {
-            return 'audio/webm';
-        }
-        if (container === 'm4a') {
-            return 'audio/mp4';
-        }
-    } else if (type === 'video') {
-        if (container === 'mkv') {
-            return 'video/x-matroska';
-        }
-        if (container === 'm4v') {
-            return 'video/mp4';
-        }
-        if (container === 'mov') {
-            return 'video/quicktime';
-        }
-        if (container === 'mpg') {
-            return 'video/mpeg';
-        }
-        if (container === 'flv') {
-            return 'video/x-flv';
-        }
-    }
-
-    return type + '/' + container;
-}
-
 function isAutomaticPlayer(player) {
     return player.isLocalPlayer;
 }
@@ -417,10 +370,6 @@ function loadPlanSessionMedia() {
     return planSessionMediaLoader;
 }
 
-function playSessionIdFor(requestOptions) {
-    return requestOptions?.playSessionId || String(++startingPlaySession);
-}
-
 /**
  * Hand one play session's capabilities back when its playback ends (#153-A1).
  *
@@ -508,47 +457,6 @@ async function getAudioStreamUrl(
         EnableRemoteMedia: appHost.supports(AppFeature.RemoteAudio),
         EnableAudioVbrEncoding: transcodingProfile.EnableAudioVbrEncoding
     });
-}
-
-async function getAudioStreamUrlFromDeviceProfile(
-    item,
-    deviceProfile,
-    maxBitrate,
-    apiClient,
-    startPosition
-) {
-    const transcodingProfile = deviceProfile.TranscodingProfiles.filter(
-        function (p) {
-            return p.Type === 'Audio' && p.Context === 'Streaming';
-        }
-    )[0];
-
-    let directPlayContainers = '';
-
-    deviceProfile.DirectPlayProfiles.forEach((p) => {
-        if (p.Type === 'Audio') {
-            if (directPlayContainers) {
-                directPlayContainers += ',' + p.Container;
-            } else {
-                directPlayContainers = p.Container;
-            }
-
-            if (p.AudioCodec) {
-                directPlayContainers += '|' + p.AudioCodec;
-            }
-        }
-    });
-
-    const maxValues = getAudioMaxValues(deviceProfile);
-
-    return getAudioStreamUrl(
-        item,
-        transcodingProfile,
-        directPlayContainers,
-        apiClient,
-        startPosition,
-        { maxBitrate, ...maxValues }
-    );
 }
 
 async function getStreamUrls(
@@ -653,328 +561,6 @@ function isLiveTvChannelItem(item) {
     return LIVE_TV_CHANNEL_ITEM_KINDS.includes(item?.Type);
 }
 
-/**
- * #153-LTV-P0. A Live TV channel's `BaseItemDto` carries a *placeholder* media source whose `Id`
- * is the channel's own item id (server `BaseItem.cs`, `GetVersionInfo`). The real source id belongs
- * to the tuner and is only known once the server has selected it. Sending the placeholder makes the
- * server narrow the source list to nothing (`MediaInfoHelper.cs`, `GetPlaybackInfo`) and playback
- * dies with `NoCompatibleStream`; omitting it lets the server pick the tuner source.
- *
- * The item-kind guard is load-bearing: an ordinary library item legitimately has a media source id
- * equal to its item id, and that request must keep its `MediaSourceId`.
- *
- * The comparison is exact on purpose. The only producer of the placeholder is
- * `mediaSourceId ||= item.Id` on the play path, so the two are the same string by construction -
- * normalising the compare would start dropping genuinely distinct ids.
- *
- * @param {{ Id?: string, Type?: string }} item
- * @param {string | null | undefined} mediaSourceId candidate `MediaSourceId` for the request.
- * @returns {boolean} whether the request should carry `MediaSourceId`.
- */
-function shouldSendMediaSourceId(item, mediaSourceId) {
-    if (!mediaSourceId) {
-        return false;
-    }
-
-    return !isLiveTvChannelItem(item) || mediaSourceId !== item.Id;
-}
-
-async function getPlaybackInfo(
-    player,
-    apiClient,
-    item,
-    deviceProfile,
-    mediaSourceId,
-    liveStreamId,
-    options
-) {
-    if (
-        !itemHelper.isLocalItem(item) &&
-        item.MediaType === 'Audio' &&
-        !player.useServerPlaybackInfoForAudio
-    ) {
-        return {
-            MediaSources: [
-                {
-                    StreamUrl: await getAudioStreamUrlFromDeviceProfile(
-                        item,
-                        deviceProfile,
-                        options.maxBitrate,
-                        apiClient,
-                        options.startPosition
-                    ),
-                    Id: item.Id,
-                    MediaStreams: [],
-                    RunTimeTicks: item.RunTimeTicks
-                }
-            ]
-        };
-    }
-
-    if (item.PresetMediaSource) {
-        return {
-            MediaSources: [item.PresetMediaSource]
-        };
-    }
-
-    const itemId = item.Id;
-
-    const query = {
-        UserId: apiClient.getCurrentUserId(),
-        StartTimeTicks: options.startPosition || 0
-    };
-
-    const api = ServerConnections.getApi(apiClient.serverId());
-
-    if (options.isPlayback) {
-        query.IsPlayback = true;
-        query.AutoOpenLiveStream = true;
-    } else {
-        query.IsPlayback = false;
-        query.AutoOpenLiveStream = false;
-    }
-
-    if (options.audioStreamIndex != null) {
-        query.AudioStreamIndex = options.audioStreamIndex;
-    }
-    if (options.subtitleStreamIndex != null) {
-        query.SubtitleStreamIndex = options.subtitleStreamIndex;
-    }
-    if (options.secondarySubtitleStreamIndex != null) {
-        query.SecondarySubtitleStreamIndex =
-            options.secondarySubtitleStreamIndex;
-    }
-    if (options.enableDirectPlay != null) {
-        query.EnableDirectPlay = options.enableDirectPlay;
-    }
-    if (options.enableDirectStream != null) {
-        query.EnableDirectStream = options.enableDirectStream;
-    }
-    if (options.allowVideoStreamCopy != null) {
-        query.AllowVideoStreamCopy = options.allowVideoStreamCopy;
-    }
-    if (options.allowAudioStreamCopy != null) {
-        query.AllowAudioStreamCopy = options.allowAudioStreamCopy;
-    }
-    if (shouldSendMediaSourceId(item, mediaSourceId)) {
-        query.MediaSourceId = mediaSourceId;
-    }
-    if (liveStreamId) {
-        query.LiveStreamId = liveStreamId;
-    }
-    if (options.maxBitrate) {
-        query.MaxStreamingBitrate = options.maxBitrate;
-    }
-    if (player.enableMediaProbe && !player.enableMediaProbe(item)) {
-        query.EnableMediaProbe = false;
-    }
-
-    // lastly, enforce player overrides for special situations
-    if (
-        query.EnableDirectStream !== false &&
-        player.supportsPlayMethod &&
-        !player.supportsPlayMethod('DirectStream', item)
-    ) {
-        query.EnableDirectStream = false;
-    }
-
-    if (player.getDirectPlayProtocols) {
-        query.DirectPlayProtocols = player.getDirectPlayProtocols();
-    }
-
-    query.AlwaysBurnInSubtitleWhenTranscoding =
-        appSettings.alwaysBurnInSubtitleWhenTranscoding();
-
-    query.DeviceProfile = deviceProfile;
-
-    // reefin #43: stamps THIS attempt's `PlaybackAttemptId` onto the `PlaybackInfoDto`, taken from
-    // the caller's `options` rather than from any ambient state - so two attempts starting at once
-    // cannot stamp each other's id. Diagnostics only: the server treats it as opaque and nothing
-    // here reads it back. Set only when there is a usable id (the helper omits the key otherwise:
-    // absent is valid, blank is a 400). `changeStream()`'s transcoding retry re-enters this function
-    // with the same id recovered from the player's state, so a retry sends the SAME id as the
-    // initial call - which is what makes the retry chain stitchable server-side.
-    applyPlaybackAttemptId(query, options.playbackAttemptId);
-
-    const res = await getMediaInfoApi(api).getPostedPlaybackInfo({
-        itemId: itemId,
-        playbackInfoDto: query
-    });
-
-    // PR116b (docs/pr116-client-migration-design.md, `reefin` repo): best-effort shadow
-    // `POST Playback/Sessions`, behind a flag (default off). PR116e: the flag is now checked, and
-    // the shadow module (+ its native capabilities builder + tesserafin-sdk client) only dynamically
-    // `import()`-ed, INSIDE `triggerShadowPlaybackSession()` - see that module's doc comment. Never
-    // awaited here - it never throws/rejects and must never delay or affect the real response above.
-    triggerShadowPlaybackSession({
-        api,
-        itemId,
-        userId: query.UserId,
-        mediaSourceId
-    });
-
-    return res.data;
-}
-
-function getOptimalMediaSource(apiClient, item, versions) {
-    const promises = versions.map(function (v) {
-        return supportsDirectPlay(apiClient, item, v);
-    });
-
-    if (!promises.length) {
-        return Promise.reject();
-    }
-
-    return Promise.all(promises).then(function (results) {
-        for (let i = 0, length = versions.length; i < length; i++) {
-            versions[i].enableDirectPlay = results[i] || false;
-        }
-        let optimalVersion = versions.filter(function (v) {
-            return v.enableDirectPlay;
-        })[0];
-
-        if (!optimalVersion) {
-            optimalVersion = versions.filter(function (v) {
-                return v.SupportsDirectStream;
-            })[0];
-        }
-
-        optimalVersion =
-            optimalVersion ||
-            versions.filter(function (s) {
-                return s.SupportsTranscoding;
-            })[0];
-
-        return optimalVersion || versions[0];
-    });
-}
-
-function getLiveStream(
-    player,
-    apiClient,
-    item,
-    playSessionId,
-    deviceProfile,
-    mediaSource,
-    options
-) {
-    const postData = {
-        DeviceProfile: deviceProfile,
-        OpenToken: mediaSource.OpenToken
-    };
-
-    const query = {
-        UserId: apiClient.getCurrentUserId(),
-        StartTimeTicks: options.startPosition || 0,
-        ItemId: item.Id,
-        PlaySessionId: playSessionId
-    };
-
-    if (options.maxBitrate) {
-        query.MaxStreamingBitrate = options.maxBitrate;
-    }
-    if (options.audioStreamIndex != null) {
-        query.AudioStreamIndex = options.audioStreamIndex;
-    }
-    if (options.subtitleStreamIndex != null) {
-        query.SubtitleStreamIndex = options.subtitleStreamIndex;
-    }
-
-    // lastly, enforce player overrides for special situations
-    if (
-        query.EnableDirectStream !== false &&
-        player.supportsPlayMethod &&
-        !player.supportsPlayMethod('DirectStream', item)
-    ) {
-        query.EnableDirectStream = false;
-    }
-
-    return apiClient.ajax({
-        url: apiClient.getUrl('LiveStreams/Open', query),
-        type: 'POST',
-        data: JSON.stringify(postData),
-        contentType: 'application/json',
-        dataType: 'json'
-    });
-}
-
-function isHostReachable(mediaSource, apiClient) {
-    if (mediaSource.IsRemote) {
-        return Promise.resolve(true);
-    }
-
-    return apiClient.getEndpointInfo().then(function (endpointInfo) {
-        if (endpointInfo.IsInNetwork) {
-            if (!endpointInfo.IsLocal) {
-                const path = (mediaSource.Path || '').toLowerCase();
-                if (
-                    path.indexOf('localhost') !== -1 ||
-                    path.indexOf('127.0.0.1') !== -1
-                ) {
-                    // This will only work if the app is on the same machine as the server
-                    return Promise.resolve(false);
-                }
-            }
-
-            return Promise.resolve(true);
-        }
-
-        // media source is in network, but connection is out of network
-        return Promise.resolve(false);
-    });
-}
-
-function supportsDirectPlay(apiClient, item, mediaSource) {
-    // folder rip hacks due to not yet being supported by the stream building engine
-    const isFolderRip =
-        mediaSource.VideoType === 'BluRay' ||
-        mediaSource.VideoType === 'Dvd' ||
-        mediaSource.VideoType === 'HdDvd';
-
-    if (mediaSource.SupportsDirectPlay || isFolderRip) {
-        if (mediaSource.IsRemote && !appHost.supports(AppFeature.RemoteVideo)) {
-            return Promise.resolve(false);
-        }
-
-        if (
-            mediaSource.Protocol === 'Http' &&
-            !mediaSource.RequiredHttpHeaders.length
-        ) {
-            // If this is the only way it can be played, then allow it
-            if (
-                !mediaSource.SupportsDirectStream &&
-                !mediaSource.SupportsTranscoding
-            ) {
-                return Promise.resolve(true);
-            } else {
-                return isHostReachable(mediaSource, apiClient);
-            }
-        }
-    }
-
-    return Promise.resolve(false);
-}
-
-/**
- * @param {PlaybackManager} instance
- * @param {import('@jellyfin/sdk/lib/generated-client/index.js').PlaybackInfoResponse} result
- * @returns {boolean}
- */
-function validatePlaybackInfoResult(instance, result) {
-    if (result.ErrorCode) {
-        // NOTE: To avoid needing to retranslate the "NoCompatibleStream" message,
-        // we need to keep the key in the same format.
-        const errMessage =
-            result.ErrorCode === PlaybackErrorCode.NoCompatibleStream
-                ? 'PlaybackErrorNoCompatibleStream'
-                : `PlaybackError.${result.ErrorCode}`;
-        showPlaybackInfoErrorMessage(instance, errMessage);
-        return false;
-    }
-
-    return true;
-}
-
 /** How long a recovery reload may take to start before it is declared failed. */
 const SOFTWARE_RECOVERY_TIMEOUT_MS = 30000;
 
@@ -997,6 +583,55 @@ function endSoftwareRecovery(playerData) {
         loading.hide();
     }
 }
+
+/**
+ * The message for a session media failure: a refusal says the reason the server named
+ * (tesserafin#129 audit W2), an authorization failure says so, anything else is the default.
+ * @param {{ failure?: string, reason?: string } | undefined} err The failure.
+ * @returns {string} The string key to show.
+ */
+function sessionMediaErrorMessage(err) {
+    switch (err?.failure) {
+        case 'unauthenticated':
+        case 'forbidden':
+            return 'PlaybackError.NotAllowed';
+        case 'refused':
+            return (
+                SESSION_REFUSAL_MESSAGES[err.reason] ??
+                'PlaybackErrorNoCompatibleStream'
+            );
+        default:
+            return 'ErrorDefault';
+    }
+}
+
+/**
+ * The stop code (`PlaybackError` + code) for a stream change that cannot start: a withdrawn or
+ * missing item, a refusal with the reason the server named, or a server error.
+ * @param {{ failure?: string, reason?: string } | undefined} outcome The change's failed outcome.
+ * @returns {string} The code, starting with the character that follows `PlaybackError`.
+ */
+function changeFailureCode(outcome) {
+    // A 404: withdrawn and missing are one answer (tesserafin-web#195).
+    if (outcome?.failure === 'notFound') {
+        return '.ItemUnavailable';
+    }
+    if (outcome?.failure === 'refused') {
+        return sessionMediaErrorMessage(outcome).slice('PlaybackError'.length);
+    }
+    return `.${MediaError.SERVER_ERROR}`;
+}
+
+/** The server's refusal reasons (`LocalMediaRefusal`) and the string each one shows. */
+const SESSION_REFUSAL_MESSAGES = {
+    NoSource: 'PlaybackError.ItemUnavailable',
+    NotTheHeldLiveStream: 'PlaybackError.ItemUnavailable',
+    NoSessionProvider: 'PlaybackError.SourceNotReadable',
+    ToneMappingUnavailable: 'PlaybackError.ToneMappingUnavailable',
+    HdrOutputNotExecuted: 'PlaybackError.HdrOutputNotExecuted',
+    SubtitleDeliveryNotExecuted: 'PlaybackError.SubtitleDeliveryNotExecuted',
+    TranscodeTargetNotExecuted: 'PlaybackErrorNoCompatibleStream'
+};
 
 function showPlaybackInfoErrorMessage(instance, errorCode) {
     alert({
@@ -2214,14 +1849,7 @@ export class PlaybackManager {
             return player.duration();
         }
 
-        function changeStream(
-            player,
-            ticks,
-            params,
-            recovery,
-            afterFailure,
-            onExistingChain
-        ) {
+        function changeStream(player, ticks, params, recovery, afterFailure) {
             if (canPlayerSeek(player) && params == null) {
                 player.currentTime(parseInt(ticks / 10000, 10));
                 return;
@@ -2252,267 +1880,23 @@ export class PlaybackManager {
 
             // Consolidation step 1: a session-owned video playback never re-plans through
             // PlaybackInfo. See replanSessionOwnedStream for the one case that comes back here.
-            if (
-                !onExistingChain &&
-                isSessionOwnedStream(getPlayerData(player).streamInfo)
-            ) {
-                replanSessionOwnedStream(player, ticks, params, change, () =>
-                    changeStream(
-                        player,
-                        ticks,
-                        { ...params, EnableDirectPlay: false },
-                        recovery,
-                        afterFailure,
-                        true
-                    )
-                );
+            if (isSessionOwnedStream(getPlayerData(player).streamInfo)) {
+                replanSessionOwnedStream(player, ticks, params, change);
                 return;
             }
 
-            const liveStreamId = getPlayerData(player).streamInfo.liveStreamId;
-            const lastMediaInfoQuery =
-                getPlayerData(player).streamInfo.lastMediaInfoQuery;
-
-            const playSessionId = self.playSessionId(player);
-
-            const currentItem = self.currentItem(player);
-
-            player
-                .getDeviceProfile(currentItem, {
-                    isRetry: params.EnableDirectPlay === false
-                })
-                .then(function (deviceProfile) {
-                    const audioStreamIndex =
-                        params.AudioStreamIndex == null
-                            ? getPlayerData(player).audioStreamIndex
-                            : params.AudioStreamIndex;
-                    const subtitleStreamIndex =
-                        params.SubtitleStreamIndex == null
-                            ? getPlayerData(player).subtitleStreamIndex
-                            : params.SubtitleStreamIndex;
-                    const secondarySubtitleStreamIndex =
-                        params.SecondarySubtitleStreamIndex == null
-                            ? getPlayerData(player).secondarySubtitleStreamIndex
-                            : params.SecondarySubtitleStreamIndex;
-
-                    let currentMediaSource = self.currentMediaSource(player);
-                    const apiClient = ServerConnections.getApiClient(
-                        currentItem.ServerId
-                    );
-
-                    if (ticks) {
-                        ticks = parseInt(ticks, 10);
-                    }
-
-                    const maxBitrate =
-                        params.MaxStreamingBitrate ||
-                        self.getMaxStreamingBitrate(player);
-
-                    const currentPlayOptions =
-                        currentItem.playOptions || getDefaultPlayOptions();
-
-                    const options = {
-                        maxBitrate,
-                        startPosition: ticks,
-                        isPlayback: true,
-                        audioStreamIndex,
-                        subtitleStreamIndex,
-                        enableDirectPlay: params.EnableDirectPlay,
-                        enableDirectStream: params.EnableDirectStream,
-                        allowVideoStreamCopy: params.AllowVideoStreamCopy,
-                        allowAudioStreamCopy: params.AllowAudioStreamCopy,
-                        // reefin #43: a retry belongs to the attempt that started this player, so
-                        // it reuses that attempt's id rather than minting a new one - that identity
-                        // is what stitches the retry chain back to the one user action behind it.
-                        playbackAttemptId:
-                            getPlayerData(player).playbackAttemptId
-                    };
-
-                    getPlaybackInfo(
-                        player,
-                        apiClient,
-                        currentItem,
-                        deviceProfile,
-                        currentMediaSource.Id,
-                        liveStreamId,
-                        options
-                    )
-                        .then(async function (result) {
-                            if (
-                                abandonStaleChange(
-                                    apiClient,
-                                    player,
-                                    change,
-                                    result?.PlaySessionId
-                                )
-                            ) {
-                                return;
-                            }
-
-                            if (validatePlaybackInfoResult(self, result)) {
-                                currentMediaSource = result.MediaSources[0];
-
-                                // #153-A1: the play session the capability binds to.
-                                options.playSessionId = result.PlaySessionId;
-
-                                const streamInfo = await createStreamInfo(
-                                    apiClient,
-                                    currentItem.MediaType,
-                                    currentItem,
-                                    currentMediaSource,
-                                    ticks,
-                                    player,
-                                    options
-                                );
-                                streamInfo.fullscreen =
-                                    currentPlayOptions.fullscreen;
-                                streamInfo.lastMediaInfoQuery =
-                                    lastMediaInfoQuery;
-                                streamInfo.resetSubtitleOffset = false;
-
-                                if (!streamInfo.url) {
-                                    onChangeCannotStart(player, change);
-                                    cancelPlayback();
-                                    showPlaybackInfoErrorMessage(
-                                        self,
-                                        `PlaybackError.${MediaError.NO_MEDIA_ERROR}`
-                                    );
-                                    return;
-                                }
-
-                                // reefin #43: re-enter v2 on the retry/stream-change path. Until this
-                                // call, a retry ALWAYS played the legacy URL built above, silently
-                                // abandoning the v2 session the player adopted at start while the
-                                // server kept serving its stale plan. When this player still holds a
-                                // live adopted v2 session (the teardown trigger is the owner of
-                                // record), re-plan it with PUT Playback/Sessions/{id} - carrying the
-                                // SAME PlaybackAttemptId as the PlaybackInfo call just above (the
-                                // retry belongs to the attempt that started it) plus the retry
-                                // ladder's constraint prohibitions - and play the re-planned stream.
-                                // Any failure (flag off, no adopted session, PUT/GET failure, 422)
-                                // leaves streamInfo untouched, so the legacy URL below plays exactly
-                                // as before; failures past the fork log an explicit console warning
-                                // rather than a silent fallback. Awaited for the same reason the
-                                // initial path awaits its trigger: changeStreamToUrl() hands this
-                                // exact object to player.play().
-                                await applyV2PlaybackReplanIfEnabled(
-                                    streamInfo,
-                                    {
-                                        api: ServerConnections.getApi(
-                                            apiClient.serverId()
-                                        ),
-                                        itemId: currentItem.Id,
-                                        mediaType: currentItem.MediaType,
-                                        userId: apiClient.getCurrentUserId(),
-                                        mediaSourceId: currentMediaSource.Id,
-                                        startTimeTicks: ticks || 0,
-                                        playbackAttemptId:
-                                            getPlayerData(player)
-                                                .playbackAttemptId,
-                                        sessionId: adoptedV2PlaybackSessionId(
-                                            getPlayerData(player)
-                                        ),
-                                        // The PlaySessionId the outgoing (v2) streamInfo carries -
-                                        // captured before changeStreamToUrl() replaces it. A re-plan
-                                        // keeps the session's original id; only a new attempt mints
-                                        // a new one.
-                                        playSessionId,
-                                        // The ladder's own prohibitions, so the server re-plans AWAY
-                                        // from the decision that just failed. `?? undefined`
-                                        // collapses the legacy `null` ("not constrained") onto the
-                                        // constraint builder's own defaults.
-                                        constraintOverrides: {
-                                            allowDirectPlay:
-                                                params.EnableDirectPlay ??
-                                                undefined,
-                                            allowDirectStream:
-                                                params.EnableDirectStream ??
-                                                undefined,
-                                            allowVideoStreamCopy:
-                                                params.AllowVideoStreamCopy ??
-                                                undefined,
-                                            allowAudioStreamCopy:
-                                                params.AllowAudioStreamCopy ??
-                                                undefined
-                                        }
-                                    },
-                                    apiClient,
-                                    {
-                                        // Same fallback-only role as on the initial path (see the
-                                        // applyV2PlaybackUrlIfEnabled call site): the server's
-                                        // reported MimeType outranks this for every play method.
-                                        directPlayMimeType: getMimeType(
-                                            (
-                                                currentItem.MediaType || ''
-                                            ).toLowerCase(),
-                                            (
-                                                currentMediaSource.Container ||
-                                                ''
-                                            ).toLowerCase()
-                                        ),
-                                        requestOptions: options
-                                    }
-                                );
-
-                                if (
-                                    abandonStaleChange(
-                                        apiClient,
-                                        player,
-                                        change,
-                                        streamInfo.playSessionId
-                                    )
-                                ) {
-                                    return;
-                                }
-
-                                getPlayerData(player).subtitleStreamIndex =
-                                    subtitleStreamIndex;
-                                getPlayerData(
-                                    player
-                                ).secondarySubtitleStreamIndex =
-                                    secondarySubtitleStreamIndex;
-                                getPlayerData(player).audioStreamIndex =
-                                    audioStreamIndex;
-                                getPlayerData(player).maxStreamingBitrate =
-                                    maxBitrate;
-
-                                changeStreamToUrl(
-                                    apiClient,
-                                    player,
-                                    playSessionId,
-                                    streamInfo,
-                                    change
-                                );
-                            } else {
-                                onChangeCannotStart(player, change);
-                            }
-                        })
-                        .catch(function (err) {
-                            // No answer, or one that could not be turned into a stream. A recovery
-                            // is ended by its timer; a switch simply did not happen.
-                            console.error(
-                                '[playbackmanager] stream change failed',
-                                err?.message
-                            );
-                            if (!change.afterFailure) {
-                                endChange(change);
-                            } else if (
-                                !change.recovery &&
-                                !isStaleChange(player, change)
-                            ) {
-                                // The failed stream is gone and its replacement was refused:
-                                // nothing will play. Without this the player sat on its last
-                                // frame with no word (#195). A recovery has its own timer.
-                                const code = isItemUnavailable(err)
-                                    ? '.ItemUnavailable'
-                                    : `.${MediaError.SERVER_ERROR}`;
-                                Events.trigger(self, 'playbackerror', [
-                                    code.slice(1)
-                                ]);
-                                onPlaybackStopped.call(player, {}, code);
-                            }
-                        });
-                });
+            // tesserafin#129 audit W3 (decided 2026-11-27): a server item plays only from its
+            // session, so a stream that is not session-owned is never re-planned through
+            // PlaybackInfo. The change does not happen.
+            console.error(
+                '[session-media] a stream that is not session-owned cannot be changed'
+            );
+            getPlayerData(player).isChangingStream = false;
+            if (change.afterFailure) {
+                onChangeCannotStart(player, change);
+            } else {
+                endChange(change);
+            }
         }
 
         /**
@@ -2532,12 +1916,12 @@ export class PlaybackManager {
          * @param {object} player The player.
          * @param {object} change The change.
          */
-        function onChangeCannotStart(player, change) {
+        function onChangeCannotStart(player, change, displayErrorCode) {
             if (
                 change.recovery &&
                 getPlayerData(player).softwareRecovery === change.recovery
             ) {
-                onPlaybackStopped.call(player, {});
+                onPlaybackStopped.call(player, {}, displayErrorCode);
                 return;
             }
             // After a failure nothing is playing, and the position stays the one to report.
@@ -2593,58 +1977,6 @@ export class PlaybackManager {
             }
 
             return true;
-        }
-
-        function changeStreamToUrl(
-            apiClient,
-            player,
-            playSessionId,
-            streamInfo,
-            change
-        ) {
-            const playerData = getPlayerData(player);
-
-            playerData.isChangingStream = true;
-
-            if (playerData.streamInfo && playSessionId) {
-                // #67: stopping the previous transcode is BEST-EFFORT CLEANUP, and it must not
-                // be able to strand the stream change. It used to carry a success handler only,
-                // so when the request failed the chain rejected, `setSrcIntoPlayer` was never
-                // called, and `isChangingStream` — which only `setSrcIntoPlayer`'s settlement
-                // handlers clear — stayed set forever. `onPlaybackError` was never re-entered,
-                // so it never reached its terminal branch: the retry ladder did not exhaust, it
-                // STALLED, and playback failed in complete silence with no dialog, no toast and
-                // no error state.
-                //
-                // That is not a contrived case. This request goes to the media host, so it fails
-                // in exactly the situation a stream change is being attempted for — the media is
-                // unreachable. Both settlements now continue identically, which is already the
-                // shape used for `afterSetSrc` immediately below. The ladder therefore always
-                // reaches a terminal state, `onPlaybackError` falls through to
-                // `onPlaybackStopped` with a `displayErrorCode`, and the error is reported.
-                const proceed = function () {
-                    // Stop the first transcoding afterwards because the player may still send requests to the original url
-                    const afterSetSrc = function () {
-                        // Best-effort too: swallow, never reject into an empty chain.
-                        apiClient
-                            .stopActiveEncodings(playSessionId)
-                            .catch(function () {
-                                /* the transcode is already unreachable; nothing to recover */
-                            });
-                    };
-                    setSrcIntoPlayer(
-                        apiClient,
-                        player,
-                        streamInfo,
-                        change
-                    ).then(afterSetSrc, afterSetSrc);
-                };
-                apiClient
-                    .stopActiveEncodings(playSessionId)
-                    .then(proceed, proceed);
-            } else {
-                setSrcIntoPlayer(apiClient, player, streamInfo, change);
-            }
         }
 
         function setSrcIntoPlayer(apiClient, player, streamInfo, change) {
@@ -3910,7 +3242,11 @@ export class PlaybackManager {
             } catch (err) {
                 loading.hide();
                 if (quiet) {
-                    return { kind: 'ended', failure: err?.failure };
+                    return {
+                        kind: 'ended',
+                        failure: err?.failure,
+                        reason: err?.reason
+                    };
                 }
                 if (err?.failure !== 'cancelled') {
                     // The error carries status and stage only: no URL, no credential.
@@ -3919,10 +3255,7 @@ export class PlaybackManager {
                     );
                     showPlaybackInfoErrorMessage(
                         self,
-                        err?.failure === 'unauthenticated' ||
-                            err?.failure === 'forbidden'
-                            ? 'PlaybackError.NotAllowed'
-                            : 'ErrorDefault'
+                        sessionMediaErrorMessage(err)
                     );
                 }
                 return { kind: 'ended' };
@@ -3930,10 +3263,6 @@ export class PlaybackManager {
                 if (self._sessionMediaAbort === controller) {
                     self._sessionMediaAbort = null;
                 }
-            }
-
-            if (outcome.kind === 'notApplicable') {
-                return { kind: 'fallback' };
             }
 
             outcome.streamInfo.backdropUrl =
@@ -4022,13 +3351,7 @@ export class PlaybackManager {
          * a session that is being, or has been, released, so what it reports (a 404 on its next
          * segment) is not an error of this playback, and a second change is not started on it.
          */
-        function replanSessionOwnedStream(
-            player,
-            ticks,
-            params,
-            change,
-            continueOnExistingChain
-        ) {
+        function replanSessionOwnedStream(player, ticks, params, change) {
             const playerData = getPlayerData(player);
             const current = playerData.streamInfo;
             const item = self.currentItem(player);
@@ -4041,24 +3364,21 @@ export class PlaybackManager {
             };
             // Nothing will play: said as an error, so that a queue does not move on as if the
             // item had finished. A recovery is ended by its own rules.
-            const cannotStart = function () {
+            const cannotStart = function (outcome) {
                 end();
                 if (isStaleChange(player, change)) {
                     abandonStaleChange(apiClient, player, change);
                     return;
                 }
+                // What the viewer is told, as the existing chain told it (#195): a withdrawn or
+                // missing item says so, a refusal says the reason the server named.
+                const code = changeFailureCode(outcome);
                 if (change.recovery) {
-                    onChangeCannotStart(player, change);
+                    onChangeCannotStart(player, change, code);
                     return;
                 }
-                Events.trigger(self, 'playbackerror', [
-                    MediaError.SERVER_ERROR
-                ]);
-                onPlaybackStopped.call(
-                    player,
-                    {},
-                    `.${MediaError.SERVER_ERROR}`
-                );
+                Events.trigger(self, 'playbackerror', [code.slice(1)]);
+                onPlaybackStopped.call(player, {}, code);
             };
 
             playerData.sessionReplan = change;
@@ -4138,13 +3458,8 @@ export class PlaybackManager {
                         abandonStaleChange(apiClient, player, change);
                         return;
                     }
-                    if (outcome.kind === 'fallback') {
-                        end();
-                        continueOnExistingChain();
-                        return;
-                    }
                     if (outcome.kind !== 'planned') {
-                        cannotStart();
+                        cannotStart(outcome);
                         return;
                     }
 
@@ -4210,6 +3525,10 @@ export class PlaybackManager {
             // tesserafin#119: a new play request is a new incident. `playerData` is the
             // player object itself and outlives the item, so this is reset here.
             endSoftwareRecovery(playerData);
+            // A re-plan still in flight belongs to the playback this one replaces: it is stale
+            // from here on (isStaleChange), and must neither block this playback's own changes
+            // nor hide its errors.
+            playerData.sessionReplan = null;
             const startedPlayback = {
                 stopped: false,
                 pendingChange: null
@@ -4406,125 +3725,23 @@ export class PlaybackManager {
                     mediaSourceId ||= item.Id;
                 }
 
-                const onLegacyMediaSource = async (mediaSource) => {
-                    if (
-                        trackOptions.DefaultSecondarySubtitleStreamIndex != null
-                    ) {
-                        mediaSource.DefaultSecondarySubtitleStreamIndex =
-                            trackOptions.DefaultSecondarySubtitleStreamIndex;
-                    }
-
-                    if (
-                        mediaSource.DefaultSubtitleStreamIndex == null ||
-                        mediaSource.DefaultSubtitleStreamIndex < 0
-                    ) {
-                        if (
-                            mediaSource.DefaultSecondarySubtitleStreamIndex !=
-                            null
-                        ) {
-                            mediaSource.DefaultSubtitleStreamIndex =
-                                mediaSource.DefaultSecondarySubtitleStreamIndex;
-                        }
-                        mediaSource.DefaultSecondarySubtitleStreamIndex = -1;
-                    }
-
-                    const subtitleTrack1 =
-                        mediaSource.MediaStreams[
-                            mediaSource.DefaultSubtitleStreamIndex
-                        ];
-                    const subtitleTrack2 =
-                        mediaSource.MediaStreams[
-                            mediaSource.DefaultSecondarySubtitleStreamIndex
-                        ];
-
-                    if (
-                        !self.trackHasSecondarySubtitleSupport(
-                            subtitleTrack1,
-                            player
-                        ) ||
-                        !self.trackHasSecondarySubtitleSupport(
-                            subtitleTrack2,
-                            player
-                        )
-                    ) {
-                        mediaSource.DefaultSecondarySubtitleStreamIndex = -1;
-                    }
-
-                    const streamInfo = await createStreamInfo(
-                        apiClient,
-                        item.MediaType,
-                        item,
-                        mediaSource,
-                        startPosition,
-                        player,
-                        options
-                    );
-
-                    // PR116d (docs/pr116-client-migration-design.md §3, docs/pr116d-url-contract-design.md,
-                    // `reefin` repo): behind a flag (default off), try the v2 `POST Playback/Sessions` +
-                    // `GET .../Stream` URL and use it instead of the legacy-constructed one above. ANY
-                    // failure (network, 4xx/5xx, missing fields, flag off) silently keeps the legacy
-                    // `streamInfo` already built - v2 can never break playback (see
-                    // playbackSessionV2Url.ts for the full fallback matrix).
-                    await applyV2PlaybackUrlIfEnabled(
-                        streamInfo,
-                        {
-                            api: ServerConnections.getApi(apiClient.serverId()),
-                            itemId: item.Id,
-                            mediaType: item.MediaType,
-                            userId: apiClient.getCurrentUserId(),
-                            mediaSourceId: mediaSource.Id,
-                            startTimeTicks: startPosition,
-                            // reefin #43: same attempt id as the `PlaybackInfo` POST above, passed
-                            // explicitly so this POST can never pick up a concurrent attempt's id.
-                            playbackAttemptId: playOptions.playbackAttemptId
-                        },
-                        apiClient,
-                        {
-                            // Fallback only. Since `reefin` #46 the v2 `GET .../Stream` response
-                            // reports the effective output `Container` and `MimeType`, and the
-                            // server's `MimeType` outranks this for every play method - which is
-                            // what re-enables remux and transcode on the v2 path (issue #44 §8-A).
-                            // This still covers a pre-#46 server, where a v2 DirectPlay needs the
-                            // source container's mime type from here; a remux/transcode against
-                            // such a server keeps the whole legacy decision (see V2ExecutionContext).
-                            directPlayMimeType: getMimeType(
-                                (item.MediaType || '').toLowerCase(),
-                                (mediaSource.Container || '').toLowerCase()
-                            ),
-                            requestOptions: options
-                        }
-                    );
-
-                    return startPlayerWithStreamInfo(
-                        player,
-                        streamInfo,
-                        mediaSource,
-                        playOptions,
-                        maxBitrate,
-                        onPlaybackStartedFn,
-                        ServerConnections.getApi(apiClient.serverId())
-                    );
-                };
-
-                const playLegacyChain = () =>
-                    getPlaybackMediaSource(
-                        player,
-                        apiClient,
-                        deviceProfile,
-                        item,
-                        mediaSourceId,
-                        options
-                    ).then(onLegacyMediaSource);
-
-                // Consolidation step 1: a library video or audio track on a local HTML player is planned
-                // through Playback/Sessions alone (sessionMedia.ts): a direct play, a remux or an
-                // SDR transcode the server serves from the session. Only a decision this journey
-                // does not cover (tone mapping, a burnt-in subtitle) continues with the legacy
-                // chain, and then without direct play, so such an item never reaches the legacy
-                // direct-play path. A refusal or a failure ends the attempt.
+                // Consolidation step 1: a server item on a local player is planned through
+                // Playback/Sessions alone (sessionMedia.ts): a direct play, a remux or a
+                // transcode the server serves from the session. A refusal or a failure ends the
+                // attempt, and so does an item the journey does not own: there is no PlaybackInfo
+                // chain to fall back to (tesserafin#129 audit W1-W2, decided 2026-11-27).
                 if (!isSessionMediaCandidate(item, player)) {
-                    return playLegacyChain();
+                    loading.hide();
+                    console.error(
+                        `[session-media] item ${item.Id} (${item.Type}, ${item.LocationType}) is not played from a session on ${player.id}`
+                    );
+                    showPlaybackInfoErrorMessage(
+                        self,
+                        item.LocationType === 'Virtual' || item.IsPlaceHolder
+                            ? 'PlaybackError.ItemUnavailable'
+                            : 'PlaybackError.NotPlayableHere'
+                    );
+                    return undefined;
                 }
 
                 return playSessionMedia({
@@ -4540,11 +3757,7 @@ export class PlaybackManager {
                     if (outcome.kind === 'started') {
                         return outcome.started;
                     }
-                    if (outcome.kind === 'ended') {
-                        return undefined;
-                    }
-                    options.enableDirectPlay = false;
-                    return playLegacyChain();
+                    return undefined;
                 });
             });
         }
@@ -4555,333 +3768,6 @@ export class PlaybackManager {
          * `allowAudioStreamCopy` are client-originated and used to be recovered by string-matching
          * the resulting URL (see `playbackExecutionDecision.ts`).
          */
-        /**
-         * #153-A1: ASYNC because a playback capability is minted before the url is built, never
-         * inside `getUrl`. All three call sites already sit inside a `.then(...)` of the
-         * `PlaybackInfo` round trip, so this adds no new asynchrony to the playback flow - it
-         * only makes the existing boundary the place the credential is obtained.
-         */
-        async function createStreamInfo(
-            apiClient,
-            type,
-            item,
-            mediaSource,
-            startPosition,
-            player,
-            requestOptions
-        ) {
-            let mediaUrl;
-            let contentType;
-            let transcodingOffsetTicks = 0;
-            const playerStartPositionTicks = startPosition;
-            const liveStreamId = mediaSource.LiveStreamId;
-
-            let playMethod = 'Transcode';
-
-            const mediaSourceContainer = (
-                mediaSource.Container || ''
-            ).toLowerCase();
-            let directOptions;
-
-            // #153-A1: the `player.useFullSubtitleUrls` block that used to absolutise every
-            // `DeliveryUrl` here is gone. No player in this repository sets that flag - the only
-            // read of it in the whole tree was this one - so it was a branch that could not run,
-            // and `getTextTracks` now rewrites each url anyway.
-
-            if (type === 'Video' || type === 'Audio') {
-                contentType = getMimeType(
-                    type.toLowerCase(),
-                    mediaSourceContainer
-                );
-
-                if (mediaSource.enableDirectPlay) {
-                    mediaUrl = mediaSource.Path;
-
-                    playMethod = 'DirectPlay';
-                } else if (mediaSource.StreamUrl) {
-                    // Only used for audio
-                    mediaUrl = mediaSource.StreamUrl;
-                    // Use the default playMethod value of Transcode
-                } else if (
-                    mediaSource.SupportsDirectPlay ||
-                    mediaSource.SupportsDirectStream
-                ) {
-                    // #153-A1: a Media capability bound to THIS item, media source AND play
-                    // session, minted here at the asynchronous boundary. There is no ApiKey
-                    // fallback: a refused mint rejects, and the caller's existing
-                    // playback-failure path reports it.
-                    //
-                    // THE PLAY SESSION GOES IN THE URL, and that is load-bearing rather than
-                    // cosmetic. `streamInfo.playSessionId` is read back out of this url with
-                    // `getParam('playSessionId', mediaUrl)`, and it is what the client reports
-                    // every lifecycle event with and what `onPlaybackStopped` hands back. Minted
-                    // under an id the url did not carry, the capability was filed under a play
-                    // session NOTHING ever reports: every `/Sessions/Playing*` call went out with
-                    // an empty `PlaySessionId`, `SessionManager.OnPlaybackStopped` skips
-                    // revocation on an empty one, and the capability went on serving media after
-                    // the playback that minted it had ended. Measured, 206 on a replay after the
-                    // stop; `tests/playbackCredential/directPlayRevocation.spec.ts` is that
-                    // measurement turned into a gate.
-                    const playSessionId = playSessionIdFor(requestOptions);
-                    const mediaCapability = await (
-                        await brokerFor(apiClient)
-                    ).mediaValue(item.Id, mediaSource.Id, playSessionId);
-
-                    directOptions = {
-                        Static: true,
-                        mediaSourceId: mediaSource.Id,
-                        deviceId: apiClient.deviceId(),
-                        PlaySessionId: playSessionId,
-                        playbackCapability: mediaCapability
-                    };
-
-                    if (mediaSource.ETag) {
-                        directOptions.Tag = mediaSource.ETag;
-                    }
-
-                    if (mediaSource.LiveStreamId) {
-                        directOptions.LiveStreamId = mediaSource.LiveStreamId;
-                    }
-
-                    const prefix = type === 'Video' ? 'Videos' : 'Audio';
-                    mediaUrl = apiClient.getUrl(
-                        prefix +
-                            '/' +
-                            item.Id +
-                            '/stream.' +
-                            mediaSourceContainer,
-                        directOptions
-                    );
-
-                    playMethod = mediaSource.SupportsDirectPlay
-                        ? 'DirectPlay'
-                        : 'DirectStream';
-                } else if (mediaSource.SupportsTranscoding) {
-                    // #153-A1: the server built this url with `api_key=`. Same Media capability as
-                    // the direct branch - the HLS children inherit it, because
-                    // `DynamicHlsController` echoes this request's query into every segment uri.
-                    mediaUrl = apiClient.getUrl(
-                        await (await brokerFor(apiClient)).rewriteMedia(
-                            mediaSource.TranscodingUrl,
-                            item.Id,
-                            mediaSource.Id,
-                            requestOptions.playSessionId ?? ''
-                        )
-                    );
-
-                    if (mediaSource.TranscodingSubProtocol === 'hls') {
-                        contentType = 'application/x-mpegURL';
-                    } else {
-                        contentType = getMimeType(
-                            type.toLowerCase(),
-                            mediaSource.TranscodingContainer
-                        );
-
-                        if (
-                            mediaUrl
-                                .toLowerCase()
-                                .indexOf('copytimestamps=true') === -1
-                        ) {
-                            transcodingOffsetTicks = startPosition || 0;
-                        }
-                    }
-                }
-            } else {
-                // All other media types
-                mediaUrl = mediaSource.Path;
-                playMethod = 'DirectPlay';
-            }
-
-            // Fallback (used for offline items)
-            if (!mediaUrl && mediaSource.SupportsDirectPlay) {
-                mediaUrl = mediaSource.Path;
-                playMethod = 'DirectPlay';
-            }
-
-            const resultInfo = {
-                url: mediaUrl,
-                mimeType: contentType,
-                transcodingOffsetTicks: transcodingOffsetTicks,
-                playMethod: playMethod,
-                playerStartPositionTicks: playerStartPositionTicks,
-                item: item,
-                mediaSource: mediaSource,
-                textTracks: await getTextTracks(
-                    apiClient,
-                    item,
-                    mediaSource,
-                    playSessionIdFor(requestOptions)
-                ),
-                mediaType: type,
-                liveStreamId: liveStreamId,
-                playSessionId: getParam('playSessionId', mediaUrl),
-                title: item.Name
-            };
-
-            // The legacy execution state, captured as a typed unit. On the v2 path
-            // applyV2PlaybackUrlToStreamInfo() replaces this wholesale, together with every field it
-            // describes - never field by field (reefin issue #41).
-            resultInfo.executionDecision = buildLegacyExecutionDecision(
-                resultInfo,
-                requestOptions
-            );
-
-            const backdropUrl = getItemBackdropImageUrl(
-                apiClient,
-                item,
-                {},
-                true
-            );
-            if (backdropUrl) {
-                resultInfo.backdropUrl = backdropUrl;
-            }
-
-            return resultInfo;
-        }
-
-        /**
-         * #153-A1: ASYNC. Every external subtitle's `DeliveryUrl` is built by the SERVER with
-         * `?ApiKey=` already appended (`StreamInfo.GetSubtitleStreamInfo`), so this is a
-         * server-emitted family: the client consumes it verbatim and has to rewrite it.
-         */
-        async function getTextTracks(
-            apiClient,
-            item,
-            mediaSource,
-            playSessionId
-        ) {
-            const subtitleStreams = mediaSource.MediaStreams.filter(
-                function (s) {
-                    return s.Type === 'Subtitle';
-                }
-            );
-
-            const textStreams = subtitleStreams.filter(function (s) {
-                return s.DeliveryMethod === 'External';
-            });
-
-            const tracks = [];
-
-            for (let i = 0, length = textStreams.length; i < length; i++) {
-                const textStream = textStreams[i];
-                let textStreamUrl;
-
-                if (itemHelper.isLocalItem(item)) {
-                    textStreamUrl = textStream.Path;
-                } else if (textStream.IsExternalUrl) {
-                    // Someone else's server entirely; this client has no credential for it and
-                    // must not attach one.
-                    textStreamUrl = textStream.DeliveryUrl;
-                } else {
-                    textStreamUrl = apiClient.getUrl(
-                        await (await brokerFor(apiClient)).rewriteSubtitle(
-                            textStream.DeliveryUrl,
-                            item.Id,
-                            mediaSource.Id,
-                            playSessionId
-                        )
-                    );
-                }
-
-                tracks.push({
-                    url: textStreamUrl,
-                    language: textStream.Language || 'und',
-                    isDefault:
-                        textStream.Index ===
-                        mediaSource.DefaultSubtitleStreamIndex,
-                    index: textStream.Index,
-                    format: textStream.Codec
-                });
-            }
-
-            return tracks;
-        }
-
-        function getPlaybackMediaSource(
-            player,
-            apiClient,
-            deviceProfile,
-            item,
-            mediaSourceId,
-            options
-        ) {
-            options.isPlayback = true;
-
-            return getPlaybackInfo(
-                player,
-                apiClient,
-                item,
-                deviceProfile,
-                mediaSourceId,
-                null,
-                options
-            ).then(function (playbackInfoResult) {
-                if (validatePlaybackInfoResult(self, playbackInfoResult)) {
-                    // #153-A1: carry the play session forward on the same options object
-                    // `createStreamInfo` is called with, so the capability can bind to it.
-                    options.playSessionId = playbackInfoResult.PlaySessionId;
-
-                    return getOptimalMediaSource(
-                        apiClient,
-                        item,
-                        playbackInfoResult.MediaSources
-                    ).then(function (mediaSource) {
-                        if (mediaSource) {
-                            if (
-                                mediaSource.RequiresOpening &&
-                                !mediaSource.LiveStreamId
-                            ) {
-                                options.audioStreamIndex = null;
-                                options.subtitleStreamIndex = null;
-
-                                return getLiveStream(
-                                    player,
-                                    apiClient,
-                                    item,
-                                    playbackInfoResult.PlaySessionId,
-                                    deviceProfile,
-                                    mediaSource,
-                                    options
-                                ).then(function (openLiveStreamResult) {
-                                    return supportsDirectPlay(
-                                        apiClient,
-                                        item,
-                                        openLiveStreamResult.MediaSource
-                                    ).then(function (result) {
-                                        openLiveStreamResult.MediaSource.enableDirectPlay =
-                                            result;
-                                        return openLiveStreamResult.MediaSource;
-                                    });
-                                });
-                            } else {
-                                if (item.AlbumId != null) {
-                                    return apiClient
-                                        .getItem(
-                                            apiClient.getCurrentUserId(),
-                                            item.AlbumId
-                                        )
-                                        .then(function (result) {
-                                            mediaSource.albumNormalizationGain =
-                                                result.NormalizationGain;
-                                            return mediaSource;
-                                        });
-                                }
-                                return mediaSource;
-                            }
-                        } else {
-                            showPlaybackInfoErrorMessage(
-                                self,
-                                `PlaybackError.${MediaError.NO_MEDIA_ERROR}`
-                            );
-                            return Promise.reject();
-                        }
-                    });
-                } else {
-                    return Promise.reject();
-                }
-            });
-        }
-
         function getPlayer(item, playOptions, forceLocalPlayers) {
             const serverItem = isServerItem(item);
             return getAutomaticPlayers(self, forceLocalPlayers).filter(

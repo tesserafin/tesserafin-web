@@ -2103,5 +2103,10 @@
     "LabelInitialLetter": "Initial",
     "SelectedLibraryStudio": "Selected studio {0}",
     "MessageNoMatchingLibraryItems": "No items match these filters.",
-    "MessageTryResetLibraryFilters": "Try removing a filter, or reset all filters."
+    "MessageTryResetLibraryFilters": "Try removing a filter, or reset all filters.",
+    "PlaybackError.NotPlayableHere": "This item can't be played here.",
+    "PlaybackError.SourceNotReadable": "The server can't read this item's source.",
+    "PlaybackError.ToneMappingUnavailable": "This video is HDR, this device plays SDR only, and the server can't convert HDR to SDR.",
+    "PlaybackError.HdrOutputNotExecuted": "This video is HDR in a form this device can't play, and the server can't convert it to a form this device accepts.",
+    "PlaybackError.SubtitleDeliveryNotExecuted": "The selected subtitles can't be shown on this device: they can neither be sent beside the video nor burnt into it."
 }

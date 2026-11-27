@@ -1954,5 +1954,10 @@
     "SelectedLibraryStudio": "Studio sélectionné {0}",
     "MessageNoMatchingLibraryItems": "Aucun média ne correspond à ces filtres.",
     "MessageTryResetLibraryFilters": "Retirez un filtre ou réinitialisez-les tous.",
-    "LabelStudio": "Studio"
+    "LabelStudio": "Studio",
+    "PlaybackError.NotPlayableHere": "Cet élément ne peut pas être lu ici.",
+    "PlaybackError.SourceNotReadable": "Le serveur ne peut pas lire la source de cet élément.",
+    "PlaybackError.ToneMappingUnavailable": "Cette vidéo est en HDR, cet appareil ne lit que le SDR, et le serveur ne sait pas convertir le HDR en SDR.",
+    "PlaybackError.HdrOutputNotExecuted": "Cette vidéo est dans un format HDR que cet appareil ne lit pas, et le serveur ne sait pas la convertir dans un format qu'il accepte.",
+    "PlaybackError.SubtitleDeliveryNotExecuted": "Les sous-titres choisis ne peuvent pas être affichés sur cet appareil : ils ne peuvent être ni envoyés à côté de la vidéo, ni incrustés."
 }

@@ -30,9 +30,11 @@ export interface SessionMediaCandidate {
 
 /**
  * Whether this journey owns the playback of `item` on `player`: a library video (film, episode,
- * home video, music video, trailer, Live TV recording) or a Live TV channel on the local HTML video player, or a
- * library audio track or audiobook on the local HTML audio player. Channel-plugin videos and
- * audio use the same journey. Cast and remote players plan for themselves.
+ * home video, music video, trailer, Live TV recording) or a Live TV channel on the local HTML video
+ * player, or a library audio track or audiobook on the local HTML audio player, wherever its file
+ * is (local, or a url the server reads). Channel-plugin videos and audio use the same journey.
+ * Cast and remote players plan for themselves. What it does not own is refused by the caller:
+ * there is no other chain (tesserafin#129 audit W1).
  */
 export function isSessionMediaCandidate(
     item: SessionMediaCandidate | null | undefined,
@@ -45,11 +47,9 @@ export function isSessionMediaCandidate(
     if (item.Type === 'TvChannel') {
         return player.id === 'htmlvideoplayer';
     }
-    if (
-        item.LocationType != null &&
-        item.LocationType !== 'FileSystem' &&
-        !(item.LocationType === 'Remote' && item.SourceType === 'Channel')
-    ) {
+    // A virtual item has nothing to play. A remote one (its path a url, a channel-plugin item
+    // among them) is the server's to read or refuse with its reason (tesserafin#129 audit W1).
+    if (item.LocationType === 'Virtual') {
         return false;
     }
     if (item.MediaType === 'Video') {

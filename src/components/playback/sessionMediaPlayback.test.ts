@@ -328,7 +328,7 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         expect(legacyStreamInfoBuilt).not.toHaveBeenCalled();
     });
 
-    it('releases the session before the legacy chain when the server decides a transcode it does not serve from the session, then plays without direct play', async () => {
+    it('ends with an error, releasing the session, when the server names a route that is not the session: never the legacy chain', async () => {
         createSession.mockResolvedValue({
             data: { Id: SESSION_ID, Method: 'Transcode' }
         });
@@ -336,23 +336,17 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         const { manager, player } = mountManager();
 
         await manager.play({ items: [videoItem()], startPositionTicks: 0 });
-        await vi.waitFor(() => expect(postedPlaybackInfo).toHaveBeenCalled(), {
+        await vi.waitFor(() => expect(alerts).toHaveLength(1), {
             timeout: 20000,
             interval: 10
         });
 
+        // tesserafin#129 audit W2: a contract error ends the attempt; nothing falls back.
         expect(createSession).toHaveBeenCalledTimes(1);
         expect(deleteSession).toHaveBeenCalledTimes(1);
-        expect(deleteSession.mock.invocationCallOrder[0]).toBeLessThan(
-            postedPlaybackInfo.mock.invocationCallOrder[0]
-        );
-        expect(
-            postedPlaybackInfo.mock.calls[0][0].playbackInfoDto.EnableDirectPlay
-        ).toBe(false);
-        await vi.waitFor(() => expect(player.played).toHaveLength(1), {
-            timeout: 20000,
-            interval: 10
-        });
+        expect(postedPlaybackInfo).not.toHaveBeenCalled();
+        expect(legacyStreamInfoBuilt).not.toHaveBeenCalled();
+        expect(player.played).toHaveLength(0);
     });
 
     it('plays a remux from the session HLS route without PlaybackInfo or createStreamInfo, and releases on stop', async () => {
@@ -483,7 +477,7 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         expect(deleteSession).toHaveBeenCalledTimes(1);
     });
 
-    it('continues a change on the existing chain only when the server then decides something it does not serve from the session, after both releases', async () => {
+    it('ends a change, after both releases, when the server then names a route that is not the session: never the legacy chain', async () => {
         const SECOND = 'dddddddddddddddddddddddddddddddd';
         createSession
             .mockResolvedValueOnce({
@@ -504,7 +498,7 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
         });
 
         manager.setAudioStreamIndex(2, player);
-        await vi.waitFor(() => expect(postedPlaybackInfo).toHaveBeenCalled(), {
+        await vi.waitFor(() => expect(stops).toHaveLength(1), {
             timeout: 20000,
             interval: 10
         });
@@ -513,12 +507,10 @@ describe('direct-play film journey', { timeout: 60000 }, () => {
             { id: SESSION_ID },
             { id: SECOND }
         ]);
-        expect(deleteSession.mock.invocationCallOrder[1]).toBeLessThan(
-            postedPlaybackInfo.mock.invocationCallOrder[0]
-        );
-        expect(
-            postedPlaybackInfo.mock.calls[0][0].playbackInfoDto.EnableDirectPlay
-        ).toBe(false);
+        expect(postedPlaybackInfo).not.toHaveBeenCalled();
+        expect(legacyStreamInfoBuilt).not.toHaveBeenCalled();
+        expect(player.played).toHaveLength(1);
+        expect(errors).toEqual(['SERVER_ERROR']);
     });
 
     it('ends the playback when a change is refused: no legacy chain', async () => {

@@ -12,17 +12,13 @@
  * from the plan it retained; this module only plays what the descriptor names. A descriptor that
  * names anything other than a route of this session is not this journey's to play.
  *
- * Outcomes are deliberately three, not two:
+ * Two outcomes, and no fallback to `PlaybackInfo` (tesserafin#129 audit W2, decided 2026-11-27):
  *  - `planned`: the server decided a direct play, a remux or a transcode it serves from the
  *    session; the caller plays `streamInfo` and owns `session` until the playback stops.
- *  - `notApplicable`: the server decided something this journey does not cover (a remux or a
- *    transcode it does not serve from the session - tone mapping, a burnt-in subtitle, a
- *    delivery that is not HLS - or no viable plan). The session it created is
- *    released first, then the caller continues with the existing chain - with direct play
- *    disabled, so the old direct-play path of a library video cannot come back that way.
- *  - a thrown {@link SessionMediaError}: authentication, authorization, a vanished session or any
- *    other failure ends the attempt. It never falls back. When releasing the session also fails, the
- *    original error is the one thrown.
+ *  - a thrown {@link SessionMediaError}: a refusal (`refused`, a 422 whose `reason` the server
+ *    names), authentication, authorization, a vanished session, a descriptor that names no route of
+ *    the session (a contract error) or any other failure ends the attempt. When releasing the
+ *    session also fails, the original error is the one thrown.
  */
 
 import type { AxiosError } from 'axios';
@@ -187,34 +183,37 @@ export interface SessionMediaSession {
     release: () => Promise<void>;
 }
 
-export type SessionMediaOutcome =
-    | {
-          kind: 'planned';
-          streamInfo: SessionMediaStreamInfo;
-          session: SessionMediaSession;
-      }
-    | { kind: 'notApplicable'; reason: string };
+export type SessionMediaOutcome = {
+    kind: 'planned';
+    streamInfo: SessionMediaStreamInfo;
+    session: SessionMediaSession;
+};
 
 export type SessionMediaFailure =
     | 'unauthenticated'
     | 'forbidden'
     | 'notFound'
     | 'cancelled'
+    | 'refused'
     | 'failed';
 
 export class SessionMediaError extends Error {
     readonly failure: SessionMediaFailure;
     readonly status: number | undefined;
     readonly detail: unknown;
+    /** For a `refused` failure, the reason the server named (`reason` of its 422), if any. */
+    readonly reason: string | undefined;
 
     constructor(
         failure: SessionMediaFailure,
         message: string,
         status?: number,
-        detail?: unknown
+        detail?: unknown,
+        reason?: string
     ) {
         super(message);
         this.detail = detail;
+        this.reason = reason;
         this.name = 'SessionMediaError';
         this.failure = failure;
         this.status = status;
@@ -223,6 +222,16 @@ export class SessionMediaError extends Error {
 
 const statusOf = (err: unknown): number | undefined =>
     (err as AxiosError | undefined)?.response?.status;
+
+/** The refusal reason a 422 names (`ProblemDetails` extension `reason`), if it names one. */
+const refusalReasonOf = (err: unknown): string | undefined => {
+    const reason = (
+        (err as AxiosError | undefined)?.response?.data as
+            | { reason?: unknown }
+            | undefined
+    )?.reason;
+    return typeof reason === 'string' ? reason : undefined;
+};
 
 function classify(
     stage: string,
@@ -370,9 +379,16 @@ export async function planSessionMedia(
         selectedSubtitle = data.SelectedStreams?.Subtitle?.Index ?? null;
         selectedAudio = data.SelectedStreams?.Audio ?? null;
     } catch (err) {
-        // 422: no direct plan the declared capabilities allow - a decision, not a refusal.
+        // 422: the server refuses this playback, and says why. It ends the attempt: there is no
+        // other chain to try (tesserafin#129 audit W2).
         if (statusOf(err) === 422) {
-            return { kind: 'notApplicable', reason: 'no viable plan' };
+            throw new SessionMediaError(
+                'refused',
+                'POST Playback/Sessions: refused',
+                422,
+                err,
+                refusalReasonOf(err)
+            );
         }
         throw classify('POST Playback/Sessions', err);
     }
@@ -414,29 +430,17 @@ export async function planSessionMedia(
         );
     }
 
-    // The existing chain may only start once this session is gone: a release that failed ends
-    // the attempt instead of risking two live sessions for one playback.
-    const decline = async (reason: string): Promise<SessionMediaOutcome> => {
-        try {
-            await release();
-        } catch (releaseError) {
-            throw new SessionMediaError(
-                'failed',
-                `session ${sessionId} (${reason}) could not be released before falling back`,
-                statusOf(releaseError),
-                releaseError
-            );
-        }
-        throwIfCancelled(signal, 'release before fallback');
-        return { kind: 'notApplicable', reason };
-    };
-
     if (
         method !== 'DirectPlay' &&
         method !== 'Remux' &&
         method !== 'Transcode'
     ) {
-        return decline(`server decided ${method ?? 'nothing'}`);
+        return abandon(
+            new SessionMediaError(
+                'failed',
+                `POST Playback/Sessions: the server decided ${method ?? 'nothing'}`
+            )
+        );
     }
 
     let stream: PlaybackSessionStreamDescriptor;
@@ -451,20 +455,6 @@ export async function planSessionMedia(
         route = sessionRouteOf(sessionId, method, stream);
     } catch (err) {
         return abandon(classify('descriptor', err, signal));
-    }
-
-    // A remux or a transcode the server does not serve from a session at all (another protocol,
-    // tone mapping, a burnt-in subtitle: the existing chain's url) is a decision this journey does
-    // not cover. A descriptor naming a session route that is not this session's is not a
-    // decision: it fails.
-    if (
-        route === null &&
-        method !== 'DirectPlay' &&
-        !(stream.Url ?? '').split('?')[0].includes('/Playback/Sessions/')
-    ) {
-        return decline(
-            `server decided a ${method.toLowerCase()} it does not serve from the session`
-        );
     }
 
     try {

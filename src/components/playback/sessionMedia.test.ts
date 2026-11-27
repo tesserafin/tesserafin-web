@@ -57,6 +57,7 @@ function fakeApi(answers: {
                         code: 'ERR_CANCELED'
                     });
                 if (typeof value === 'number') throw fail(value);
+                if (value instanceof Error) throw value;
                 return { data: value, status: 200 };
             };
             if (method === 'POST' && url.endsWith('/Playback/Sessions'))
@@ -191,6 +192,7 @@ describe('isSessionMediaCandidate', () => {
                 html
             )
         ).toBe(false);
+        // A remote file (its path a url): the server reads it from the session or refuses it.
         expect(
             isSessionMediaCandidate(
                 {
@@ -201,7 +203,7 @@ describe('isSessionMediaCandidate', () => {
                 },
                 html
             )
-        ).toBe(false);
+        ).toBe(true);
         expect(
             isSessionMediaCandidate(
                 { Id: ITEM, Type: 'Movie', MediaType: 'Video' },
@@ -309,6 +311,18 @@ describe('isSessionMediaCandidate', () => {
                     Type: 'Audio',
                     MediaType: 'Audio',
                     LocationType: 'Remote'
+                },
+                audioPlayer
+            )
+        ).toBe(true);
+        // A virtual item has nothing to play: refused by the caller, never another chain.
+        expect(
+            isSessionMediaCandidate(
+                {
+                    Id: ITEM,
+                    Type: 'Audio',
+                    MediaType: 'Audio',
+                    LocationType: 'Virtual'
                 },
                 audioPlayer
             )
@@ -560,7 +574,7 @@ describe('planSessionMedia', () => {
         ).toBe(false);
     });
 
-    it('declines a remux the server does not serve from the session, releasing it first', async () => {
+    it('ends with a contract error, releasing the session, when a remux is not served from the session', async () => {
         const { api, calls } = fakeApi({
             create: () => ({ Id: SESSION, Method: 'Remux' }),
             stream: () => ({
@@ -570,15 +584,18 @@ describe('planSessionMedia', () => {
             })
         });
         const mint = vi.fn(async () => 'CAP');
-        const outcome = await planSessionMedia(params(api), {
-            mintMediaCapability: mint,
-            authorizeSubtitle: subtitle,
-            logger: quiet
-        });
 
-        expect(outcome).toEqual({
-            kind: 'notApplicable',
-            reason: 'server decided a remux it does not serve from the session'
+        // tesserafin#129 audit W2: a descriptor naming no route of the session is a contract
+        // error, never a fallback to PlaybackInfo.
+        await expect(
+            planSessionMedia(params(api), {
+                mintMediaCapability: mint,
+                authorizeSubtitle: subtitle,
+                logger: quiet
+            })
+        ).rejects.toMatchObject({
+            name: 'SessionMediaError',
+            failure: 'failed'
         });
         expect(mint).not.toHaveBeenCalled();
         expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
@@ -672,7 +689,7 @@ describe('planSessionMedia', () => {
         expect(calls.some((c) => /PlaybackInfo/i.test(c.url))).toBe(false);
     });
 
-    it('releases the session before falling back when the server decides a transcode it does not serve from the session', async () => {
+    it('ends with a contract error, releasing the session, when a transcode is not served from the session', async () => {
         const { api, calls } = fakeApi({
             create: () => ({ Id: SESSION, Method: 'Transcode' }),
             stream: () => ({
@@ -681,28 +698,38 @@ describe('planSessionMedia', () => {
                 Container: 'ts'
             })
         });
-        const outcome = await planSessionMedia(params(api), {
-            mintMediaCapability: vi.fn(),
-            authorizeSubtitle: subtitle,
-            logger: quiet
-        });
 
-        expect(outcome).toEqual({
-            kind: 'notApplicable',
-            reason: 'server decided a transcode it does not serve from the session'
-        });
+        await expect(
+            planSessionMedia(params(api), {
+                mintMediaCapability: vi.fn(),
+                authorizeSubtitle: subtitle,
+                logger: quiet
+            })
+        ).rejects.toMatchObject({ failure: 'failed' });
         expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
     });
 
-    it('falls back without a session to release when no direct plan is viable (422)', async () => {
-        const { api, calls } = fakeApi({ create: () => 422 });
-        const outcome = await planSessionMedia(params(api), {
-            mintMediaCapability: vi.fn(),
-            authorizeSubtitle: subtitle,
-            logger: quiet
+    it('is refused, with the reason the server named, when the server answers 422', async () => {
+        const refused = Object.assign(new Error('HTTP 422'), {
+            response: {
+                status: 422,
+                data: { reason: 'ToneMappingUnavailable' }
+            }
         });
+        const { api, calls } = fakeApi({ create: () => refused });
 
-        expect(outcome.kind).toBe('notApplicable');
+        await expect(
+            planSessionMedia(params(api), {
+                mintMediaCapability: vi.fn(),
+                authorizeSubtitle: subtitle,
+                logger: quiet
+            })
+        ).rejects.toMatchObject({
+            name: 'SessionMediaError',
+            failure: 'refused',
+            status: 422,
+            reason: 'ToneMappingUnavailable'
+        });
         expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(0);
     });
 
@@ -791,30 +818,6 @@ describe('planSessionMedia', () => {
 });
 
 describe('planSessionMedia review fixes (#404)', () => {
-    it('does not fall back if the start is cancelled while deleting the declined session', async () => {
-        const controller = new AbortController();
-        const { api, calls } = fakeApi({
-            create: () => ({ Id: SESSION, Method: 'Transcode' }),
-            stream: () => ({
-                Url: `/Videos/${ITEM}/master.m3u8?MediaSourceId=${SOURCE}&VideoCodec=h264`,
-                Protocol: 'Hls',
-                Container: 'ts'
-            }),
-            del: () => {
-                controller.abort();
-            }
-        });
-        await expect(
-            planSessionMedia(params(api), {
-                mintMediaCapability: vi.fn(),
-                authorizeSubtitle: subtitle,
-                signal: controller.signal,
-                logger: quiet
-            })
-        ).rejects.toMatchObject({ failure: 'cancelled' });
-        expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
-    });
-
     it('releases a session the server created while the start was being cancelled', async () => {
         const controller = new AbortController();
         const { api, calls } = fakeApi({
@@ -836,7 +839,7 @@ describe('planSessionMedia review fixes (#404)', () => {
         expect(calls.some((c) => c.url.includes('/Stream'))).toBe(false);
     });
 
-    it('does not fall back when the declined session could not be released', async () => {
+    it('throws the contract error, not the release failure, when the session cannot be released', async () => {
         const { api, calls } = fakeApi({
             create: () => ({ Id: SESSION, Method: 'Transcode' }),
             stream: () => ({
@@ -855,28 +858,9 @@ describe('planSessionMedia review fixes (#404)', () => {
         ).rejects.toMatchObject({
             name: 'SessionMediaError',
             failure: 'failed',
-            status: 500
+            message: 'GET .../Stream: descriptor names no route of this session'
         });
         expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
-    });
-
-    it('still falls back when the declined session is already gone (404)', async () => {
-        const { api } = fakeApi({
-            create: () => ({ Id: SESSION, Method: 'Transcode' }),
-            stream: () => ({
-                Url: `/Videos/${ITEM}/master.m3u8?MediaSourceId=${SOURCE}&VideoCodec=h264`,
-                Protocol: 'Hls',
-                Container: 'ts'
-            }),
-            del: () => 404
-        });
-        await expect(
-            planSessionMedia(params(api), {
-                mintMediaCapability: vi.fn(),
-                authorizeSubtitle: subtitle,
-                logger: quiet
-            })
-        ).resolves.toMatchObject({ kind: 'notApplicable' });
     });
 });
 

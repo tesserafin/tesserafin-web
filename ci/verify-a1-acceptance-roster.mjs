@@ -74,6 +74,8 @@ const ACCEPTANCE_ROSTER = [
     'sessionLiveTv.spec.ts',
     // Live TV: a recording still being written, from the session's live playlist.
     'sessionLiveRecording.spec.ts',
+    // tesserafin#129 W1-W3: a .strm played from its session, and a refusal said, never PlaybackInfo.
+    'sessionNoFallback.spec.ts',
     'directPlayRevocation.spec.ts',
     'disclosure.spec.ts',
     'libassFamilies.spec.ts',
