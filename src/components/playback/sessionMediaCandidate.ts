@@ -5,14 +5,17 @@
  */
 
 /**
- * Video families supported by the session media journey, including items from channel plugins.
+ * Video families supported by the session media journey, including items from channel plugins and
+ * Live TV recordings (`Recording`: the type a recording's item takes, finished or still being
+ * written - the session plays one still being written from its live playlist).
  */
 const SESSION_VIDEO_TYPES = new Set([
     'Movie',
     'Episode',
     'Video',
     'MusicVideo',
-    'Trailer'
+    'Trailer',
+    'Recording'
 ]);
 
 /** The item fields that decide whether this journey owns a playback. */
@@ -27,7 +30,7 @@ export interface SessionMediaCandidate {
 
 /**
  * Whether this journey owns the playback of `item` on `player`: a library video (film, episode,
- * home video, music video, trailer) or a Live TV channel on the local HTML video player, or a
+ * home video, music video, trailer, Live TV recording) or a Live TV channel on the local HTML video player, or a
  * library audio track or audiobook on the local HTML audio player. Channel-plugin videos and
  * audio use the same journey. Cast and remote players plan for themselves.
  */

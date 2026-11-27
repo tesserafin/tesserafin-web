@@ -72,6 +72,8 @@ const ACCEPTANCE_ROSTER = [
     'sessionAudio.spec.ts',
     // Live TV: a channel of a paced software tuner, from the session's live playlist.
     'sessionLiveTv.spec.ts',
+    // Live TV: a recording still being written, from the session's live playlist.
+    'sessionLiveRecording.spec.ts',
     'directPlayRevocation.spec.ts',
     'disclosure.spec.ts',
     'libassFamilies.spec.ts',
