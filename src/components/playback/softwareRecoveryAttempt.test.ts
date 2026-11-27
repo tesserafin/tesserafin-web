@@ -3,7 +3,8 @@
  *
  * Every test drives the real `PlaybackManager` through its public entry points (`play()`,
  * `stop()`) and through the two events a player raises (`error`, `stopped`). The server's answer
- * to the recovery's `PlaybackInfo` request is a promise the test settles when it chooses, and the
+ * to each `POST Playback/Sessions` (a start, a recovery, a reload) is a promise the test settles
+ * when it chooses (tesserafin#129 audit W1-W3: there is no `PlaybackInfo` chain left), and the
  * recovery timeout runs on a controlled clock, so each ordering below is forced rather than hoped
  * for. Assertions are on what a viewer or the server would observe: which streams the player was
  * given, what was reported, which dialogs were raised, which transcodes were released.
@@ -29,15 +30,44 @@ const FAILED_AT_MS = 42000;
 const FAILED_AT_TICKS = FAILED_AT_MS * 10000;
 const RECOVERY_TIMEOUT_MS = 30000;
 
-const postedPlaybackInfo = vi.fn();
+const createSession = vi.fn();
+const deleteSession = vi.fn((_request: { id: string }) => Promise.resolve({}));
+/** The media source each session the test answered was planned on. */
+const sessionSources = new Map<string, string>();
 const alerts: unknown[] = [];
 const toasts: unknown[] = [];
 
-vi.mock('@jellyfin/sdk/lib/utils/api/media-info-api', () => ({
-    getMediaInfoApi: () => ({ getPostedPlaybackInfo: postedPlaybackInfo })
+vi.mock('lib/tesserafin-sdk/generated/api/playback-api', () => ({
+    PlaybackApi: class {
+        createPlaybackSession(request: unknown) {
+            return createSession(request);
+        }
+        getPlaybackSessionStream({ id }: { id: string }) {
+            return Promise.resolve({
+                data: {
+                    Url: `/Playback/Sessions/${id}/Hls/main.m3u8?itemId=item&mediaSourceId=${sessionSources.get(id)}&playSessionId=ps`,
+                    MimeType: 'application/x-mpegURL',
+                    Container: 'mp4',
+                    Protocol: 'Hls'
+                }
+            });
+        }
+        deletePlaybackSession(request: { id: string }) {
+            return deleteSession(request);
+        }
+    }
+}));
+vi.mock('lib/tesserafin-sdk/generated/api/library-api', () => ({
+    LibraryApi: class {
+        getItem({ itemId }: { itemId: string }) {
+            return Promise.resolve({
+                data: itemId === SECOND_ITEM_ID ? secondItem() : videoItem()
+            });
+        }
+    }
 }));
 
-// The credential runtime, stubbed at its one transport seam (see livetvPlaybackInfoRequest.test.ts).
+// The credential runtime, stubbed at its one transport seam.
 let mintedCapabilities = 0;
 vi.mock('lib/tesserafin-sdk/generated/api/playback-credentials-api', () => ({
     PlaybackCredentialsApi: class {
@@ -122,6 +152,12 @@ const serverConnectionsMock = {
     ServerConnections: {
         getApiClient: () => apiClient,
         getApi: () => ({ axiosInstance: {}, basePath: '', accessToken: '' }),
+        getTesserafinApi: () => ({
+            basePath: 'http://127.0.0.1:8096',
+            configuration: {},
+            axiosInstance: {},
+            authorizationHeader: 'MediaBrowser Token="test-token"'
+        }),
         currentApiClient: () => apiClient
     }
 };
@@ -135,26 +171,14 @@ vi.mock('lib/jellyfin-apiclient/ServerConnections', () => ({
     default: serverConnectionsMock.ServerConnections
 }));
 
-// Module scope on purpose: see livetvPlaybackInfoRequest.test.ts.
+// Module scope on purpose: `playbackmanager` pulls in the route tree, which is too slow to import
+// once per test.
 const { playbackManager: manager } = await import(
     'components/playback/playbackmanager'
 );
 const { pluginManager } = await import('components/pluginManager');
 const Events = (await import('utils/events')).default;
 const { MediaError } = await import('types/mediaError');
-
-/** A source the server will only ever transcode, as HLS: the only kind a recovery applies to. */
-function transcodedSource(id: string, sessionId: string) {
-    return {
-        ...videoSource({ Id: id }),
-        SupportsDirectPlay: false,
-        SupportsDirectStream: false,
-        SupportsTranscoding: true,
-        TranscodingUrl: `/videos/${id}/master.m3u8?PlaySessionId=${sessionId}`,
-        TranscodingSubProtocol: 'hls',
-        TranscodingContainer: 'ts'
-    };
-}
 
 function secondItem() {
     return videoItem({
@@ -164,17 +188,41 @@ function secondItem() {
     });
 }
 
+/** The server's answer to a `POST Playback/Sessions`: a transcode of `sourceId` in session `sessionId`. */
 function answer(sourceId: string, sessionId: string) {
-    return {
-        data: {
-            MediaSources: [transcodedSource(sourceId, sessionId)],
-            PlaySessionId: sessionId
-        }
-    };
+    // A test that names the item stands for the item's one source.
+    const source =
+        sourceId === VIDEO_ITEM_ID
+            ? (videoSource().Id as string)
+            : sourceId === SECOND_ITEM_ID
+              ? SECOND_SOURCE_ID
+              : sourceId;
+    sessionSources.set(sessionId, source);
+    return { data: { Id: sessionId, Method: 'Transcode', SelectedStreams: {} } };
+}
+
+/** What a refusal looks like: a 422 naming its reason. */
+const refusal = {
+    response: { status: 422, data: { reason: 'NoSessionProvider' } }
+};
+
+/** What a session request asked for. */
+function constraintsOf(request: Deferred['request']) {
+    return request.createPlaybackSessionRequest.Constraints;
+}
+
+/** Whether the session a late answer named was released on the server. */
+function released(sessionId: string) {
+    return deleteSession.mock.calls.some(([request]) => request.id === sessionId);
 }
 
 interface Deferred {
-    request: { itemId: string; playbackInfoDto: Record<string, unknown> };
+    request: {
+        createPlaybackSessionRequest: {
+            ItemId: string;
+            Constraints: Record<string, unknown>;
+        };
+    };
     resolve: (value: unknown) => void;
     reject: (reason: unknown) => void;
 }
@@ -200,7 +248,8 @@ function mount(): Rig {
     const player = createFakePlayer();
     mounted += 1;
     player.name = 'P2R1TestPlayer' + mounted;
-    player.id = 'p2r1testplayer' + mounted;
+    // The local HTML video player: the one a server video plays on, from its session.
+    player.id = 'htmlvideoplayer';
     // A real player announces its own stop, and reads a position only while it has a stream:
     // the element is torn down with a failed one and reads zero until the next has started.
     let positionMs = 0;
@@ -274,10 +323,9 @@ async function startRecovery(rig: Rig) {
  */
 async function lateAnswerHandled(rig: Rig, sessionId: string, plays: number) {
     await until(() =>
-        expect(
-            stopActiveEncodings.mock.calls.some(([id]) => id === sessionId) ||
-                rig.player.played.length > plays
-        ).toBe(true)
+        expect(released(sessionId) || rig.player.played.length > plays).toBe(
+            true
+        )
     );
     await settle();
 }
@@ -316,8 +364,26 @@ function stoppedPositions() {
 
 function playedSessions(rig: Rig) {
     return rig.player.played.map(
-        (streamInfo) => (streamInfo as { playSessionId: string }).playSessionId
+        (streamInfo) =>
+            (
+                streamInfo as {
+                    executionDecision: { playbackSessionId: string };
+                }
+            ).executionDecision.playbackSessionId
     );
+}
+
+/** The play session id of the stream the player was given for session `sessionId`. */
+function playSessionIdOf(rig: Rig, sessionId: string) {
+    const stream = rig.player.played.find(
+        (streamInfo) =>
+            (
+                streamInfo as {
+                    executionDecision: { playbackSessionId: string };
+                }
+            ).executionDecision.playbackSessionId === sessionId
+    ) as { playSessionId: string } | undefined;
+    return stream?.playSessionId;
 }
 
 describe('software recovery attempt isolation', { timeout: 60000 }, () => {
@@ -329,8 +395,10 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
         stopActiveEncodings.mockClear();
         reportPlaybackStart.mockClear();
         reportPlaybackStopped.mockClear();
-        postedPlaybackInfo.mockReset();
-        postedPlaybackInfo.mockImplementation(
+        deleteSession.mockClear();
+        sessionSources.clear();
+        createSession.mockReset();
+        createSession.mockImplementation(
             (request: Deferred['request']) =>
                 new Promise((resolve, reject) => {
                     held.push({ request, resolve, reject });
@@ -355,7 +423,7 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
         const rig = mount();
         const recovery = await startRecovery(rig);
 
-        expect(recovery.request.playbackInfoDto.StartTimeTicks).toBe(
+        expect(constraintsOf(recovery.request).StartTimeTicks).toBe(
             FAILED_AT_TICKS
         );
         recovery.resolve(answer(VIDEO_ITEM_ID, 'session-A-recovered'));
@@ -372,7 +440,7 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
         ]);
         expect(playbackErrors).toEqual([]);
         expect(reportPlaybackStopped).not.toHaveBeenCalled();
-        expect(postedPlaybackInfo).toHaveBeenCalledTimes(2);
+        expect(createSession).toHaveBeenCalledTimes(2);
     });
 
     it('does not start the stream when its answer arrives after the recovery timed out', async () => {
@@ -391,7 +459,7 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
         expect(reportPlaybackStart).toHaveBeenCalledTimes(1);
         expect(playbackErrors).toEqual([MediaError.TRANSCODE_FAILED]);
         expect(stoppedPositions()).toEqual([FAILED_AT_TICKS]);
-        expect(stopActiveEncodings).toHaveBeenCalledWith('session-A-late');
+        expect(released('session-A-late')).toBe(true);
     });
 
     it('does not start the stream when its answer arrives after the viewer stopped', async () => {
@@ -411,7 +479,7 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
         expect(stoppedPositions()).toEqual([FAILED_AT_TICKS]);
         expect(playbackErrors).toEqual([]);
         expect(alerts).toEqual([]);
-        expect(stopActiveEncodings).toHaveBeenCalledWith('session-A-late');
+        expect(released('session-A-late')).toBe(true);
     });
 
     it('leaves playback B alone when A`s recovery answers after B has started', async () => {
@@ -422,7 +490,7 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
         await settle();
         await startPlayback(rig, secondItem());
         const stopsBeforeLateAnswer = reportPlaybackStopped.mock.calls.length;
-        const releasedBeforeLateAnswer = stopActiveEncodings.mock.calls.length;
+        const releasedBeforeLateAnswer = deleteSession.mock.calls.length;
 
         recovery.resolve(answer(VIDEO_ITEM_ID, 'session-A-late'));
         await lateAnswerHandled(rig, 'session-A-late', 2);
@@ -434,7 +502,7 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
         ]);
         expect(rig.manager.currentItem(rig.player).Id).toBe(SECOND_ITEM_ID);
         expect(rig.manager.playSessionId(rig.player)).toBe(
-            'session-' + SECOND_ITEM_ID
+            playSessionIdOf(rig, 'session-' + SECOND_ITEM_ID)
         );
         expect(reportPlaybackStopped).toHaveBeenCalledTimes(
             stopsBeforeLateAnswer
@@ -444,9 +512,9 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
         expect(alerts).toEqual([]);
         // Only A's abandoned transcode is released: never B's.
         expect(
-            stopActiveEncodings.mock.calls
+            deleteSession.mock.calls
                 .slice(releasedBeforeLateAnswer)
-                .map(([id]) => id)
+                .map(([request]) => request.id)
         ).toEqual(['session-A-late']);
 
         // And B can still be stopped normally: A's answer did not leave it "changing stream".
@@ -515,10 +583,10 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
         await settle();
 
         expect(held).toHaveLength(1);
-        expect(held[0].request.playbackInfoDto.StartTimeTicks).toBe(
+        expect(constraintsOf(held[0].request).StartTimeTicks).toBe(
             FAILED_AT_TICKS
         );
-        expect(postedPlaybackInfo).toHaveBeenCalledTimes(2);
+        expect(createSession).toHaveBeenCalledTimes(2);
         expect(playbackErrors).toEqual([]);
         expect(reportPlaybackStopped).not.toHaveBeenCalled();
         expect(toasts).toHaveLength(1);
@@ -538,7 +606,7 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
         failTranscode(rig.player, 'software');
         await settle();
 
-        expect(postedPlaybackInfo).toHaveBeenCalledTimes(2);
+        expect(createSession).toHaveBeenCalledTimes(2);
         expect(held).toEqual([]);
         expect(rig.player.played).toHaveLength(2);
         expect(playbackErrors).toEqual([MediaError.TRANSCODE_FAILED]);
@@ -556,8 +624,8 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
         // its own rules - not the recovery: no "recovering" notice, no recovery in flight.
         expect(toasts).toEqual([]);
         expect(rig.player.softwareRecovery).toBeFalsy();
-        expect(held[0].request.playbackInfoDto.EnableDirectPlay).toBe(false);
-        expect(held[0].request.playbackInfoDto.StartTimeTicks).toBe(
+        expect(constraintsOf(held[0].request).AllowDirectPlay).toBe(false);
+        expect(constraintsOf(held[0].request).StartTimeTicks).toBe(
             FAILED_AT_TICKS
         );
 
@@ -582,7 +650,7 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
         // request is the ladder's (direct play refused).
         expect(toasts).toEqual([]);
         expect(rig.player.softwareRecovery).toBeFalsy();
-        expect(held[0].request.playbackInfoDto.EnableDirectPlay).toBe(false);
+        expect(constraintsOf(held[0].request).AllowDirectPlay).toBe(false);
 
         const reloads = await exhaustLadder(rig, null);
 
@@ -633,7 +701,7 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
         await settle();
 
         expect(playbackErrors).toEqual([MediaError.TRANSCODE_FAILED]);
-        expect(postedPlaybackInfo).toHaveBeenCalledTimes(2);
+        expect(createSession).toHaveBeenCalledTimes(2);
         expect(rig.player.played).toHaveLength(2);
         // The viewer's position is the one the first failure happened at, not zero.
         expect(stoppedPositions()).toEqual([FAILED_AT_TICKS]);
@@ -665,7 +733,7 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
             expect(reportPlaybackStart).toHaveBeenCalledTimes(1);
             expect(stoppedPositions()).toEqual([FAILED_AT_TICKS]);
             expect(playbackErrors).toEqual([]);
-            expect(stopActiveEncodings).toHaveBeenCalledWith('session-A-late');
+            expect(released('session-A-late')).toBe(true);
         });
 
         it('leaves playback B alone when A`s answer arrives after B has started', async () => {
@@ -687,8 +755,8 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
             ]);
             expect(rig.manager.currentItem(rig.player).Id).toBe(SECOND_ITEM_ID);
             expect(rig.manager.playSessionId(rig.player)).toBe(
-                'session-' + SECOND_ITEM_ID
-            );
+            playSessionIdOf(rig, 'session-' + SECOND_ITEM_ID)
+        );
             expect(reportPlaybackStopped).toHaveBeenCalledTimes(
                 stopsBeforeLateAnswer
             );
@@ -741,9 +809,7 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
                 expect(stoppedPositions()).toEqual([FAILED_AT_TICKS]);
                 expect(playbackErrors).toEqual([]);
                 expect(alerts).toEqual([]);
-                expect(stopActiveEncodings).toHaveBeenCalledWith(
-                    'session-A-new'
-                );
+                expect(released('session-A-new')).toBe(true);
             }
         );
 
@@ -799,16 +865,14 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
             );
             expect(rig.manager.currentItem(rig.player).Id).toBe(SECOND_ITEM_ID);
             expect(playbackErrors).toEqual([]);
-            expect(stopActiveEncodings).toHaveBeenCalledWith('session-A-new');
+            expect(released('session-A-new')).toBe(true);
         });
 
         it('ends a recovery once when its answer cannot be played', async () => {
             const rig = mount();
             const recovery = await startRecovery(rig);
 
-            recovery.resolve({
-                data: { MediaSources: [], ErrorCode: 'NoCompatibleStream' }
-            });
+            recovery.reject(refusal);
             await until(() => expect(alerts).toHaveLength(1));
             await vi.advanceTimersByTimeAsync(RECOVERY_TIMEOUT_MS * 2);
             await settle();
@@ -820,34 +884,36 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
             expect(rig.player.played).toHaveLength(1);
         });
 
-        const refused = {
-            data: { MediaSources: [], ErrorCode: 'NoCompatibleStream' }
-        };
 
-        it('forgets the position of a switch that never happened', async () => {
+        it('ends the playback and says why when a switch is refused, once', async () => {
             const rig = mount();
             await startPlayback(rig);
 
-            // The viewer asks for another audio track and the server refuses: the stream in
-            // place keeps playing.
+            // The viewer asks for another audio track. A session-owned stream is released before
+            // the change is planned again, so a refusal leaves nothing playing: the playback
+            // ends where the viewer was, with the reason the server named.
             rig.manager.setAudioStreamIndex(1, rig.player);
             await until(() => expect(held).toHaveLength(1));
-            held.shift()?.resolve(refused);
+            held.shift()?.reject(refusal);
             await until(() => expect(alerts).toHaveLength(1));
             await settle();
 
-            // Later the viewer stops with the element reading zero for its own reasons.
-            (rig.player.tearDown as () => void)();
+            expect(JSON.stringify(alerts[0])).toContain(
+                'PlaybackError.SourceNotReadable'
+            );
+            expect(stoppedPositions()).toEqual([FAILED_AT_TICKS]);
+
+            // A later stop reports nothing more.
             await rig.manager.stop(rig.player);
             await settle();
-
-            expect(stoppedPositions()).toEqual([0]);
+            expect(stoppedPositions()).toEqual([FAILED_AT_TICKS]);
+            expect(alerts).toHaveLength(1);
         });
 
         it('keeps the position when the reload after a failure is refused', async () => {
             const rig = mount();
             await startLadderReload(rig).then((reload) =>
-                reload.resolve(refused)
+                reload.reject(refusal)
             );
             await until(() => expect(alerts).toHaveLength(1));
             await settle();
@@ -920,7 +986,7 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
             );
             await until(() => expect(rig.player.played).toHaveLength(1));
             await startPlayback(rig, secondItem());
-            const requests = postedPlaybackInfo.mock.calls.length;
+            const requests = createSession.mock.calls.length;
             const starts = reportPlaybackStart.mock.calls.length;
 
             failFirstStart?.(MediaError.SERVER_ERROR);
@@ -928,7 +994,7 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
             await vi.advanceTimersByTimeAsync(1000);
             await settle();
 
-            expect(postedPlaybackInfo).toHaveBeenCalledTimes(requests);
+            expect(createSession).toHaveBeenCalledTimes(requests);
             expect(reportPlaybackStart).toHaveBeenCalledTimes(starts);
             expect(playbackErrors).toEqual([]);
             expect(alerts).toEqual([]);
@@ -966,8 +1032,10 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
             await startPlayback(rig);
             chooseBitrate(rig)();
             await until(() => expect(held).toHaveLength(1));
-            expect(held[0].request.itemId).toBe(VIDEO_ITEM_ID);
-            expect(held[0].request.playbackInfoDto.MaxStreamingBitrate).toBe(
+            expect(held[0].request.createPlaybackSessionRequest.ItemId).toBe(
+                VIDEO_ITEM_ID
+            );
+            expect(constraintsOf(held[0].request).MaxBitrate).toBe(
                 4000000
             );
         });
@@ -977,13 +1045,13 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
             await startPlayback(rig);
             const chosenFor = chooseBitrate(rig);
             await startPlayback(rig, secondItem());
-            const requests = postedPlaybackInfo.mock.calls.length;
+            const requests = createSession.mock.calls.length;
             const plays = rig.player.played.length;
 
             chosenFor();
             await settle();
 
-            expect(postedPlaybackInfo).toHaveBeenCalledTimes(requests);
+            expect(createSession).toHaveBeenCalledTimes(requests);
             expect(held).toEqual([]);
             expect(rig.player.played).toHaveLength(plays);
             expect(rig.manager.currentItem(rig.player).Id).toBe(SECOND_ITEM_ID);

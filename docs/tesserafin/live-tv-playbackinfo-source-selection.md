@@ -1,5 +1,9 @@
 # Live TV `PlaybackInfo` source selection (#153-LTV-P0)
 
+> **Historical (2026-11-27).** The Web client no longer sends `PlaybackInfo`: every server item plays
+> from its `Playback/Sessions` session, with no fallback (tesserafin#129 audit W1-W3). The request
+> builder this note describes, and its test `livetvPlaybackInfoRequest.test.ts`, are gone.
+
 All line references are against `origin/main` @ `75b38dd24807e3d42f61989d1a9f60c2615d0f2e`
 (web) and `~/tesserafin-a1-server` @ `c0f39e07aa7b394558fa34b5dcdfa4896f004a3e` (server).
 

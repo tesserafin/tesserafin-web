@@ -658,3 +658,122 @@ export async function startSoftwareTuner(
         }
     };
 }
+
+export interface StrmLibrary extends SeededLibrary {
+    /** A `.strm` naming an MP4 the server reads over HTTP: played from the session. */
+    playable: string;
+    /** A `.strm` naming an endless stream with no known length: refused by the server. */
+    unreadable: string;
+}
+
+/**
+ * A home-videos library of two `.strm` items, whose targets a loopback HTTP server serves
+ * (tesserafin#129 audit W1: keep a `.strm` case in the browser validation). One names a finished
+ * MP4 the server reads as a remote file; the other names an endless MPEG-TS body with no
+ * Content-Length, which no session provider reads - the server refuses it and says why.
+ */
+export async function seedStrmLibrary(
+    a: Admin,
+    label = 'W1 Strm'
+): Promise<StrmLibrary> {
+    const root = mkdtempSync(join(tmpdir(), 'w1-strm-'));
+    const media = join(root, 'media');
+    mkdirSync(media);
+    const film = join(media, 'film.mp4');
+    ffmpeg([
+        '-f',
+        'lavfi',
+        '-i',
+        'testsrc=size=640x360:rate=25:duration=30',
+        '-f',
+        'lavfi',
+        '-i',
+        'sine=frequency=440:duration=30',
+        '-c:v',
+        'libx264',
+        '-preset',
+        'ultrafast',
+        '-pix_fmt',
+        'yuv420p',
+        '-c:a',
+        'aac',
+        '-movflags',
+        '+faststart',
+        '-shortest',
+        film
+    ]);
+    const bytes = readFileSync(film);
+    const sockets = new Set<Socket>();
+    const server = createServer((req, res) => {
+        if (req.url === '/film.mp4') {
+            const range = /bytes=(\d+)-(\d*)/.exec(req.headers.range ?? '');
+            if (range) {
+                const start = Number(range[1]);
+                const end = range[2] ? Number(range[2]) : bytes.length - 1;
+                res.writeHead(206, {
+                    'Content-Type': 'video/mp4',
+                    'Accept-Ranges': 'bytes',
+                    'Content-Range': `bytes ${start}-${end}/${bytes.length}`,
+                    'Content-Length': end - start + 1
+                });
+                res.end(bytes.subarray(start, end + 1));
+                return;
+            }
+            res.writeHead(200, {
+                'Content-Type': 'video/mp4',
+                'Accept-Ranges': 'bytes',
+                'Content-Length': bytes.length
+            });
+            res.end(bytes);
+            return;
+        }
+        if (req.url === '/endless.ts') {
+            // No Content-Length, never ends: a live body with no known length.
+            res.writeHead(200, { 'Content-Type': 'video/mp2t' });
+            const timer = setInterval(
+                () => res.write(Buffer.alloc(188 * 10)),
+                100
+            );
+            res.on('close', () => clearInterval(timer));
+            return;
+        }
+        res.writeHead(404).end();
+    });
+    server.on('connection', (socket) => {
+        sockets.add(socket);
+        socket.on('close', () => sockets.delete(socket));
+    });
+    await new Promise<void>((resolve) =>
+        server.listen(0, '127.0.0.1', resolve)
+    );
+    const port = (server.address() as AddressInfo).port;
+
+    const library = join(root, 'library');
+    const playable = `${label} Playable`;
+    const unreadable = `${label} Endless`;
+    for (const [name, target] of [
+        [playable, `http://127.0.0.1:${port}/film.mp4`],
+        [unreadable, `http://127.0.0.1:${port}/endless.ts`]
+    ]) {
+        mkdirSync(join(library, name), { recursive: true });
+        writeFileSync(join(library, name, `${name}.strm`), target + '\n');
+    }
+
+    const name = `${label} Library`;
+    await removeLibrary(a, name);
+    await addLibrary(a, name, 'homevideos', library);
+    await waitForItems(a, [playable, unreadable]);
+
+    return {
+        root,
+        itemNames: [playable, unreadable],
+        playable,
+        unreadable,
+        dispose: async () => {
+            await removeLibrary(a, name);
+            for (const socket of sockets) socket.destroy();
+            await new Promise<void>((resolve) => server.close(() => resolve()));
+            rmSync(root, { recursive: true, force: true });
+        }
+    };
+}

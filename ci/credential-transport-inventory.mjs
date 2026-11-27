@@ -327,20 +327,35 @@ producers({
     )
 });
 
-// --- 4. direct audio ---------------------------------------------------------------------------
-producers({
+// --- 4. direct audio — REMOVED -----------------------------------------------------------------
+// tesserafin#129 audit W1-W3 (2026-11-27): `createStreamInfo`, the producer of
+// `/Audio|Videos/{id}/stream.{container}?static=true`, is gone with the PlaybackInfo chain. A
+// direct-play track is served from its session's own File route (sessionMedia.ts).
+absence({
     id: 'direct-audio',
     surface: 'GET /Audio/{id}/stream.{container}?static=true',
     producer:
-        "playbackmanager.js createStreamInfo, prefix = type === 'Video' ? 'Videos' : 'Audio'",
-    consumer: '<audio src>',
-    construction: 'sync, inside playInternal',
-    identities: 'item, mediaSource known',
-    scope: 'Media',
+        'NOBODY. It was playbackmanager.js createStreamInfo, deleted with the PlaybackInfo chain.',
+    consumer: 'n/a',
+    construction: 'n/a',
+    identities: 'n/a',
+    scope: 'n/a',
     childInherits: 'n/a',
-    durableToday: true,
-    provingTest: 'browser matrix: direct audio',
-    hits: grep(SRC_FILES, /type === 'Video' \? 'Videos' : 'Audio'/)
+    durableToday: false,
+    provingTest:
+        "this category: no first-party source builds the type-prefixed static stream url again",
+    assert: () => {
+        const hits = grep(SRC_FILES, /type === 'Video' \? 'Videos' : 'Audio'/).filter(
+            (h) => !/\.(test|spec)\./.test(h.file)
+        );
+        return {
+            ok: hits.length === 0,
+            detail:
+                hits.length === 0
+                    ? 'no first-party producer: createStreamInfo was deleted with the PlaybackInfo chain'
+                    : `THE STATIC STREAM URL IS BUILT AGAIN: ${hits.map((h) => `${h.file}:${h.line}`).join(', ')}`
+        };
+    }
 });
 
 // --- 5. universal audio ------------------------------------------------------------------------
@@ -812,7 +827,7 @@ absence({
     id: 'livetv-direct-play-path',
     surface: 'mediaSource.Path used verbatim as the media url',
     producer:
-        'playbackmanager.js createStreamInfo, mediaSource.enableDirectPlay branch',
+        'NOBODY since tesserafin#129 audit W1-W3: the createStreamInfo direct-play branch was deleted with the PlaybackInfo chain; every server item plays from its session route',
     consumer: '<video src>',
     construction: 'sync',
     identities: 'n/a — the url is opaque server output',
@@ -822,25 +837,18 @@ absence({
     provingTest:
         'runtime probe: open a live stream and assert the opened media source never reaches the direct-play branch',
     assert: () => {
-        // This is the ONLY branch that could turn a server-supplied LiveStreamFiles url into a
-        // browser request. It is gated by supportsDirectPlay(), whose sole true-returning path
-        // requires `Protocol === 'Http' && !RequiredHttpHeaders.length`. Every live source whose
-        // Path is a LiveStreamFiles url sets a User-Agent in RequiredHttpHeaders (M3UTunerHost) or
-        // ships SupportsDirectPlay = false (HdHomerunHost). Assert the gate still reads both.
-        const pathUse = grep(SRC_FILES, /mediaUrl = mediaSource\.Path/);
-        const gate = grep(SRC_FILES, /RequiredHttpHeaders\.length/);
-        const ok = pathUse.length > 0 && gate.length > 0;
+        // The branch that could turn a server-supplied LiveStreamFiles url into a browser
+        // request was createStreamInfo's direct play of `mediaSource.Path`. It is gone with the
+        // PlaybackInfo chain; this asserts it does not come back.
+        const pathUse = grep(SRC_FILES, /mediaUrl = mediaSource\.Path/).filter(
+            (h) => !/\.(test|spec)\./.test(h.file)
+        );
         return {
-            ok,
-            detail: ok
-                ? `direct-play branch at ${pathUse
-                      .map((h) => `${h.file}:${h.line}`)
-                      .join(
-                          ', '
-                      )} is still gated by the RequiredHttpHeaders check at ${gate
-                      .map((h) => `${h.file}:${h.line}`)
-                      .join(', ')}`
-                : `the direct-play gate changed shape: mediaSource.Path uses=${pathUse.length}, RequiredHttpHeaders gate=${gate.length}`
+            ok: pathUse.length === 0,
+            detail:
+                pathUse.length === 0
+                    ? 'no first-party code plays mediaSource.Path verbatim: the direct-play branch was deleted with the PlaybackInfo chain'
+                    : `mediaSource.Path IS PLAYED VERBATIM AGAIN: ${pathUse.map((h) => `${h.file}:${h.line}`).join(', ')}`
         };
     }
 });
