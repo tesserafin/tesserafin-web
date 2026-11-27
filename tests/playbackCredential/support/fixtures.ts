@@ -488,6 +488,11 @@ export interface SoftwareTuner {
     openStreams: () => number;
     /** Channel streams the server asked the tuner for so far. */
     streamsOpened: () => number;
+    /**
+     * The XMLTV guide the tuner serves when started with `guideTitle`: one programme on its channel,
+     * airing from a few minutes ago to an hour from now.
+     */
+    guideUrl: string;
     /** Unregister the tuner host, stop the tuner and remove its fixture. */
     dispose: () => Promise<void>;
 }
@@ -501,7 +506,8 @@ export interface SoftwareTuner {
 export async function startSoftwareTuner(
     a: Admin,
     channelName = 'A1 Live One',
-    durationSeconds = 120
+    durationSeconds = 120,
+    guideTitle?: string
 ): Promise<SoftwareTuner> {
     const root = mkdtempSync(join(tmpdir(), 'a1-tuner-'));
     const body = join(root, 'channel1.ts');
@@ -542,6 +548,21 @@ export async function startSoftwareTuner(
             res.writeHead(200, { 'Content-Type': 'audio/x-mpegurl' });
             res.end(
                 `#EXTM3U\n#EXTINF:-1 tvg-id="a1-live-1" tvg-name="${channelName}",${channelName}\nhttp://127.0.0.1:${port}/channel1.ts\n`
+            );
+            return;
+        }
+        if (req.url === '/guide.xml' && guideTitle) {
+            const at = (offsetMinutes: number) =>
+                `${new Date(Date.now() + offsetMinutes * 60_000)
+                    .toISOString()
+                    .replace(/[-:T]/g, '')
+                    .slice(0, 14)} +0000`;
+            res.writeHead(200, { 'Content-Type': 'application/xml' });
+            res.end(
+                `<?xml version="1.0" encoding="UTF-8"?>\n<tv>\n` +
+                    `<channel id="a1-live-1"><display-name>${channelName}</display-name></channel>\n` +
+                    `<programme start="${at(-5)}" stop="${at(60)}" channel="a1-live-1"><title>${guideTitle}</title></programme>\n` +
+                    `</tv>\n`
             );
             return;
         }
@@ -623,6 +644,7 @@ export async function startSoftwareTuner(
         channelId,
         openStreams: () => open,
         streamsOpened: () => opened,
+        guideUrl: `http://127.0.0.1:${port}/guide.xml`,
         dispose: async () => {
             await a.api
                 .delete('/LiveTv/TunerHosts', {

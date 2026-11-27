@@ -184,7 +184,7 @@ describe('isSessionMediaCandidate', () => {
                 { Id: ITEM, Type: 'Recording', MediaType: 'Video' },
                 html
             )
-        ).toBe(false);
+        ).toBe(true);
         expect(
             isSessionMediaCandidate(
                 { Id: ITEM, Type: 'ChannelVideoItem', MediaType: 'Video' },
@@ -238,6 +238,26 @@ describe('isSessionMediaCandidate', () => {
             ).toBe(false);
         }
     );
+
+    it('owns a Live TV recording, finished or still being written, on the local html video player', () => {
+        const videoPlayer = { id: 'htmlvideoplayer', isLocalPlayer: true };
+        for (const Status of ['InProgress', 'Completed']) {
+            const recording = {
+                Id: ITEM,
+                Type: 'Recording',
+                MediaType: 'Video',
+                LocationType: 'FileSystem',
+                Status
+            };
+            expect(isSessionMediaCandidate(recording, videoPlayer)).toBe(true);
+            expect(
+                isSessionMediaCandidate(recording, {
+                    id: 'chromecast',
+                    isLocalPlayer: false
+                })
+            ).toBe(false);
+        }
+    });
 
     it('owns a Live TV channel on the local html video player only', () => {
         const videoPlayer = { id: 'htmlvideoplayer', isLocalPlayer: true };
