@@ -41,6 +41,7 @@ export const MediaInfoApiAxiosParamCreator = function (configuration?: Configura
          * @summary Closes a media source.
          * @param {string} liveStreamId The livestream id.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         closeLiveStream: async (liveStreamId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
@@ -120,6 +121,7 @@ export const MediaInfoApiAxiosParamCreator = function (configuration?: Configura
          * @param {string} itemId The item id.
          * @param {string} [userId] The user id.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getPlaybackInfo: async (itemId: string, userId?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
@@ -176,6 +178,7 @@ export const MediaInfoApiAxiosParamCreator = function (configuration?: Configura
          * @param {boolean} [allowAudioStreamCopy] Whether to allow to copy the audio stream. Default: true.
          * @param {PlaybackInfoDto} [playbackInfoDto] The playback info.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getPostedPlaybackInfo: async (itemId: string, userId?: string, maxStreamingBitrate?: number, startTimeTicks?: number, audioStreamIndex?: number, subtitleStreamIndex?: number, maxAudioChannels?: number, mediaSourceId?: string, liveStreamId?: string, autoOpenLiveStream?: boolean, enableDirectPlay?: boolean, enableDirectStream?: boolean, enableTranscoding?: boolean, allowVideoStreamCopy?: boolean, allowAudioStreamCopy?: boolean, playbackInfoDto?: PlaybackInfoDto, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
@@ -284,6 +287,7 @@ export const MediaInfoApiAxiosParamCreator = function (configuration?: Configura
          * @param {boolean} [alwaysBurnInSubtitleWhenTranscoding] Always burn-in subtitle when transcoding.
          * @param {OpenLiveStreamDto} [openLiveStreamDto] The open live stream dto.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         openLiveStream: async (openToken?: string, userId?: string, playSessionId?: string, maxStreamingBitrate?: number, startTimeTicks?: number, audioStreamIndex?: number, subtitleStreamIndex?: number, maxAudioChannels?: number, itemId?: string, enableDirectPlay?: boolean, enableDirectStream?: boolean, alwaysBurnInSubtitleWhenTranscoding?: boolean, openLiveStreamDto?: OpenLiveStreamDto, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
@@ -379,6 +383,7 @@ export const MediaInfoApiFp = function(configuration?: Configuration) {
          * @summary Closes a media source.
          * @param {string} liveStreamId The livestream id.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         async closeLiveStream(liveStreamId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
@@ -406,6 +411,7 @@ export const MediaInfoApiFp = function(configuration?: Configuration) {
          * @param {string} itemId The item id.
          * @param {string} [userId] The user id.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         async getPlaybackInfo(itemId: string, userId?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PlaybackInfoResponse>> {
@@ -434,6 +440,7 @@ export const MediaInfoApiFp = function(configuration?: Configuration) {
          * @param {boolean} [allowAudioStreamCopy] Whether to allow to copy the audio stream. Default: true.
          * @param {PlaybackInfoDto} [playbackInfoDto] The playback info.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         async getPostedPlaybackInfo(itemId: string, userId?: string, maxStreamingBitrate?: number, startTimeTicks?: number, audioStreamIndex?: number, subtitleStreamIndex?: number, maxAudioChannels?: number, mediaSourceId?: string, liveStreamId?: string, autoOpenLiveStream?: boolean, enableDirectPlay?: boolean, enableDirectStream?: boolean, enableTranscoding?: boolean, allowVideoStreamCopy?: boolean, allowAudioStreamCopy?: boolean, playbackInfoDto?: PlaybackInfoDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PlaybackInfoResponse>> {
@@ -459,6 +466,7 @@ export const MediaInfoApiFp = function(configuration?: Configuration) {
          * @param {boolean} [alwaysBurnInSubtitleWhenTranscoding] Always burn-in subtitle when transcoding.
          * @param {OpenLiveStreamDto} [openLiveStreamDto] The open live stream dto.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         async openLiveStream(openToken?: string, userId?: string, playSessionId?: string, maxStreamingBitrate?: number, startTimeTicks?: number, audioStreamIndex?: number, subtitleStreamIndex?: number, maxAudioChannels?: number, itemId?: string, enableDirectPlay?: boolean, enableDirectStream?: boolean, alwaysBurnInSubtitleWhenTranscoding?: boolean, openLiveStreamDto?: OpenLiveStreamDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LiveStreamResponse>> {
@@ -482,6 +490,7 @@ export const MediaInfoApiFactory = function (configuration?: Configuration, base
          * @summary Closes a media source.
          * @param {MediaInfoApiCloseLiveStreamRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         closeLiveStream(requestParameters: MediaInfoApiCloseLiveStreamRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
@@ -502,6 +511,7 @@ export const MediaInfoApiFactory = function (configuration?: Configuration, base
          * @summary Gets live playback media info for an item.
          * @param {MediaInfoApiGetPlaybackInfoRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getPlaybackInfo(requestParameters: MediaInfoApiGetPlaybackInfoRequest, options?: RawAxiosRequestConfig): AxiosPromise<PlaybackInfoResponse> {
@@ -512,6 +522,7 @@ export const MediaInfoApiFactory = function (configuration?: Configuration, base
          * @summary Gets live playback media info for an item.
          * @param {MediaInfoApiGetPostedPlaybackInfoRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getPostedPlaybackInfo(requestParameters: MediaInfoApiGetPostedPlaybackInfoRequest, options?: RawAxiosRequestConfig): AxiosPromise<PlaybackInfoResponse> {
@@ -522,6 +533,7 @@ export const MediaInfoApiFactory = function (configuration?: Configuration, base
          * @summary Opens a media source.
          * @param {MediaInfoApiOpenLiveStreamRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         openLiveStream(requestParameters: MediaInfoApiOpenLiveStreamRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<LiveStreamResponse> {
@@ -541,6 +553,7 @@ export interface MediaInfoApiInterface {
      * @summary Closes a media source.
      * @param {MediaInfoApiCloseLiveStreamRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof MediaInfoApiInterface
      */
@@ -561,6 +574,7 @@ export interface MediaInfoApiInterface {
      * @summary Gets live playback media info for an item.
      * @param {MediaInfoApiGetPlaybackInfoRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof MediaInfoApiInterface
      */
@@ -571,6 +585,7 @@ export interface MediaInfoApiInterface {
      * @summary Gets live playback media info for an item.
      * @param {MediaInfoApiGetPostedPlaybackInfoRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof MediaInfoApiInterface
      */
@@ -581,6 +596,7 @@ export interface MediaInfoApiInterface {
      * @summary Opens a media source.
      * @param {MediaInfoApiOpenLiveStreamRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof MediaInfoApiInterface
      */
@@ -866,6 +882,7 @@ export class MediaInfoApi extends BaseAPI implements MediaInfoApiInterface {
      * @summary Closes a media source.
      * @param {MediaInfoApiCloseLiveStreamRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof MediaInfoApi
      */
@@ -890,6 +907,7 @@ export class MediaInfoApi extends BaseAPI implements MediaInfoApiInterface {
      * @summary Gets live playback media info for an item.
      * @param {MediaInfoApiGetPlaybackInfoRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof MediaInfoApi
      */
@@ -902,6 +920,7 @@ export class MediaInfoApi extends BaseAPI implements MediaInfoApiInterface {
      * @summary Gets live playback media info for an item.
      * @param {MediaInfoApiGetPostedPlaybackInfoRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof MediaInfoApi
      */
@@ -914,6 +933,7 @@ export class MediaInfoApi extends BaseAPI implements MediaInfoApiInterface {
      * @summary Opens a media source.
      * @param {MediaInfoApiOpenLiveStreamRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof MediaInfoApi
      */
