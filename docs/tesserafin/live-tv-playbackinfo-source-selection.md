@@ -22,9 +22,9 @@ and posts it at `:678` via `getMediaInfoApi(api).getPostedPlaybackInfo({ itemId,
 | # | Call site | Origin of the value | Live TV channel outcome |
 |---|-----------|---------------------|--------------------------|
 | 1 | `:4025 getPlaybackMediaSource` ← `:3580` main play path | `playOptions.mediaSourceId`, or **`item.Id`** via `:3577 mediaSourceId ||= item.Id` | **defect site** |
-| 2 | `:4025 getPlaybackMediaSource` ← `:3765` (`self.getPlaybackInfo`-style path) | `options.mediaSourceId` | caller-supplied |
+| 2 | ~~`:4025 getPlaybackMediaSource` ← `:3765` (`self.getPlaybackInfo`-style path)~~ | removed 2026-11-27 (no caller; tesserafin#129 audit W4) | - |
 | 3 | `:2131` direct, from `changeStream` | `currentMediaSource.Id` — the **resolved tuner source id** after a successful play | must be preserved |
-| 4 | `:3817` direct, from `self.getPlaybackMediaSources` | literal `null` | field never sent |
+| 4 | ~~`:3817` direct, from `self.getPlaybackMediaSources`~~ | removed 2026-11-27 (no caller; tesserafin#129 audit W4) | - |
 | 5 | `:593` short-circuit on `item.PresetMediaSource` | n/a — no request is made; only `setStreamUrls` (`:550`) sets it, on the remote `sendPlaybackListToPlayer` path | n/a |
 
 ## 3. Where the placeholder is manufactured
@@ -87,7 +87,7 @@ That is **false for the first request** on clean main:
   (`src/components/itemHelper.js:404`), so the modern details page never passes one.
 - Legacy `itemDetails` clears `.selectSource` to `''` for channels
   (`src/apps/legacy/controllers/itemDetails/index.js`, `renderTrackSelections`), and `''` is falsy at `:638`.
-- `self.getPlaybackMediaSources` passes `null` (reacher #4).
+- `self.getPlaybackMediaSources` passed `null` (reacher #4, removed 2026-11-27).
 
 The *mechanism* the task describes is real; the *trigger* is the second request. Phase 0.6, the
 Phase 3 defect fixture and hostile control #1 therefore describe the queue-advance request.
