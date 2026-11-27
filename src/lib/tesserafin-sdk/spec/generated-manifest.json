@@ -22,7 +22,7 @@
         },
         {
             "path": "api/audio-api.ts",
-            "sha256": "964f63ac0b6ed147427490d842198c095f705cc97c2065ee3159890be1a610e0"
+            "sha256": "815e7dcac6289e9deab87e97fff38c5191325f6ad4150792ead8fa56ed4efd9a"
         },
         {
             "path": "api/authentication-api.ts",
@@ -106,7 +106,7 @@
         },
         {
             "path": "api/media-info-api.ts",
-            "sha256": "73603407da7fa78337817b237bad5dbeccb6c2624a8fb085a9eb53a027f6f664"
+            "sha256": "6aadac08adc02f54b37d8eb0266cd3c618cc64c87910ad35b9f6a46c7d1b257d"
         },
         {
             "path": "api/media-segment-api.ts",

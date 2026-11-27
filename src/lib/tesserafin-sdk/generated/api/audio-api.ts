@@ -613,6 +613,7 @@ export const AudioApiAxiosParamCreator = function (configuration?: Configuration
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {boolean} [enableRedirection] Whether to enable redirection. Defaults to true.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getUniversalAudioStream: async (itemId: string, container?: Array<string>, mediaSourceId?: string, deviceId?: string, userId?: string, audioCodec?: string, maxAudioChannels?: number, transcodingAudioChannels?: number, maxStreamingBitrate?: number, audioBitRate?: number, startTimeTicks?: number, transcodingContainer?: string, transcodingProtocol?: MediaStreamProtocol, maxAudioSampleRate?: number, maxAudioBitDepth?: number, enableRemoteMedia?: boolean, enableAudioVbrEncoding?: boolean, enableRedirection?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
@@ -1292,6 +1293,7 @@ export const AudioApiAxiosParamCreator = function (configuration?: Configuration
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {boolean} [enableRedirection] Whether to enable redirection. Defaults to true.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         headUniversalAudioStream: async (itemId: string, container?: Array<string>, mediaSourceId?: string, deviceId?: string, userId?: string, audioCodec?: string, maxAudioChannels?: number, transcodingAudioChannels?: number, maxStreamingBitrate?: number, audioBitRate?: number, startTimeTicks?: number, transcodingContainer?: string, transcodingProtocol?: MediaStreamProtocol, maxAudioSampleRate?: number, maxAudioBitDepth?: number, enableRemoteMedia?: boolean, enableAudioVbrEncoding?: boolean, enableRedirection?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
@@ -1546,6 +1548,7 @@ export const AudioApiFp = function(configuration?: Configuration) {
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {boolean} [enableRedirection] Whether to enable redirection. Defaults to true.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         async getUniversalAudioStream(itemId: string, container?: Array<string>, mediaSourceId?: string, deviceId?: string, userId?: string, audioCodec?: string, maxAudioChannels?: number, transcodingAudioChannels?: number, maxStreamingBitrate?: number, audioBitRate?: number, startTimeTicks?: number, transcodingContainer?: string, transcodingProtocol?: MediaStreamProtocol, maxAudioSampleRate?: number, maxAudioBitDepth?: number, enableRemoteMedia?: boolean, enableAudioVbrEncoding?: boolean, enableRedirection?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
@@ -1698,6 +1701,7 @@ export const AudioApiFp = function(configuration?: Configuration) {
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {boolean} [enableRedirection] Whether to enable redirection. Defaults to true.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         async headUniversalAudioStream(itemId: string, container?: Array<string>, mediaSourceId?: string, deviceId?: string, userId?: string, audioCodec?: string, maxAudioChannels?: number, transcodingAudioChannels?: number, maxStreamingBitrate?: number, audioBitRate?: number, startTimeTicks?: number, transcodingContainer?: string, transcodingProtocol?: MediaStreamProtocol, maxAudioSampleRate?: number, maxAudioBitDepth?: number, enableRemoteMedia?: boolean, enableAudioVbrEncoding?: boolean, enableRedirection?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
@@ -1741,6 +1745,7 @@ export const AudioApiFactory = function (configuration?: Configuration, basePath
          * @summary Gets an audio stream.
          * @param {AudioApiGetUniversalAudioStreamRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getUniversalAudioStream(requestParameters: AudioApiGetUniversalAudioStreamRequest, options?: RawAxiosRequestConfig): AxiosPromise<File> {
@@ -1771,6 +1776,7 @@ export const AudioApiFactory = function (configuration?: Configuration, basePath
          * @summary Gets an audio stream.
          * @param {AudioApiHeadUniversalAudioStreamRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         headUniversalAudioStream(requestParameters: AudioApiHeadUniversalAudioStreamRequest, options?: RawAxiosRequestConfig): AxiosPromise<File> {
@@ -1810,6 +1816,7 @@ export interface AudioApiInterface {
      * @summary Gets an audio stream.
      * @param {AudioApiGetUniversalAudioStreamRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof AudioApiInterface
      */
@@ -1840,6 +1847,7 @@ export interface AudioApiInterface {
      * @summary Gets an audio stream.
      * @param {AudioApiHeadUniversalAudioStreamRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof AudioApiInterface
      */
@@ -3549,6 +3557,7 @@ export class AudioApi extends BaseAPI implements AudioApiInterface {
      * @summary Gets an audio stream.
      * @param {AudioApiGetUniversalAudioStreamRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof AudioApi
      */
@@ -3585,6 +3594,7 @@ export class AudioApi extends BaseAPI implements AudioApiInterface {
      * @summary Gets an audio stream.
      * @param {AudioApiHeadUniversalAudioStreamRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof AudioApi
      */
