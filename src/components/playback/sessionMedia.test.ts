@@ -711,7 +711,10 @@ describe('planSessionMedia', () => {
 
     it('is refused, with the reason the server named, when the server answers 422', async () => {
         const refused = Object.assign(new Error('HTTP 422'), {
-            response: { status: 422, data: { reason: 'ToneMappingUnavailable' } }
+            response: {
+                status: 422,
+                data: { reason: 'ToneMappingUnavailable' }
+            }
         });
         const { api, calls } = fakeApi({ create: () => refused });
 
@@ -859,7 +862,6 @@ describe('planSessionMedia review fixes (#404)', () => {
         });
         expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(1);
     });
-
 });
 
 describe('newSessionMediaPlaySessionId', () => {

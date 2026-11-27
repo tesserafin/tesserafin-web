@@ -343,11 +343,12 @@ absence({
     childInherits: 'n/a',
     durableToday: false,
     provingTest:
-        "this category: no first-party source builds the type-prefixed static stream url again",
+        'this category: no first-party source builds the type-prefixed static stream url again',
     assert: () => {
-        const hits = grep(SRC_FILES, /type === 'Video' \? 'Videos' : 'Audio'/).filter(
-            (h) => !/\.(test|spec)\./.test(h.file)
-        );
+        const hits = grep(
+            SRC_FILES,
+            /type === 'Video' \? 'Videos' : 'Audio'/
+        ).filter((h) => !/\.(test|spec)\./.test(h.file));
         return {
             ok: hits.length === 0,
             detail:

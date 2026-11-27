@@ -191,14 +191,15 @@ function secondItem() {
 /** The server's answer to a `POST Playback/Sessions`: a transcode of `sourceId` in session `sessionId`. */
 function answer(sourceId: string, sessionId: string) {
     // A test that names the item stands for the item's one source.
-    const source =
-        sourceId === VIDEO_ITEM_ID
-            ? (videoSource().Id as string)
-            : sourceId === SECOND_ITEM_ID
-              ? SECOND_SOURCE_ID
-              : sourceId;
+    const itemSources: Record<string, string> = {
+        [VIDEO_ITEM_ID]: videoSource().Id as string,
+        [SECOND_ITEM_ID]: SECOND_SOURCE_ID
+    };
+    const source = itemSources[sourceId] ?? sourceId;
     sessionSources.set(sessionId, source);
-    return { data: { Id: sessionId, Method: 'Transcode', SelectedStreams: {} } };
+    return {
+        data: { Id: sessionId, Method: 'Transcode', SelectedStreams: {} }
+    };
 }
 
 /** What a refusal looks like: a 422 naming its reason. */
@@ -213,7 +214,9 @@ function constraintsOf(request: Deferred['request']) {
 
 /** Whether the session a late answer named was released on the server. */
 function released(sessionId: string) {
-    return deleteSession.mock.calls.some(([request]) => request.id === sessionId);
+    return deleteSession.mock.calls.some(
+        ([request]) => request.id === sessionId
+    );
 }
 
 interface Deferred {
@@ -755,8 +758,8 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
             ]);
             expect(rig.manager.currentItem(rig.player).Id).toBe(SECOND_ITEM_ID);
             expect(rig.manager.playSessionId(rig.player)).toBe(
-            playSessionIdOf(rig, 'session-' + SECOND_ITEM_ID)
-        );
+                playSessionIdOf(rig, 'session-' + SECOND_ITEM_ID)
+            );
             expect(reportPlaybackStopped).toHaveBeenCalledTimes(
                 stopsBeforeLateAnswer
             );
@@ -883,7 +886,6 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
             expect(stoppedPositions()).toEqual([FAILED_AT_TICKS]);
             expect(rig.player.played).toHaveLength(1);
         });
-
 
         it('ends the playback and says why when a switch is refused, once', async () => {
             const rig = mount();
@@ -1035,9 +1037,7 @@ describe('software recovery attempt isolation', { timeout: 60000 }, () => {
             expect(held[0].request.createPlaybackSessionRequest.ItemId).toBe(
                 VIDEO_ITEM_ID
             );
-            expect(constraintsOf(held[0].request).MaxBitrate).toBe(
-                4000000
-            );
+            expect(constraintsOf(held[0].request).MaxBitrate).toBe(4000000);
         });
 
         it('changes nothing when another playback replaced it while the endpoint answered', async () => {
