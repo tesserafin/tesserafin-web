@@ -109,9 +109,10 @@ route, parameter or operation, and scalar and array serialization are untouched.
 Because a vendored template is a fork, `npm run verify:openapi-templates` fails if the vendored copy
 differs from the pinned generator's built-in template by anything other than the single declared
 hunk. A generator bump that touches this template fails loudly instead of silently reverting the
-correction or discarding an upstream fix. The resulting URLs are pinned by
-`src/lib/tesserafin-sdk/deepObjectSerialization.test.ts`, which drives the real client through a stub
-axios and asserts the query string actually produced.
+correction or discarding an upstream fix. The contract declares no deepObject parameter since the
+client-option stream routes were deleted (tesserafin#129 step 7, their `streamOptions` were the only
+ones), so no generated operation exercises the branch today; a future one is serialized correctly
+without touching the template.
 
 Finally, the script strips the `/* eslint-disable */` line the `typescript-axios` template
 unconditionally emits in every generated file's header (`stripEslintDisableHeaders()`) - dead

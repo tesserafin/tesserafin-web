@@ -14,7 +14,6 @@
 
 
 export * from './api/artist-api';
-export * from './api/audio-api';
 export * from './api/authentication-api';
 export * from './api/backup-api';
 export * from './api/branding-api';

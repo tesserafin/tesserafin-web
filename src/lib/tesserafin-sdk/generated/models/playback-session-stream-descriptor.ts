@@ -20,7 +20,7 @@ import type { PlaybackDecisionStreamingProtocol } from './playback-decision-stre
 import type { PlaybackLiveFallbackReason } from './playback-live-fallback-reason';
 
 /**
- * PR117 (docs/pr116d-url-contract-design.md §2.2): the companion, client-facing descriptor of the executable URL for a session already planned via `Playback/Sessions` - returned only from `GET Playback/Sessions/{id}/Stream`, never composed into Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackSessionListItem or Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackDiagnosticDetail (design doc §1.4: those two reach the admin-elevated, cross-user diagnostics surface). Neither URL carries a credential: the client authenticates each request for the resource with its own session or a playback capability.
+ * PR117 (docs/pr116d-url-contract-design.md §2.2): the companion, client-facing descriptor of the executable URL for a session already planned via `Playback/Sessions` - returned only from `GET Playback/Sessions/{id}/Stream`. Neither URL carries a credential: the client authenticates each request for the resource with its own session or a playback capability.
  * @export
  * @interface PlaybackSessionStreamDescriptor
  */
@@ -38,7 +38,7 @@ export interface PlaybackSessionStreamDescriptor {
      */
     'FallbackReason'?: PlaybackLiveFallbackReason | null;
     /**
-     * The content type a client should announce to its player for Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackSessionStreamDescriptor.Url, resolved from Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackSessionStreamDescriptor.Container exactly the way the delivery endpoints themselves resolve their own `Content-Type` header - `application/vnd.apple.mpegurl` on Tesserafin.Playback.Decision.StreamingProtocol.Hls (the playlist\'s type, not the segments\'), otherwise `MimeTypes.GetMimeType(\".\" + Container)`, the same call `VideosController`/`AudioHelper` make on the container they actually write. Reported rather than re-derived client-side so the announced type can never disagree with the response the URL will really produce. null when no container is known, or when no mapping exists for it.
+     * The content type a client should announce to its player for Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackSessionStreamDescriptor.Url, resolved from Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackSessionStreamDescriptor.Container exactly the way the delivery endpoints themselves resolve their own `Content-Type` header - `application/vnd.apple.mpegurl` on Tesserafin.Playback.Decision.StreamingProtocol.Hls (the playlist\'s type, not the segments\'), otherwise `MimeTypes.GetMimeType(\".\" + Container)`, the same call the removed client-option stream routes make on the container they actually write. Reported rather than re-derived client-side so the announced type can never disagree with the response the URL will really produce. null when no container is known, or when no mapping exists for it.
      * @type {string}
      * @memberof PlaybackSessionStreamDescriptor
      */
