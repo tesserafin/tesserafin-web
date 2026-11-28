@@ -34,7 +34,7 @@ function onOpen() {
     debug('[autocast] initializing cast player', playerId);
 
     playbackManager
-        .getTargets({ enableDiscovery: playerId === 'Google Cast' })
+        .getTargets({ enableDiscovery: false })
         .then(function (targets) {
             debug('[autocast] playback target count', targets.length);
 

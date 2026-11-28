@@ -154,14 +154,7 @@ async function loadPlugins() {
     let list = await getPlugins();
     if (!appHost.supports(AppFeature.RemoteControl)) {
         // Disable remote player plugins if not supported
-        list = list.filter(
-            (plugin) =>
-                !plugin.startsWith('sessionPlayer') &&
-                !plugin.startsWith('chromecastPlayer')
-        );
-    } else if (!browser.chrome && !browser.edgeChromium && !browser.opera) {
-        // Disable chromecast player in unsupported browsers
-        list = list.filter((plugin) => !plugin.startsWith('chromecastPlayer'));
+        list = list.filter((plugin) => !plugin.startsWith('sessionPlayer'));
     }
 
     // add any native plugins

@@ -100,7 +100,6 @@ describe('W1 — inherited YouTube player surface', () => {
             'pdfPlayer/plugin',
             'logoScreensaver/plugin',
             'sessionPlayer/plugin',
-            'chromecastPlayer/plugin',
             'stillWatching/plugin',
             'syncPlay/plugin'
         ]);

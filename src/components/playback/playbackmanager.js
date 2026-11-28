@@ -346,8 +346,6 @@ function getAudioMaxValues(deviceProfile) {
     };
 }
 
-let startingPlaySession = new Date().getTime();
-
 /**
  * A play session id that is never empty.
  *
@@ -397,156 +395,6 @@ function releaseCapabilitiesForPlaySession(serverId, playSessionId) {
         .then((broker) => broker?.releasePlaySession(playSessionId))
         .catch(() => undefined);
 }
-/**
- * #153-A1: ASYNC, because the universal-audio url is the one family built BEFORE any
- * `PlaybackInfo` round trip - it invents its own `PlaySessionId` - so the mint has to happen here.
- * The route names no media source, so the capability is minted with `mediaSourceId: null`: the
- * server's demand comparison treats a null on the route side as a refusal for a bound capability,
- * never as a wildcard, so a media-source-bound one would not satisfy it.
- */
-async function getAudioStreamUrl(
-    item,
-    transcodingProfile,
-    directPlayContainers,
-    apiClient,
-    startPosition,
-    maxValues
-) {
-    const url = 'Audio/' + item.Id + '/universal';
-
-    startingPlaySession++;
-    const playSessionId = String(startingPlaySession);
-    // #153-A1: the capability IS bound to `playSessionId`, the value this client reports playback
-    // lifecycle with. That is the contract in #153 - bound to the play session, invalidated when it
-    // ends - and this is the one family whose play session the client has to invent, because the
-    // url is built before any `PlaybackInfo` round trip.
-    //
-    // MEASURED, AND CORRECTED. An earlier revision refused to bind here, on the observation that
-    // binding made the next request answer 401. The 401 was real; the play session was not its
-    // cause. `SessionManager.OnPlaybackStopped` revokes every capability bound to the reported play
-    // session - correctly - and the broker then served the SAME capability out of its cache,
-    // because nothing dropped the cache entry when playback ended. `onPlaybackStopped` now hands
-    // the play session back, so the second playback mints a fresh capability.
-    //
-    // Re-measured on the real rig with the binding restored: the audio path reports exactly one
-    // `/Sessions/Playing` at 0 ms, one `/Sessions/Playing/Progress`, and one
-    // `/Sessions/Playing/Stopped` at the end of the track. There is no stop at 0 ms during start.
-    // `audioRevocation.spec.ts` played the same item twice in one document and failed with a 401
-    // when the release wiring was removed; no local audio item reaches this path any more
-    // (consolidation step 1), so that browser proof is gone with it.
-    const capability = await (await brokerFor(apiClient)).mediaValue(
-        item.Id,
-        null,
-        playSessionId
-    );
-
-    return apiClient.getUrl(url, {
-        UserId: apiClient.getCurrentUserId(),
-        DeviceId: apiClient.deviceId(),
-        MaxStreamingBitrate: maxValues.maxAudioBitrate || maxValues.maxBitrate,
-        Container: directPlayContainers,
-        TranscodingContainer: transcodingProfile.Container || null,
-        TranscodingProtocol: transcodingProfile.Protocol || null,
-        AudioCodec: transcodingProfile.AudioCodec,
-        MaxAudioSampleRate: maxValues.maxAudioSampleRate,
-        MaxAudioBitDepth: maxValues.maxAudioBitDepth,
-        playbackCapability: capability,
-        PlaySessionId: playSessionId,
-        StartTimeTicks: startPosition || 0,
-        EnableRedirection: true,
-        EnableRemoteMedia: appHost.supports(AppFeature.RemoteAudio),
-        EnableAudioVbrEncoding: transcodingProfile.EnableAudioVbrEncoding
-    });
-}
-
-async function getStreamUrls(
-    items,
-    deviceProfile,
-    maxBitrate,
-    apiClient,
-    startPosition
-) {
-    const audioTranscodingProfile = deviceProfile.TranscodingProfiles.filter(
-        function (p) {
-            return p.Type === 'Audio' && p.Context === 'Streaming';
-        }
-    )[0];
-
-    let audioDirectPlayContainers = '';
-
-    deviceProfile.DirectPlayProfiles.forEach((p) => {
-        if (p.Type === 'Audio') {
-            if (audioDirectPlayContainers) {
-                audioDirectPlayContainers += ',' + p.Container;
-            } else {
-                audioDirectPlayContainers = p.Container;
-            }
-
-            if (p.AudioCodec) {
-                audioDirectPlayContainers += '|' + p.AudioCodec;
-            }
-        }
-    });
-
-    const maxValues = getAudioMaxValues(deviceProfile);
-
-    const streamUrls = [];
-
-    for (let i = 0, length = items.length; i < length; i++) {
-        const item = items[i];
-        let streamUrl;
-
-        if (item.MediaType === 'Audio' && !itemHelper.isLocalItem(item)) {
-            streamUrl = await getAudioStreamUrl(
-                item,
-                audioTranscodingProfile,
-                audioDirectPlayContainers,
-                apiClient,
-                startPosition,
-                { maxBitrate, ...maxValues }
-            );
-        }
-
-        streamUrls.push(streamUrl || '');
-
-        if (i === 0) {
-            startPosition = 0;
-        }
-    }
-
-    return streamUrls;
-}
-
-function setStreamUrls(
-    items,
-    deviceProfile,
-    maxBitrate,
-    apiClient,
-    startPosition
-) {
-    return getStreamUrls(
-        items,
-        deviceProfile,
-        maxBitrate,
-        apiClient,
-        startPosition
-    ).then(function (streamUrls) {
-        for (let i = 0, length = items.length; i < length; i++) {
-            const item = items[i];
-            const streamUrl = streamUrls[i];
-
-            if (streamUrl) {
-                item.PresetMediaSource = {
-                    StreamUrl: streamUrl,
-                    Id: item.Id,
-                    MediaStreams: [],
-                    RunTimeTicks: item.RunTimeTicks
-                };
-            }
-        }
-    });
-}
-
 /** The item kinds that are a Live TV channel rather than a library item. */
 const LIVE_TV_CHANNEL_ITEM_KINDS = [
     BaseItemKind.TvChannel,
@@ -2943,23 +2791,17 @@ export class PlaybackManager {
             mediaSourceId,
             options
         ) {
-            return setStreamUrls(
-                items,
-                deviceProfile,
-                options.maxBitrate,
-                apiClient,
-                options.startPosition
-            ).then(function () {
-                loading.hide();
+            // A remote player plays the items from its own session: it is told what to play,
+            // never handed a stream url (tesserafin#129 step 7).
+            loading.hide();
 
-                return player.play({
-                    items,
-                    startPositionTicks: options.startPosition || 0,
-                    mediaSourceId,
-                    audioStreamIndex: options.audioStreamIndex,
-                    subtitleStreamIndex: options.subtitleStreamIndex,
-                    startIndex: options.startIndex
-                });
+            return player.play({
+                items,
+                startPositionTicks: options.startPosition || 0,
+                mediaSourceId,
+                audioStreamIndex: options.audioStreamIndex,
+                subtitleStreamIndex: options.subtitleStreamIndex,
+                startIndex: options.startIndex
             });
         }
 
@@ -4045,25 +3887,11 @@ export class PlaybackManager {
                 player && !enableLocalPlaylistManagement(player);
 
             if (queueDirectToPlayer) {
-                const apiClient = ServerConnections.getApiClient(
-                    items[0].ServerId
-                );
-
-                player.getDeviceProfile(items[0]).then(function (profile) {
-                    setStreamUrls(
-                        items,
-                        profile,
-                        self.getMaxStreamingBitrate(player),
-                        apiClient,
-                        0
-                    ).then(function () {
-                        if (mode === 'next') {
-                            player.queueNext(items);
-                        } else {
-                            player.queue(items);
-                        }
-                    });
-                });
+                if (mode === 'next') {
+                    player.queueNext(items);
+                } else {
+                    player.queue(items);
+                }
 
                 return;
             }

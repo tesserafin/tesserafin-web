@@ -1,12 +1,9 @@
-import { AppFeature } from 'constants/appFeature';
 import Events from '../../utils/events.ts';
 import browser from '../../scripts/browser';
 import loading from '../loading/loading';
 import { playbackManager } from '../playback/playbackmanager';
-import { pluginManager } from '../pluginManager';
 import { appRouter } from '../router/appRouter';
 import globalize from '../../lib/globalize';
-import { appHost } from '../apphost';
 import { enable, isEnabled } from '../../scripts/autocast';
 import '../../elements/emby-checkbox/emby-checkbox';
 import '../../elements/emby-button/emby-button';
@@ -97,27 +94,6 @@ export function show(button) {
                         resolveOnClick: true,
                         border: true
                     };
-
-                    // Unfortunately we can't allow the url to change or chromecast will throw a security error
-                    // Might be able to solve this in the future by moving the dialogs to hashbangs
-                    if (
-                        !(
-                            (!browser.chrome && !browser.edgeChromium) ||
-                            appHost.supports(AppFeature.CastMenuHashChange)
-                        )
-                    ) {
-                        menuOptions.enableHistory = false;
-                    }
-
-                    // Add message when Google Cast is not supported
-                    const isChromecastPluginLoaded =
-                        !!pluginManager.plugins.find(
-                            (plugin) => plugin.id === 'chromecast'
-                        );
-                    // TODO: Add other checks for support (Android app, secure context, etc)
-                    if (!isChromecastPluginLoaded) {
-                        menuOptions.text = `(${globalize.translate('GoogleCastUnsupported')})`;
-                    }
 
                     actionsheet
                         .show(menuOptions)

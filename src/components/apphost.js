@@ -307,10 +307,6 @@ const supportedFeatures = (function () {
         features.push(AppFeature.FileInput);
     }
 
-    if (browser.chrome || browser.edgeChromium) {
-        features.push(AppFeature.Chromecast);
-    }
-
     return features;
 })();
 

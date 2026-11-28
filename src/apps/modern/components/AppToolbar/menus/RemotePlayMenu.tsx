@@ -1,5 +1,3 @@
-import Warning from '@mui/icons-material/Warning';
-import Divider from '@mui/material/Divider';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Menu, { type MenuProps } from '@mui/material/Menu';
@@ -8,7 +6,6 @@ import React, { FC, useEffect, useState } from 'react';
 
 import globalize from 'lib/globalize';
 import { playbackManager } from 'components/playback/playbackmanager';
-import { pluginManager } from 'components/pluginManager';
 import type { PlayTarget } from 'types/playTarget';
 
 import PlayTargetIcon from '../../PlayTargetIcon';
@@ -24,11 +21,6 @@ const RemotePlayMenu: FC<RemotePlayMenuProps> = ({
     open,
     onMenuClose
 }) => {
-    // TODO: Add other checks for support (Android app, secure context, etc)
-    const isChromecastPluginLoaded = !!pluginManager.plugins.find(
-        (plugin) => plugin.id === 'chromecast'
-    );
-
     const [playbackTargets, setPlaybackTargets] = useState<PlayTarget[]>([]);
 
     const onPlayTargetClick = (target: PlayTarget) => {
@@ -69,21 +61,6 @@ const RemotePlayMenu: FC<RemotePlayMenuProps> = ({
             open={open}
             onClose={onMenuClose}
         >
-            {!isChromecastPluginLoaded && (
-                <MenuItem disabled>
-                    <ListItemIcon>
-                        <Warning />
-                    </ListItemIcon>
-                    <ListItemText>
-                        {globalize.translate('GoogleCastUnsupported')}
-                    </ListItemText>
-                </MenuItem>
-            )}
-
-            {!isChromecastPluginLoaded && playbackTargets.length > 0 && (
-                <Divider />
-            )}
-
             {playbackTargets.map((target) => (
                 <MenuItem
                     key={target.id}
@@ -104,7 +81,7 @@ const RemotePlayMenu: FC<RemotePlayMenuProps> = ({
                 </MenuItem>
             ))}
 
-            {isChromecastPluginLoaded && playbackTargets.length === 0 && (
+            {playbackTargets.length === 0 && (
                 <MenuItem disabled>
                     <ListItemText>
                         {globalize.translate('NoCastTargets')}
