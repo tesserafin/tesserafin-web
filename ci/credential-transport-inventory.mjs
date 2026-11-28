@@ -359,20 +359,34 @@ absence({
     }
 });
 
-// --- 5. universal audio ------------------------------------------------------------------------
-producers({
+// --- 5. universal audio — REMOVED -------------------------------------------------------------
+// tesserafin#129 step 7 (2026-11-28): `getAudioStreamUrl`, the producer of `/Audio/{id}/universal`,
+// is gone with the Chromecast player and `getStreamUrls`; the server deleted the route.
+absence({
     id: 'universal-audio',
     surface: 'GET /Audio/{id}/universal',
-    producer: 'playbackmanager.js getAudioStreamUrl',
-    consumer: '<audio src> / hls.js',
-    construction: 'sync, and BEFORE any PlaybackInfo call',
-    identities:
-        'item known; mediaSource NOT named; playSession is CLIENT-INVENTED (startingPlaySession counter)',
-    scope: 'Media',
-    childInherits: 'hls child playlists inherit the echoed query',
-    durableToday: true,
-    provingTest: 'browser matrix: universal audio',
-    hits: grep(SRC_FILES, /\/universal/)
+    producer:
+        'NOBODY. It was playbackmanager.js getAudioStreamUrl, deleted with getStreamUrls.',
+    consumer: 'n/a',
+    construction: 'n/a',
+    identities: 'n/a',
+    scope: 'n/a',
+    childInherits: 'n/a',
+    durableToday: false,
+    provingTest:
+        'this category: no first-party source builds the universal audio url again',
+    assert: () => {
+        const hits = grep(SRC_FILES, /\/universal/).filter(
+            (h) => !/\.(test|spec)\./.test(h.file)
+        );
+        return {
+            ok: hits.length === 0,
+            detail:
+                hits.length === 0
+                    ? 'no first-party producer: getAudioStreamUrl was deleted with getStreamUrls'
+                    : `THE UNIVERSAL AUDIO URL IS BUILT AGAIN: ${hits.map((h) => `${h.file}:${h.line}`).join(', ')}`
+        };
+    }
 });
 
 // --- 6. transcoded video / TranscodingUrl ------------------------------------------------------
@@ -570,24 +584,35 @@ producers({
         : grep(SRC_FILES, /websocketclose|websocketopen/)
 });
 
-// --- 15. server-emitted urls consumed by the web client ----------------------------------------
-producers({
+// --- 15. server-emitted urls — REMOVED -------------------------------------------------------
+// tesserafin#129 step 7: the PlaybackInfo response that carried TranscodingUrl and DeliveryUrl is
+// gone; a session descriptor's urls carry no credential (the client authenticates each request).
+absence({
     id: 'server-emitted-urls',
     surface: 'every url the web client did not build itself',
     producer:
-        'server (TranscodingUrl, subtitle DeliveryUrl, attachment DeliveryUrl, playlist bodies)',
-    consumer: 'web, verbatim through apiClient.getUrl(...)',
-    construction: 'server',
-    identities: 'present in the PlaybackInfo response',
-    scope: 'per family',
-    childInherits: 'inherit',
-    durableToday: true,
+        'NOBODY. PlaybackInfo (TranscodingUrl, DeliveryUrl) is deleted on the server and in this client.',
+    consumer: 'n/a',
+    construction: 'n/a',
+    identities: 'n/a',
+    scope: 'n/a',
+    childInherits: 'n/a',
+    durableToday: false,
     provingTest:
-        'browser matrix: every server-emitted url is rewritten before use; none reaches the network with a durable token',
-    hits: grep(
-        SRC_FILES,
-        /getUrl\(\s*(mediaSource\.TranscodingUrl|textStream\.DeliveryUrl|i\.DeliveryUrl|stream\.DeliveryUrl)/
-    )
+        'this category: no first-party source hands a PlaybackInfo-emitted url to apiClient.getUrl again',
+    assert: () => {
+        const hits = grep(
+            SRC_FILES,
+            /getUrl\(\s*(mediaSource\.TranscodingUrl|textStream\.DeliveryUrl|i\.DeliveryUrl|stream\.DeliveryUrl)/
+        );
+        return {
+            ok: hits.length === 0,
+            detail:
+                hits.length === 0
+                    ? 'no first-party consumer: PlaybackInfo urls are gone with the chain'
+                    : `A PLAYBACKINFO URL IS CONSUMED AGAIN: ${hits.map((h) => `${h.file}:${h.line}`).join(', ')}`
+        };
+    }
 });
 
 // --- 16. the generated SDK seam ----------------------------------------------------------------
