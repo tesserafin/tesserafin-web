@@ -37,12 +37,6 @@ import type { LogLevel } from '../models';
 // @ts-ignore
 import type { MetadataOptions } from '../models';
 // @ts-ignore
-import type { PlaybackDiagnosticDetail } from '../models';
-// @ts-ignore
-import type { PlaybackOperationalMetricsResponse } from '../models';
-// @ts-ignore
-import type { PlaybackSessionListItem } from '../models';
-// @ts-ignore
 import type { ProblemDetails } from '../models';
 // @ts-ignore
 import type { PublicSystemInfo } from '../models';
@@ -62,44 +56,6 @@ import type { UtcTimeResponse } from '../models';
  */
 export const SystemApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
-        /**
-         * 
-         * @summary PR113b: exports a session\'s retained shadow diagnostic as a playback-compatibility-lab fixture (docs/pr92-design-playback-api-and-diagnostics.md §5, \"Exporter le cas de test\"), conforming to tests/PlaybackCompat/schema/fixture.schema.json, so a real case observed in production can be dropped into tests/PlaybackCompat/fixtures/ and replayed by the lab. Serialized with Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter.Options (camelCase property names) directly, bypassing this API\'s normal PascalCase-by-default content negotiation (see Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter remarks) - the schema requires camelCase regardless of what an admin client\'s Accept header might otherwise negotiate.
-         * @param {string} id The session to export.
-         * @param {*} [options] Override http request option.
-         * @deprecated
-         * @throws {RequiredError}
-         */
-        exportFixture: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('exportFixture', 'id', id)
-            const localVarPath = `/System/PlaybackDiagnostics/Sessions/{id}/Fixture`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication CustomAuthentication required
-            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
         /**
          * 
          * @summary Gets application configuration.
@@ -385,40 +341,6 @@ export const SystemApiAxiosParamCreator = function (configuration?: Configuratio
         },
         /**
          * 
-         * @summary Gets the current cumulative operational metrics for the v2 live streaming path, plus the current stop-threshold guard state.
-         * @param {*} [options] Override http request option.
-         * @deprecated
-         * @throws {RequiredError}
-         */
-        getOperationalMetrics: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/System/PlaybackDiagnostics/Metrics`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication CustomAuthentication required
-            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
          * @summary Pings the system.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -435,78 +357,6 @@ export const SystemApiAxiosParamCreator = function (configuration?: Configuratio
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @summary Gets a single tracked playback session\'s diagnostic detail.
-         * @param {string} id The session to look up.
-         * @param {*} [options] Override http request option.
-         * @deprecated
-         * @throws {RequiredError}
-         */
-        getPlaybackSession: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('getPlaybackSession', 'id', id)
-            const localVarPath = `/System/PlaybackDiagnostics/Sessions/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication CustomAuthentication required
-            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @summary Gets a snapshot of all currently tracked playback sessions.
-         * @param {*} [options] Override http request option.
-         * @deprecated
-         * @throws {RequiredError}
-         */
-        getPlaybackSessions: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/System/PlaybackDiagnostics/Sessions`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication CustomAuthentication required
-            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
     
@@ -944,20 +794,6 @@ export const SystemApiFp = function(configuration?: Configuration) {
     return {
         /**
          * 
-         * @summary PR113b: exports a session\'s retained shadow diagnostic as a playback-compatibility-lab fixture (docs/pr92-design-playback-api-and-diagnostics.md §5, \"Exporter le cas de test\"), conforming to tests/PlaybackCompat/schema/fixture.schema.json, so a real case observed in production can be dropped into tests/PlaybackCompat/fixtures/ and replayed by the lab. Serialized with Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter.Options (camelCase property names) directly, bypassing this API\'s normal PascalCase-by-default content negotiation (see Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter remarks) - the schema requires camelCase regardless of what an admin client\'s Accept header might otherwise negotiate.
-         * @param {string} id The session to export.
-         * @param {*} [options] Override http request option.
-         * @deprecated
-         * @throws {RequiredError}
-         */
-        async exportFixture(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.exportFixture(id, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['SystemApi.exportFixture']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
          * @summary Gets application configuration.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1046,19 +882,6 @@ export const SystemApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @summary Gets the current cumulative operational metrics for the v2 live streaming path, plus the current stop-threshold guard state.
-         * @param {*} [options] Override http request option.
-         * @deprecated
-         * @throws {RequiredError}
-         */
-        async getOperationalMetrics(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PlaybackOperationalMetricsResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getOperationalMetrics(options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['SystemApi.getOperationalMetrics']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
          * @summary Pings the system.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1067,33 +890,6 @@ export const SystemApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getPingSystem(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['SystemApi.getPingSystem']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @summary Gets a single tracked playback session\'s diagnostic detail.
-         * @param {string} id The session to look up.
-         * @param {*} [options] Override http request option.
-         * @deprecated
-         * @throws {RequiredError}
-         */
-        async getPlaybackSession(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PlaybackDiagnosticDetail>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getPlaybackSession(id, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['SystemApi.getPlaybackSession']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @summary Gets a snapshot of all currently tracked playback sessions.
-         * @param {*} [options] Override http request option.
-         * @deprecated
-         * @throws {RequiredError}
-         */
-        async getPlaybackSessions(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<PlaybackSessionListItem>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getPlaybackSessions(options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['SystemApi.getPlaybackSessions']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -1257,17 +1053,6 @@ export const SystemApiFactory = function (configuration?: Configuration, basePat
     return {
         /**
          * 
-         * @summary PR113b: exports a session\'s retained shadow diagnostic as a playback-compatibility-lab fixture (docs/pr92-design-playback-api-and-diagnostics.md §5, \"Exporter le cas de test\"), conforming to tests/PlaybackCompat/schema/fixture.schema.json, so a real case observed in production can be dropped into tests/PlaybackCompat/fixtures/ and replayed by the lab. Serialized with Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter.Options (camelCase property names) directly, bypassing this API\'s normal PascalCase-by-default content negotiation (see Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter remarks) - the schema requires camelCase regardless of what an admin client\'s Accept header might otherwise negotiate.
-         * @param {SystemApiExportFixtureRequest} requestParameters Request parameters.
-         * @param {*} [options] Override http request option.
-         * @deprecated
-         * @throws {RequiredError}
-         */
-        exportFixture(requestParameters: SystemApiExportFixtureRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.exportFixture(requestParameters.id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
          * @summary Gets application configuration.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1325,43 +1110,12 @@ export const SystemApiFactory = function (configuration?: Configuration, basePat
         },
         /**
          * 
-         * @summary Gets the current cumulative operational metrics for the v2 live streaming path, plus the current stop-threshold guard state.
-         * @param {*} [options] Override http request option.
-         * @deprecated
-         * @throws {RequiredError}
-         */
-        getOperationalMetrics(options?: RawAxiosRequestConfig): AxiosPromise<PlaybackOperationalMetricsResponse> {
-            return localVarFp.getOperationalMetrics(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
          * @summary Pings the system.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         getPingSystem(options?: RawAxiosRequestConfig): AxiosPromise<string> {
             return localVarFp.getPingSystem(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @summary Gets a single tracked playback session\'s diagnostic detail.
-         * @param {SystemApiGetPlaybackSessionRequest} requestParameters Request parameters.
-         * @param {*} [options] Override http request option.
-         * @deprecated
-         * @throws {RequiredError}
-         */
-        getPlaybackSession(requestParameters: SystemApiGetPlaybackSessionRequest, options?: RawAxiosRequestConfig): AxiosPromise<PlaybackDiagnosticDetail> {
-            return localVarFp.getPlaybackSession(requestParameters.id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @summary Gets a snapshot of all currently tracked playback sessions.
-         * @param {*} [options] Override http request option.
-         * @deprecated
-         * @throws {RequiredError}
-         */
-        getPlaybackSessions(options?: RawAxiosRequestConfig): AxiosPromise<Array<PlaybackSessionListItem>> {
-            return localVarFp.getPlaybackSessions(options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -1486,17 +1240,6 @@ export const SystemApiFactory = function (configuration?: Configuration, basePat
 export interface SystemApiInterface {
     /**
      * 
-     * @summary PR113b: exports a session\'s retained shadow diagnostic as a playback-compatibility-lab fixture (docs/pr92-design-playback-api-and-diagnostics.md §5, \"Exporter le cas de test\"), conforming to tests/PlaybackCompat/schema/fixture.schema.json, so a real case observed in production can be dropped into tests/PlaybackCompat/fixtures/ and replayed by the lab. Serialized with Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter.Options (camelCase property names) directly, bypassing this API\'s normal PascalCase-by-default content negotiation (see Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter remarks) - the schema requires camelCase regardless of what an admin client\'s Accept header might otherwise negotiate.
-     * @param {SystemApiExportFixtureRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @deprecated
-     * @throws {RequiredError}
-     * @memberof SystemApiInterface
-     */
-    exportFixture(requestParameters: SystemApiExportFixtureRequest, options?: RawAxiosRequestConfig): AxiosPromise<void>;
-
-    /**
-     * 
      * @summary Gets application configuration.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -1554,43 +1297,12 @@ export interface SystemApiInterface {
 
     /**
      * 
-     * @summary Gets the current cumulative operational metrics for the v2 live streaming path, plus the current stop-threshold guard state.
-     * @param {*} [options] Override http request option.
-     * @deprecated
-     * @throws {RequiredError}
-     * @memberof SystemApiInterface
-     */
-    getOperationalMetrics(options?: RawAxiosRequestConfig): AxiosPromise<PlaybackOperationalMetricsResponse>;
-
-    /**
-     * 
      * @summary Pings the system.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof SystemApiInterface
      */
     getPingSystem(options?: RawAxiosRequestConfig): AxiosPromise<string>;
-
-    /**
-     * 
-     * @summary Gets a single tracked playback session\'s diagnostic detail.
-     * @param {SystemApiGetPlaybackSessionRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @deprecated
-     * @throws {RequiredError}
-     * @memberof SystemApiInterface
-     */
-    getPlaybackSession(requestParameters: SystemApiGetPlaybackSessionRequest, options?: RawAxiosRequestConfig): AxiosPromise<PlaybackDiagnosticDetail>;
-
-    /**
-     * 
-     * @summary Gets a snapshot of all currently tracked playback sessions.
-     * @param {*} [options] Override http request option.
-     * @deprecated
-     * @throws {RequiredError}
-     * @memberof SystemApiInterface
-     */
-    getPlaybackSessions(options?: RawAxiosRequestConfig): AxiosPromise<Array<PlaybackSessionListItem>>;
 
     /**
      * 
@@ -1704,20 +1416,6 @@ export interface SystemApiInterface {
      */
     updateNamedConfiguration(requestParameters: SystemApiUpdateNamedConfigurationRequest, options?: RawAxiosRequestConfig): AxiosPromise<void>;
 
-}
-
-/**
- * Request parameters for exportFixture operation in SystemApi.
- * @export
- * @interface SystemApiExportFixtureRequest
- */
-export interface SystemApiExportFixtureRequest {
-    /**
-     * The session to export.
-     * @type {string}
-     * @memberof SystemApiExportFixture
-     */
-    readonly id: string
 }
 
 /**
@@ -1854,20 +1552,6 @@ export interface SystemApiGetNamedConfigurationRequest {
 }
 
 /**
- * Request parameters for getPlaybackSession operation in SystemApi.
- * @export
- * @interface SystemApiGetPlaybackSessionRequest
- */
-export interface SystemApiGetPlaybackSessionRequest {
-    /**
-     * The session to look up.
-     * @type {string}
-     * @memberof SystemApiGetPlaybackSession
-     */
-    readonly id: string
-}
-
-/**
  * Request parameters for logFile operation in SystemApi.
  * @export
  * @interface SystemApiLogFileRequest
@@ -1939,19 +1623,6 @@ export interface SystemApiUpdateNamedConfigurationRequest {
 export class SystemApi extends BaseAPI implements SystemApiInterface {
     /**
      * 
-     * @summary PR113b: exports a session\'s retained shadow diagnostic as a playback-compatibility-lab fixture (docs/pr92-design-playback-api-and-diagnostics.md §5, \"Exporter le cas de test\"), conforming to tests/PlaybackCompat/schema/fixture.schema.json, so a real case observed in production can be dropped into tests/PlaybackCompat/fixtures/ and replayed by the lab. Serialized with Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter.Options (camelCase property names) directly, bypassing this API\'s normal PascalCase-by-default content negotiation (see Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter remarks) - the schema requires camelCase regardless of what an admin client\'s Accept header might otherwise negotiate.
-     * @param {SystemApiExportFixtureRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @deprecated
-     * @throws {RequiredError}
-     * @memberof SystemApi
-     */
-    public exportFixture(requestParameters: SystemApiExportFixtureRequest, options?: RawAxiosRequestConfig) {
-        return SystemApiFp(this.configuration).exportFixture(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
      * @summary Gets application configuration.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -2021,18 +1692,6 @@ export class SystemApi extends BaseAPI implements SystemApiInterface {
 
     /**
      * 
-     * @summary Gets the current cumulative operational metrics for the v2 live streaming path, plus the current stop-threshold guard state.
-     * @param {*} [options] Override http request option.
-     * @deprecated
-     * @throws {RequiredError}
-     * @memberof SystemApi
-     */
-    public getOperationalMetrics(options?: RawAxiosRequestConfig) {
-        return SystemApiFp(this.configuration).getOperationalMetrics(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
      * @summary Pings the system.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -2040,31 +1699,6 @@ export class SystemApi extends BaseAPI implements SystemApiInterface {
      */
     public getPingSystem(options?: RawAxiosRequestConfig) {
         return SystemApiFp(this.configuration).getPingSystem(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @summary Gets a single tracked playback session\'s diagnostic detail.
-     * @param {SystemApiGetPlaybackSessionRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @deprecated
-     * @throws {RequiredError}
-     * @memberof SystemApi
-     */
-    public getPlaybackSession(requestParameters: SystemApiGetPlaybackSessionRequest, options?: RawAxiosRequestConfig) {
-        return SystemApiFp(this.configuration).getPlaybackSession(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @summary Gets a snapshot of all currently tracked playback sessions.
-     * @param {*} [options] Override http request option.
-     * @deprecated
-     * @throws {RequiredError}
-     * @memberof SystemApi
-     */
-    public getPlaybackSessions(options?: RawAxiosRequestConfig) {
-        return SystemApiFp(this.configuration).getPlaybackSessions(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
