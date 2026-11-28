@@ -7,21 +7,21 @@
     "webAppVersion": "0.3.0",
     "versionSkewNote": null,
     "openapi": "3.0.4",
-    "pathCount": 312,
-    "schemaCount": 436,
-    "source": "~/tesserafin-deprecate-wt/openapi/openapi.json",
+    "pathCount": 308,
+    "schemaCount": 431,
+    "source": "~/tesserafin-c1-wt/openapi/openapi.json",
     "sourceRepository": "tesserafin/tesserafin",
-    "sourceCommit": "5283bc85edd97fb6b5802e6f7948e09262e6ad40",
-    "sourceRef": "5283bc85edd97fb6b5802e6f7948e09262e6ad40",
-    "canonicalSpecSha256": "bbf24c5edf7ab3cbdee328fc2fcb7658b67703e3ab3dca80ff87b880ac1212d9",
-    "specSha256": "8483abdeff29b1506a28d1043970825db26b26bcd1633dab054aec8c91f63b28",
+    "sourceCommit": "5c37cdfee39e66b8263c5ff24fb0e255264fa300",
+    "sourceRef": "5c37cdfee39e66b8263c5ff24fb0e255264fa300",
+    "canonicalSpecSha256": "08765dd62f36a5c21e00fb582b24569555923ef8658b72e3f1681bd8f7c5d050",
+    "specSha256": "fa49417c12d28630115d1a3d16569a83e473b85375a239e0738162854738a80d",
     "transformVersion": 1,
     "generator": {
         "name": "typescript-axios",
         "cliVersion": "2.40.1",
         "generatorVersion": "7.11.0"
     },
-    "generatedManifestSha256": "d2529e9932828ef05afb2a56827b600e4a809b12f7c3479a0be5b6646e46fb3f",
-    "generatedFileCount": 496,
-    "generatedAt": "2026-11-27T21:51:54.917Z"
+    "generatedManifestSha256": "580ecc511152a1db086976227ad741a080ad82d6e27f0d12b097737eb40cbaec",
+    "generatedFileCount": 491,
+    "generatedAt": "2026-11-27T22:46:48.601Z"
 }

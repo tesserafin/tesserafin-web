@@ -2,11 +2,11 @@
     "provenanceSchema": 2,
     "root": "src/lib/tesserafin-sdk/generated",
     "algorithm": "sha256",
-    "fileCount": 496,
+    "fileCount": 491,
     "files": [
         {
             "path": ".openapi-generator/FILES",
-            "sha256": "432f6e01c7cf80aab3024fb0a344bf11b278f48d678d3ca267b03ea49d566359"
+            "sha256": "9e186ab619d9f5e48721a156494ccdcade562a1fa52751a871983504f3f17b15"
         },
         {
             "path": ".openapi-generator/VERSION",
@@ -22,7 +22,7 @@
         },
         {
             "path": "api/audio-api.ts",
-            "sha256": "815e7dcac6289e9deab87e97fff38c5191325f6ad4150792ead8fa56ed4efd9a"
+            "sha256": "5bb23ffb875989b6b3c895af609a90d397c52164a026f5c92039fc83f39a221f"
         },
         {
             "path": "api/authentication-api.ts",
@@ -106,7 +106,7 @@
         },
         {
             "path": "api/media-info-api.ts",
-            "sha256": "6aadac08adc02f54b37d8eb0266cd3c618cc64c87910ad35b9f6a46c7d1b257d"
+            "sha256": "7a96f20fc646fb01cfb21c49cd154f3dc7745c1c89636f96215698852332a4a7"
         },
         {
             "path": "api/media-segment-api.ts",
@@ -766,7 +766,7 @@
         },
         {
             "path": "models/index.ts",
-            "sha256": "7f656e4fe69ae0d5c3a0b3023a4c14584ed034bae652b8b320b1d4977be8ed45"
+            "sha256": "fa7aecd7a7fee34b94aa7e6267fbd245a9cc231c7da29ebae2a76a22c09f07f6"
         },
         {
             "path": "models/installation-info.ts",
@@ -835,10 +835,6 @@
         {
             "path": "models/listings-provider-info.ts",
             "sha256": "4bf24b8ed041596b5af6ead4b94a4e7c5f874ab2ef74063b89e4bdfb7adb8d3e"
-        },
-        {
-            "path": "models/live-stream-response.ts",
-            "sha256": "c8944502c3bff68ec9939bd947db9852468b7fb4e84a634d7ef3ec8edef52d85"
         },
         {
             "path": "models/live-tv-info.ts",
@@ -1019,10 +1015,6 @@
         {
             "path": "models/next-item-request-dto.ts",
             "sha256": "e10097cce3b99087e5d4f48cb26fccabab8647c3fa1867ad5b56f18deb7f143b"
-        },
-        {
-            "path": "models/open-live-stream-dto.ts",
-            "sha256": "307c91dc637f23c2726f260586939f7565ec02c4b27f6994482364b38555340a"
         },
         {
             "path": "models/outbound-keep-alive-message.ts",
@@ -1235,18 +1227,6 @@
         {
             "path": "models/playback-engine-mode.ts",
             "sha256": "eaff8aeeabcc7b0ab5d47ec34d8eadb363c5d43e06735f7ce4fe1c9a4654b05c"
-        },
-        {
-            "path": "models/playback-error-code.ts",
-            "sha256": "f4914634ffa6641b49d803cd82d99793a8696b2ba96a8c3395e20a53469fa718"
-        },
-        {
-            "path": "models/playback-info-dto.ts",
-            "sha256": "c91189877fd8d695c0039d5597770e23282ebf52555b3243415914d275525435"
-        },
-        {
-            "path": "models/playback-info-response.ts",
-            "sha256": "3488498cf44b5e6e119e233761a50e2e7026f8678b7eae6d87ebe9112d11ec23"
         },
         {
             "path": "models/playback-live-fallback-reason.ts",
