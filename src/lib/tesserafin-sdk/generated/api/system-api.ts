@@ -67,6 +67,7 @@ export const SystemApiAxiosParamCreator = function (configuration?: Configuratio
          * @summary PR113b: exports a session\'s retained shadow diagnostic as a playback-compatibility-lab fixture (docs/pr92-design-playback-api-and-diagnostics.md §5, \"Exporter le cas de test\"), conforming to tests/PlaybackCompat/schema/fixture.schema.json, so a real case observed in production can be dropped into tests/PlaybackCompat/fixtures/ and replayed by the lab. Serialized with Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter.Options (camelCase property names) directly, bypassing this API\'s normal PascalCase-by-default content negotiation (see Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter remarks) - the schema requires camelCase regardless of what an admin client\'s Accept header might otherwise negotiate.
          * @param {string} id The session to export.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         exportFixture: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
@@ -386,6 +387,7 @@ export const SystemApiAxiosParamCreator = function (configuration?: Configuratio
          * 
          * @summary Gets the current cumulative operational metrics for the v2 live streaming path, plus the current stop-threshold guard state.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getOperationalMetrics: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
@@ -450,6 +452,7 @@ export const SystemApiAxiosParamCreator = function (configuration?: Configuratio
          * @summary Gets a single tracked playback session\'s diagnostic detail.
          * @param {string} id The session to look up.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getPlaybackSession: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
@@ -486,6 +489,7 @@ export const SystemApiAxiosParamCreator = function (configuration?: Configuratio
          * 
          * @summary Gets a snapshot of all currently tracked playback sessions.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getPlaybackSessions: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
@@ -943,6 +947,7 @@ export const SystemApiFp = function(configuration?: Configuration) {
          * @summary PR113b: exports a session\'s retained shadow diagnostic as a playback-compatibility-lab fixture (docs/pr92-design-playback-api-and-diagnostics.md §5, \"Exporter le cas de test\"), conforming to tests/PlaybackCompat/schema/fixture.schema.json, so a real case observed in production can be dropped into tests/PlaybackCompat/fixtures/ and replayed by the lab. Serialized with Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter.Options (camelCase property names) directly, bypassing this API\'s normal PascalCase-by-default content negotiation (see Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter remarks) - the schema requires camelCase regardless of what an admin client\'s Accept header might otherwise negotiate.
          * @param {string} id The session to export.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         async exportFixture(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
@@ -1043,6 +1048,7 @@ export const SystemApiFp = function(configuration?: Configuration) {
          * 
          * @summary Gets the current cumulative operational metrics for the v2 live streaming path, plus the current stop-threshold guard state.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         async getOperationalMetrics(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PlaybackOperationalMetricsResponse>> {
@@ -1068,6 +1074,7 @@ export const SystemApiFp = function(configuration?: Configuration) {
          * @summary Gets a single tracked playback session\'s diagnostic detail.
          * @param {string} id The session to look up.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         async getPlaybackSession(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<PlaybackDiagnosticDetail>> {
@@ -1080,6 +1087,7 @@ export const SystemApiFp = function(configuration?: Configuration) {
          * 
          * @summary Gets a snapshot of all currently tracked playback sessions.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         async getPlaybackSessions(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<PlaybackSessionListItem>>> {
@@ -1252,6 +1260,7 @@ export const SystemApiFactory = function (configuration?: Configuration, basePat
          * @summary PR113b: exports a session\'s retained shadow diagnostic as a playback-compatibility-lab fixture (docs/pr92-design-playback-api-and-diagnostics.md §5, \"Exporter le cas de test\"), conforming to tests/PlaybackCompat/schema/fixture.schema.json, so a real case observed in production can be dropped into tests/PlaybackCompat/fixtures/ and replayed by the lab. Serialized with Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter.Options (camelCase property names) directly, bypassing this API\'s normal PascalCase-by-default content negotiation (see Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter remarks) - the schema requires camelCase regardless of what an admin client\'s Accept header might otherwise negotiate.
          * @param {SystemApiExportFixtureRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         exportFixture(requestParameters: SystemApiExportFixtureRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
@@ -1318,6 +1327,7 @@ export const SystemApiFactory = function (configuration?: Configuration, basePat
          * 
          * @summary Gets the current cumulative operational metrics for the v2 live streaming path, plus the current stop-threshold guard state.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getOperationalMetrics(options?: RawAxiosRequestConfig): AxiosPromise<PlaybackOperationalMetricsResponse> {
@@ -1337,6 +1347,7 @@ export const SystemApiFactory = function (configuration?: Configuration, basePat
          * @summary Gets a single tracked playback session\'s diagnostic detail.
          * @param {SystemApiGetPlaybackSessionRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getPlaybackSession(requestParameters: SystemApiGetPlaybackSessionRequest, options?: RawAxiosRequestConfig): AxiosPromise<PlaybackDiagnosticDetail> {
@@ -1346,6 +1357,7 @@ export const SystemApiFactory = function (configuration?: Configuration, basePat
          * 
          * @summary Gets a snapshot of all currently tracked playback sessions.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getPlaybackSessions(options?: RawAxiosRequestConfig): AxiosPromise<Array<PlaybackSessionListItem>> {
@@ -1477,6 +1489,7 @@ export interface SystemApiInterface {
      * @summary PR113b: exports a session\'s retained shadow diagnostic as a playback-compatibility-lab fixture (docs/pr92-design-playback-api-and-diagnostics.md §5, \"Exporter le cas de test\"), conforming to tests/PlaybackCompat/schema/fixture.schema.json, so a real case observed in production can be dropped into tests/PlaybackCompat/fixtures/ and replayed by the lab. Serialized with Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter.Options (camelCase property names) directly, bypassing this API\'s normal PascalCase-by-default content negotiation (see Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter remarks) - the schema requires camelCase regardless of what an admin client\'s Accept header might otherwise negotiate.
      * @param {SystemApiExportFixtureRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof SystemApiInterface
      */
@@ -1543,6 +1556,7 @@ export interface SystemApiInterface {
      * 
      * @summary Gets the current cumulative operational metrics for the v2 live streaming path, plus the current stop-threshold guard state.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof SystemApiInterface
      */
@@ -1562,6 +1576,7 @@ export interface SystemApiInterface {
      * @summary Gets a single tracked playback session\'s diagnostic detail.
      * @param {SystemApiGetPlaybackSessionRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof SystemApiInterface
      */
@@ -1571,6 +1586,7 @@ export interface SystemApiInterface {
      * 
      * @summary Gets a snapshot of all currently tracked playback sessions.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof SystemApiInterface
      */
@@ -1926,6 +1942,7 @@ export class SystemApi extends BaseAPI implements SystemApiInterface {
      * @summary PR113b: exports a session\'s retained shadow diagnostic as a playback-compatibility-lab fixture (docs/pr92-design-playback-api-and-diagnostics.md §5, \"Exporter le cas de test\"), conforming to tests/PlaybackCompat/schema/fixture.schema.json, so a real case observed in production can be dropped into tests/PlaybackCompat/fixtures/ and replayed by the lab. Serialized with Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter.Options (camelCase property names) directly, bypassing this API\'s normal PascalCase-by-default content negotiation (see Tesserafin.Api.Models.PlaybackSessionDtos.PlaybackCompatFixtureExporter remarks) - the schema requires camelCase regardless of what an admin client\'s Accept header might otherwise negotiate.
      * @param {SystemApiExportFixtureRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof SystemApi
      */
@@ -2006,6 +2023,7 @@ export class SystemApi extends BaseAPI implements SystemApiInterface {
      * 
      * @summary Gets the current cumulative operational metrics for the v2 live streaming path, plus the current stop-threshold guard state.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof SystemApi
      */
@@ -2029,6 +2047,7 @@ export class SystemApi extends BaseAPI implements SystemApiInterface {
      * @summary Gets a single tracked playback session\'s diagnostic detail.
      * @param {SystemApiGetPlaybackSessionRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof SystemApi
      */
@@ -2040,6 +2059,7 @@ export class SystemApi extends BaseAPI implements SystemApiInterface {
      * 
      * @summary Gets a snapshot of all currently tracked playback sessions.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof SystemApi
      */

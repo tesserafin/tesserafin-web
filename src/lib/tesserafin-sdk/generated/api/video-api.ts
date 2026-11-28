@@ -213,6 +213,7 @@ export const VideoApiAxiosParamCreator = function (configuration?: Configuration
          * @param {{ [key: string]: string; }} [streamOptions] Optional. The streaming options.
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getVideoStream: async (itemId: string, container?: string, _static?: boolean, params?: string, tag?: string, deviceProfileId?: string, playSessionId?: string, segmentContainer?: string, segmentLength?: number, minSegments?: number, mediaSourceId?: string, deviceId?: string, audioCodec?: string, enableAutoStreamCopy?: boolean, allowVideoStreamCopy?: boolean, allowAudioStreamCopy?: boolean, audioSampleRate?: number, maxAudioBitDepth?: number, audioBitRate?: number, audioChannels?: number, maxAudioChannels?: number, profile?: string, level?: string, framerate?: number, maxFramerate?: number, copyTimestamps?: boolean, startTimeTicks?: number, width?: number, height?: number, maxWidth?: number, maxHeight?: number, videoBitRate?: number, subtitleStreamIndex?: number, subtitleMethod?: SubtitleDeliveryMethod, maxRefFrames?: number, maxVideoBitDepth?: number, requireAvc?: boolean, deInterlace?: boolean, requireNonAnamorphic?: boolean, transcodingMaxAudioChannels?: number, cpuCoreLimit?: number, liveStreamId?: string, enableMpegtsM2TsMode?: boolean, videoCodec?: string, subtitleCodec?: string, transcodeReasons?: string, audioStreamIndex?: number, videoStreamIndex?: number, context?: EncodingContext, streamOptions?: { [key: string]: string; }, enableAudioVbrEncoding?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
@@ -502,6 +503,7 @@ export const VideoApiAxiosParamCreator = function (configuration?: Configuration
          * @param {{ [key: string]: string; }} [streamOptions] Optional. The streaming options.
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getVideoStreamByContainer: async (itemId: string, container: string, _static?: boolean, params?: string, tag?: string, deviceProfileId?: string, playSessionId?: string, segmentContainer?: string, segmentLength?: number, minSegments?: number, mediaSourceId?: string, deviceId?: string, audioCodec?: string, enableAutoStreamCopy?: boolean, allowVideoStreamCopy?: boolean, allowAudioStreamCopy?: boolean, audioSampleRate?: number, maxAudioBitDepth?: number, audioBitRate?: number, audioChannels?: number, maxAudioChannels?: number, profile?: string, level?: string, framerate?: number, maxFramerate?: number, copyTimestamps?: boolean, startTimeTicks?: number, width?: number, height?: number, maxWidth?: number, maxHeight?: number, videoBitRate?: number, subtitleStreamIndex?: number, subtitleMethod?: SubtitleDeliveryMethod, maxRefFrames?: number, maxVideoBitDepth?: number, requireAvc?: boolean, deInterlace?: boolean, requireNonAnamorphic?: boolean, transcodingMaxAudioChannels?: number, cpuCoreLimit?: number, liveStreamId?: string, enableMpegtsM2TsMode?: boolean, videoCodec?: string, subtitleCodec?: string, transcodeReasons?: string, audioStreamIndex?: number, videoStreamIndex?: number, context?: EncodingContext, streamOptions?: { [key: string]: string; }, enableAudioVbrEncoding?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
@@ -790,6 +792,7 @@ export const VideoApiAxiosParamCreator = function (configuration?: Configuration
          * @param {{ [key: string]: string; }} [streamOptions] Optional. The streaming options.
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         headVideoStream: async (itemId: string, container?: string, _static?: boolean, params?: string, tag?: string, deviceProfileId?: string, playSessionId?: string, segmentContainer?: string, segmentLength?: number, minSegments?: number, mediaSourceId?: string, deviceId?: string, audioCodec?: string, enableAutoStreamCopy?: boolean, allowVideoStreamCopy?: boolean, allowAudioStreamCopy?: boolean, audioSampleRate?: number, maxAudioBitDepth?: number, audioBitRate?: number, audioChannels?: number, maxAudioChannels?: number, profile?: string, level?: string, framerate?: number, maxFramerate?: number, copyTimestamps?: boolean, startTimeTicks?: number, width?: number, height?: number, maxWidth?: number, maxHeight?: number, videoBitRate?: number, subtitleStreamIndex?: number, subtitleMethod?: SubtitleDeliveryMethod, maxRefFrames?: number, maxVideoBitDepth?: number, requireAvc?: boolean, deInterlace?: boolean, requireNonAnamorphic?: boolean, transcodingMaxAudioChannels?: number, cpuCoreLimit?: number, liveStreamId?: string, enableMpegtsM2TsMode?: boolean, videoCodec?: string, subtitleCodec?: string, transcodeReasons?: string, audioStreamIndex?: number, videoStreamIndex?: number, context?: EncodingContext, streamOptions?: { [key: string]: string; }, enableAudioVbrEncoding?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
@@ -1079,6 +1082,7 @@ export const VideoApiAxiosParamCreator = function (configuration?: Configuration
          * @param {{ [key: string]: string; }} [streamOptions] Optional. The streaming options.
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         headVideoStreamByContainer: async (itemId: string, container: string, _static?: boolean, params?: string, tag?: string, deviceProfileId?: string, playSessionId?: string, segmentContainer?: string, segmentLength?: number, minSegments?: number, mediaSourceId?: string, deviceId?: string, audioCodec?: string, enableAutoStreamCopy?: boolean, allowVideoStreamCopy?: boolean, allowAudioStreamCopy?: boolean, audioSampleRate?: number, maxAudioBitDepth?: number, audioBitRate?: number, audioChannels?: number, maxAudioChannels?: number, profile?: string, level?: string, framerate?: number, maxFramerate?: number, copyTimestamps?: boolean, startTimeTicks?: number, width?: number, height?: number, maxWidth?: number, maxHeight?: number, videoBitRate?: number, subtitleStreamIndex?: number, subtitleMethod?: SubtitleDeliveryMethod, maxRefFrames?: number, maxVideoBitDepth?: number, requireAvc?: boolean, deInterlace?: boolean, requireNonAnamorphic?: boolean, transcodingMaxAudioChannels?: number, cpuCoreLimit?: number, liveStreamId?: string, enableMpegtsM2TsMode?: boolean, videoCodec?: string, subtitleCodec?: string, transcodeReasons?: string, audioStreamIndex?: number, videoStreamIndex?: number, context?: EncodingContext, streamOptions?: { [key: string]: string; }, enableAudioVbrEncoding?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
@@ -1459,6 +1463,7 @@ export const VideoApiFp = function(configuration?: Configuration) {
          * @param {{ [key: string]: string; }} [streamOptions] Optional. The streaming options.
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         async getVideoStream(itemId: string, container?: string, _static?: boolean, params?: string, tag?: string, deviceProfileId?: string, playSessionId?: string, segmentContainer?: string, segmentLength?: number, minSegments?: number, mediaSourceId?: string, deviceId?: string, audioCodec?: string, enableAutoStreamCopy?: boolean, allowVideoStreamCopy?: boolean, allowAudioStreamCopy?: boolean, audioSampleRate?: number, maxAudioBitDepth?: number, audioBitRate?: number, audioChannels?: number, maxAudioChannels?: number, profile?: string, level?: string, framerate?: number, maxFramerate?: number, copyTimestamps?: boolean, startTimeTicks?: number, width?: number, height?: number, maxWidth?: number, maxHeight?: number, videoBitRate?: number, subtitleStreamIndex?: number, subtitleMethod?: SubtitleDeliveryMethod, maxRefFrames?: number, maxVideoBitDepth?: number, requireAvc?: boolean, deInterlace?: boolean, requireNonAnamorphic?: boolean, transcodingMaxAudioChannels?: number, cpuCoreLimit?: number, liveStreamId?: string, enableMpegtsM2TsMode?: boolean, videoCodec?: string, subtitleCodec?: string, transcodeReasons?: string, audioStreamIndex?: number, videoStreamIndex?: number, context?: EncodingContext, streamOptions?: { [key: string]: string; }, enableAudioVbrEncoding?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
@@ -1522,6 +1527,7 @@ export const VideoApiFp = function(configuration?: Configuration) {
          * @param {{ [key: string]: string; }} [streamOptions] Optional. The streaming options.
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         async getVideoStreamByContainer(itemId: string, container: string, _static?: boolean, params?: string, tag?: string, deviceProfileId?: string, playSessionId?: string, segmentContainer?: string, segmentLength?: number, minSegments?: number, mediaSourceId?: string, deviceId?: string, audioCodec?: string, enableAutoStreamCopy?: boolean, allowVideoStreamCopy?: boolean, allowAudioStreamCopy?: boolean, audioSampleRate?: number, maxAudioBitDepth?: number, audioBitRate?: number, audioChannels?: number, maxAudioChannels?: number, profile?: string, level?: string, framerate?: number, maxFramerate?: number, copyTimestamps?: boolean, startTimeTicks?: number, width?: number, height?: number, maxWidth?: number, maxHeight?: number, videoBitRate?: number, subtitleStreamIndex?: number, subtitleMethod?: SubtitleDeliveryMethod, maxRefFrames?: number, maxVideoBitDepth?: number, requireAvc?: boolean, deInterlace?: boolean, requireNonAnamorphic?: boolean, transcodingMaxAudioChannels?: number, cpuCoreLimit?: number, liveStreamId?: string, enableMpegtsM2TsMode?: boolean, videoCodec?: string, subtitleCodec?: string, transcodeReasons?: string, audioStreamIndex?: number, videoStreamIndex?: number, context?: EncodingContext, streamOptions?: { [key: string]: string; }, enableAudioVbrEncoding?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
@@ -1585,6 +1591,7 @@ export const VideoApiFp = function(configuration?: Configuration) {
          * @param {{ [key: string]: string; }} [streamOptions] Optional. The streaming options.
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         async headVideoStream(itemId: string, container?: string, _static?: boolean, params?: string, tag?: string, deviceProfileId?: string, playSessionId?: string, segmentContainer?: string, segmentLength?: number, minSegments?: number, mediaSourceId?: string, deviceId?: string, audioCodec?: string, enableAutoStreamCopy?: boolean, allowVideoStreamCopy?: boolean, allowAudioStreamCopy?: boolean, audioSampleRate?: number, maxAudioBitDepth?: number, audioBitRate?: number, audioChannels?: number, maxAudioChannels?: number, profile?: string, level?: string, framerate?: number, maxFramerate?: number, copyTimestamps?: boolean, startTimeTicks?: number, width?: number, height?: number, maxWidth?: number, maxHeight?: number, videoBitRate?: number, subtitleStreamIndex?: number, subtitleMethod?: SubtitleDeliveryMethod, maxRefFrames?: number, maxVideoBitDepth?: number, requireAvc?: boolean, deInterlace?: boolean, requireNonAnamorphic?: boolean, transcodingMaxAudioChannels?: number, cpuCoreLimit?: number, liveStreamId?: string, enableMpegtsM2TsMode?: boolean, videoCodec?: string, subtitleCodec?: string, transcodeReasons?: string, audioStreamIndex?: number, videoStreamIndex?: number, context?: EncodingContext, streamOptions?: { [key: string]: string; }, enableAudioVbrEncoding?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
@@ -1648,6 +1655,7 @@ export const VideoApiFp = function(configuration?: Configuration) {
          * @param {{ [key: string]: string; }} [streamOptions] Optional. The streaming options.
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         async headVideoStreamByContainer(itemId: string, container: string, _static?: boolean, params?: string, tag?: string, deviceProfileId?: string, playSessionId?: string, segmentContainer?: string, segmentLength?: number, minSegments?: number, mediaSourceId?: string, deviceId?: string, audioCodec?: string, enableAutoStreamCopy?: boolean, allowVideoStreamCopy?: boolean, allowAudioStreamCopy?: boolean, audioSampleRate?: number, maxAudioBitDepth?: number, audioBitRate?: number, audioChannels?: number, maxAudioChannels?: number, profile?: string, level?: string, framerate?: number, maxFramerate?: number, copyTimestamps?: boolean, startTimeTicks?: number, width?: number, height?: number, maxWidth?: number, maxHeight?: number, videoBitRate?: number, subtitleStreamIndex?: number, subtitleMethod?: SubtitleDeliveryMethod, maxRefFrames?: number, maxVideoBitDepth?: number, requireAvc?: boolean, deInterlace?: boolean, requireNonAnamorphic?: boolean, transcodingMaxAudioChannels?: number, cpuCoreLimit?: number, liveStreamId?: string, enableMpegtsM2TsMode?: boolean, videoCodec?: string, subtitleCodec?: string, transcodeReasons?: string, audioStreamIndex?: number, videoStreamIndex?: number, context?: EncodingContext, streamOptions?: { [key: string]: string; }, enableAudioVbrEncoding?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
@@ -1714,6 +1722,7 @@ export const VideoApiFactory = function (configuration?: Configuration, basePath
          * @summary Gets a video stream.
          * @param {VideoApiGetVideoStreamRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getVideoStream(requestParameters: VideoApiGetVideoStreamRequest, options?: RawAxiosRequestConfig): AxiosPromise<File> {
@@ -1724,6 +1733,7 @@ export const VideoApiFactory = function (configuration?: Configuration, basePath
          * @summary Gets a video stream.
          * @param {VideoApiGetVideoStreamByContainerRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getVideoStreamByContainer(requestParameters: VideoApiGetVideoStreamByContainerRequest, options?: RawAxiosRequestConfig): AxiosPromise<File> {
@@ -1734,6 +1744,7 @@ export const VideoApiFactory = function (configuration?: Configuration, basePath
          * @summary Gets a video stream.
          * @param {VideoApiHeadVideoStreamRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         headVideoStream(requestParameters: VideoApiHeadVideoStreamRequest, options?: RawAxiosRequestConfig): AxiosPromise<File> {
@@ -1744,6 +1755,7 @@ export const VideoApiFactory = function (configuration?: Configuration, basePath
          * @summary Gets a video stream.
          * @param {VideoApiHeadVideoStreamByContainerRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         headVideoStreamByContainer(requestParameters: VideoApiHeadVideoStreamByContainerRequest, options?: RawAxiosRequestConfig): AxiosPromise<File> {
@@ -1803,6 +1815,7 @@ export interface VideoApiInterface {
      * @summary Gets a video stream.
      * @param {VideoApiGetVideoStreamRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof VideoApiInterface
      */
@@ -1813,6 +1826,7 @@ export interface VideoApiInterface {
      * @summary Gets a video stream.
      * @param {VideoApiGetVideoStreamByContainerRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof VideoApiInterface
      */
@@ -1823,6 +1837,7 @@ export interface VideoApiInterface {
      * @summary Gets a video stream.
      * @param {VideoApiHeadVideoStreamRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof VideoApiInterface
      */
@@ -1833,6 +1848,7 @@ export interface VideoApiInterface {
      * @summary Gets a video stream.
      * @param {VideoApiHeadVideoStreamByContainerRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof VideoApiInterface
      */
@@ -3431,6 +3447,7 @@ export class VideoApi extends BaseAPI implements VideoApiInterface {
      * @summary Gets a video stream.
      * @param {VideoApiGetVideoStreamRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof VideoApi
      */
@@ -3443,6 +3460,7 @@ export class VideoApi extends BaseAPI implements VideoApiInterface {
      * @summary Gets a video stream.
      * @param {VideoApiGetVideoStreamByContainerRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof VideoApi
      */
@@ -3455,6 +3473,7 @@ export class VideoApi extends BaseAPI implements VideoApiInterface {
      * @summary Gets a video stream.
      * @param {VideoApiHeadVideoStreamRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof VideoApi
      */
@@ -3467,6 +3486,7 @@ export class VideoApi extends BaseAPI implements VideoApiInterface {
      * @summary Gets a video stream.
      * @param {VideoApiHeadVideoStreamByContainerRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof VideoApi
      */
