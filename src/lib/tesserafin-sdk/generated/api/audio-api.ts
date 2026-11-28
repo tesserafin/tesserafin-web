@@ -85,6 +85,7 @@ export const AudioApiAxiosParamCreator = function (configuration?: Configuration
          * @param {{ [key: string]: string; }} [streamOptions] Optional. The streaming options.
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getAudioStream: async (itemId: string, container?: string, _static?: boolean, params?: string, tag?: string, deviceProfileId?: string, playSessionId?: string, segmentContainer?: string, segmentLength?: number, minSegments?: number, mediaSourceId?: string, deviceId?: string, audioCodec?: string, enableAutoStreamCopy?: boolean, allowVideoStreamCopy?: boolean, allowAudioStreamCopy?: boolean, audioSampleRate?: number, maxAudioBitDepth?: number, audioBitRate?: number, audioChannels?: number, maxAudioChannels?: number, profile?: string, level?: string, framerate?: number, maxFramerate?: number, copyTimestamps?: boolean, startTimeTicks?: number, width?: number, height?: number, videoBitRate?: number, subtitleStreamIndex?: number, subtitleMethod?: SubtitleDeliveryMethod, maxRefFrames?: number, maxVideoBitDepth?: number, requireAvc?: boolean, deInterlace?: boolean, requireNonAnamorphic?: boolean, transcodingMaxAudioChannels?: number, cpuCoreLimit?: number, liveStreamId?: string, enableMpegtsM2TsMode?: boolean, videoCodec?: string, subtitleCodec?: string, transcodeReasons?: string, audioStreamIndex?: number, videoStreamIndex?: number, context?: EncodingContext, streamOptions?: { [key: string]: string; }, enableAudioVbrEncoding?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
@@ -364,6 +365,7 @@ export const AudioApiAxiosParamCreator = function (configuration?: Configuration
          * @param {{ [key: string]: string; }} [streamOptions] Optional. The streaming options.
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getAudioStreamByContainer: async (itemId: string, container: string, _static?: boolean, params?: string, tag?: string, deviceProfileId?: string, playSessionId?: string, segmentContainer?: string, segmentLength?: number, minSegments?: number, mediaSourceId?: string, deviceId?: string, audioCodec?: string, enableAutoStreamCopy?: boolean, allowVideoStreamCopy?: boolean, allowAudioStreamCopy?: boolean, audioSampleRate?: number, maxAudioBitDepth?: number, audioBitRate?: number, audioChannels?: number, maxAudioChannels?: number, profile?: string, level?: string, framerate?: number, maxFramerate?: number, copyTimestamps?: boolean, startTimeTicks?: number, width?: number, height?: number, videoBitRate?: number, subtitleStreamIndex?: number, subtitleMethod?: SubtitleDeliveryMethod, maxRefFrames?: number, maxVideoBitDepth?: number, requireAvc?: boolean, deInterlace?: boolean, requireNonAnamorphic?: boolean, transcodingMaxAudioChannels?: number, cpuCoreLimit?: number, liveStreamId?: string, enableMpegtsM2TsMode?: boolean, videoCodec?: string, subtitleCodec?: string, transcodeReasons?: string, audioStreamIndex?: number, videoStreamIndex?: number, context?: EncodingContext, streamOptions?: { [key: string]: string; }, enableAudioVbrEncoding?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
@@ -642,6 +644,7 @@ export const AudioApiAxiosParamCreator = function (configuration?: Configuration
          * @param {{ [key: string]: string; }} [streamOptions] Optional. The streaming options.
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         headAudioStream: async (itemId: string, container?: string, _static?: boolean, params?: string, tag?: string, deviceProfileId?: string, playSessionId?: string, segmentContainer?: string, segmentLength?: number, minSegments?: number, mediaSourceId?: string, deviceId?: string, audioCodec?: string, enableAutoStreamCopy?: boolean, allowVideoStreamCopy?: boolean, allowAudioStreamCopy?: boolean, audioSampleRate?: number, maxAudioBitDepth?: number, audioBitRate?: number, audioChannels?: number, maxAudioChannels?: number, profile?: string, level?: string, framerate?: number, maxFramerate?: number, copyTimestamps?: boolean, startTimeTicks?: number, width?: number, height?: number, videoBitRate?: number, subtitleStreamIndex?: number, subtitleMethod?: SubtitleDeliveryMethod, maxRefFrames?: number, maxVideoBitDepth?: number, requireAvc?: boolean, deInterlace?: boolean, requireNonAnamorphic?: boolean, transcodingMaxAudioChannels?: number, cpuCoreLimit?: number, liveStreamId?: string, enableMpegtsM2TsMode?: boolean, videoCodec?: string, subtitleCodec?: string, transcodeReasons?: string, audioStreamIndex?: number, videoStreamIndex?: number, context?: EncodingContext, streamOptions?: { [key: string]: string; }, enableAudioVbrEncoding?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
@@ -921,6 +924,7 @@ export const AudioApiAxiosParamCreator = function (configuration?: Configuration
          * @param {{ [key: string]: string; }} [streamOptions] Optional. The streaming options.
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         headAudioStreamByContainer: async (itemId: string, container: string, _static?: boolean, params?: string, tag?: string, deviceProfileId?: string, playSessionId?: string, segmentContainer?: string, segmentLength?: number, minSegments?: number, mediaSourceId?: string, deviceId?: string, audioCodec?: string, enableAutoStreamCopy?: boolean, allowVideoStreamCopy?: boolean, allowAudioStreamCopy?: boolean, audioSampleRate?: number, maxAudioBitDepth?: number, audioBitRate?: number, audioChannels?: number, maxAudioChannels?: number, profile?: string, level?: string, framerate?: number, maxFramerate?: number, copyTimestamps?: boolean, startTimeTicks?: number, width?: number, height?: number, videoBitRate?: number, subtitleStreamIndex?: number, subtitleMethod?: SubtitleDeliveryMethod, maxRefFrames?: number, maxVideoBitDepth?: number, requireAvc?: boolean, deInterlace?: boolean, requireNonAnamorphic?: boolean, transcodingMaxAudioChannels?: number, cpuCoreLimit?: number, liveStreamId?: string, enableMpegtsM2TsMode?: boolean, videoCodec?: string, subtitleCodec?: string, transcodeReasons?: string, audioStreamIndex?: number, videoStreamIndex?: number, context?: EncodingContext, streamOptions?: { [key: string]: string; }, enableAudioVbrEncoding?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
@@ -1209,6 +1213,7 @@ export const AudioApiFp = function(configuration?: Configuration) {
          * @param {{ [key: string]: string; }} [streamOptions] Optional. The streaming options.
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         async getAudioStream(itemId: string, container?: string, _static?: boolean, params?: string, tag?: string, deviceProfileId?: string, playSessionId?: string, segmentContainer?: string, segmentLength?: number, minSegments?: number, mediaSourceId?: string, deviceId?: string, audioCodec?: string, enableAutoStreamCopy?: boolean, allowVideoStreamCopy?: boolean, allowAudioStreamCopy?: boolean, audioSampleRate?: number, maxAudioBitDepth?: number, audioBitRate?: number, audioChannels?: number, maxAudioChannels?: number, profile?: string, level?: string, framerate?: number, maxFramerate?: number, copyTimestamps?: boolean, startTimeTicks?: number, width?: number, height?: number, videoBitRate?: number, subtitleStreamIndex?: number, subtitleMethod?: SubtitleDeliveryMethod, maxRefFrames?: number, maxVideoBitDepth?: number, requireAvc?: boolean, deInterlace?: boolean, requireNonAnamorphic?: boolean, transcodingMaxAudioChannels?: number, cpuCoreLimit?: number, liveStreamId?: string, enableMpegtsM2TsMode?: boolean, videoCodec?: string, subtitleCodec?: string, transcodeReasons?: string, audioStreamIndex?: number, videoStreamIndex?: number, context?: EncodingContext, streamOptions?: { [key: string]: string; }, enableAudioVbrEncoding?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
@@ -1270,6 +1275,7 @@ export const AudioApiFp = function(configuration?: Configuration) {
          * @param {{ [key: string]: string; }} [streamOptions] Optional. The streaming options.
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         async getAudioStreamByContainer(itemId: string, container: string, _static?: boolean, params?: string, tag?: string, deviceProfileId?: string, playSessionId?: string, segmentContainer?: string, segmentLength?: number, minSegments?: number, mediaSourceId?: string, deviceId?: string, audioCodec?: string, enableAutoStreamCopy?: boolean, allowVideoStreamCopy?: boolean, allowAudioStreamCopy?: boolean, audioSampleRate?: number, maxAudioBitDepth?: number, audioBitRate?: number, audioChannels?: number, maxAudioChannels?: number, profile?: string, level?: string, framerate?: number, maxFramerate?: number, copyTimestamps?: boolean, startTimeTicks?: number, width?: number, height?: number, videoBitRate?: number, subtitleStreamIndex?: number, subtitleMethod?: SubtitleDeliveryMethod, maxRefFrames?: number, maxVideoBitDepth?: number, requireAvc?: boolean, deInterlace?: boolean, requireNonAnamorphic?: boolean, transcodingMaxAudioChannels?: number, cpuCoreLimit?: number, liveStreamId?: string, enableMpegtsM2TsMode?: boolean, videoCodec?: string, subtitleCodec?: string, transcodeReasons?: string, audioStreamIndex?: number, videoStreamIndex?: number, context?: EncodingContext, streamOptions?: { [key: string]: string; }, enableAudioVbrEncoding?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
@@ -1331,6 +1337,7 @@ export const AudioApiFp = function(configuration?: Configuration) {
          * @param {{ [key: string]: string; }} [streamOptions] Optional. The streaming options.
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         async headAudioStream(itemId: string, container?: string, _static?: boolean, params?: string, tag?: string, deviceProfileId?: string, playSessionId?: string, segmentContainer?: string, segmentLength?: number, minSegments?: number, mediaSourceId?: string, deviceId?: string, audioCodec?: string, enableAutoStreamCopy?: boolean, allowVideoStreamCopy?: boolean, allowAudioStreamCopy?: boolean, audioSampleRate?: number, maxAudioBitDepth?: number, audioBitRate?: number, audioChannels?: number, maxAudioChannels?: number, profile?: string, level?: string, framerate?: number, maxFramerate?: number, copyTimestamps?: boolean, startTimeTicks?: number, width?: number, height?: number, videoBitRate?: number, subtitleStreamIndex?: number, subtitleMethod?: SubtitleDeliveryMethod, maxRefFrames?: number, maxVideoBitDepth?: number, requireAvc?: boolean, deInterlace?: boolean, requireNonAnamorphic?: boolean, transcodingMaxAudioChannels?: number, cpuCoreLimit?: number, liveStreamId?: string, enableMpegtsM2TsMode?: boolean, videoCodec?: string, subtitleCodec?: string, transcodeReasons?: string, audioStreamIndex?: number, videoStreamIndex?: number, context?: EncodingContext, streamOptions?: { [key: string]: string; }, enableAudioVbrEncoding?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
@@ -1392,6 +1399,7 @@ export const AudioApiFp = function(configuration?: Configuration) {
          * @param {{ [key: string]: string; }} [streamOptions] Optional. The streaming options.
          * @param {boolean} [enableAudioVbrEncoding] Optional. Whether to enable Audio Encoding.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         async headAudioStreamByContainer(itemId: string, container: string, _static?: boolean, params?: string, tag?: string, deviceProfileId?: string, playSessionId?: string, segmentContainer?: string, segmentLength?: number, minSegments?: number, mediaSourceId?: string, deviceId?: string, audioCodec?: string, enableAutoStreamCopy?: boolean, allowVideoStreamCopy?: boolean, allowAudioStreamCopy?: boolean, audioSampleRate?: number, maxAudioBitDepth?: number, audioBitRate?: number, audioChannels?: number, maxAudioChannels?: number, profile?: string, level?: string, framerate?: number, maxFramerate?: number, copyTimestamps?: boolean, startTimeTicks?: number, width?: number, height?: number, videoBitRate?: number, subtitleStreamIndex?: number, subtitleMethod?: SubtitleDeliveryMethod, maxRefFrames?: number, maxVideoBitDepth?: number, requireAvc?: boolean, deInterlace?: boolean, requireNonAnamorphic?: boolean, transcodingMaxAudioChannels?: number, cpuCoreLimit?: number, liveStreamId?: string, enableMpegtsM2TsMode?: boolean, videoCodec?: string, subtitleCodec?: string, transcodeReasons?: string, audioStreamIndex?: number, videoStreamIndex?: number, context?: EncodingContext, streamOptions?: { [key: string]: string; }, enableAudioVbrEncoding?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<File>> {
@@ -1415,6 +1423,7 @@ export const AudioApiFactory = function (configuration?: Configuration, basePath
          * @summary Gets an audio stream.
          * @param {AudioApiGetAudioStreamRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getAudioStream(requestParameters: AudioApiGetAudioStreamRequest, options?: RawAxiosRequestConfig): AxiosPromise<File> {
@@ -1425,6 +1434,7 @@ export const AudioApiFactory = function (configuration?: Configuration, basePath
          * @summary Gets an audio stream.
          * @param {AudioApiGetAudioStreamByContainerRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         getAudioStreamByContainer(requestParameters: AudioApiGetAudioStreamByContainerRequest, options?: RawAxiosRequestConfig): AxiosPromise<File> {
@@ -1435,6 +1445,7 @@ export const AudioApiFactory = function (configuration?: Configuration, basePath
          * @summary Gets an audio stream.
          * @param {AudioApiHeadAudioStreamRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         headAudioStream(requestParameters: AudioApiHeadAudioStreamRequest, options?: RawAxiosRequestConfig): AxiosPromise<File> {
@@ -1445,6 +1456,7 @@ export const AudioApiFactory = function (configuration?: Configuration, basePath
          * @summary Gets an audio stream.
          * @param {AudioApiHeadAudioStreamByContainerRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
+         * @deprecated
          * @throws {RequiredError}
          */
         headAudioStreamByContainer(requestParameters: AudioApiHeadAudioStreamByContainerRequest, options?: RawAxiosRequestConfig): AxiosPromise<File> {
@@ -1464,6 +1476,7 @@ export interface AudioApiInterface {
      * @summary Gets an audio stream.
      * @param {AudioApiGetAudioStreamRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof AudioApiInterface
      */
@@ -1474,6 +1487,7 @@ export interface AudioApiInterface {
      * @summary Gets an audio stream.
      * @param {AudioApiGetAudioStreamByContainerRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof AudioApiInterface
      */
@@ -1484,6 +1498,7 @@ export interface AudioApiInterface {
      * @summary Gets an audio stream.
      * @param {AudioApiHeadAudioStreamRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof AudioApiInterface
      */
@@ -1494,6 +1509,7 @@ export interface AudioApiInterface {
      * @summary Gets an audio stream.
      * @param {AudioApiHeadAudioStreamByContainerRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof AudioApiInterface
      */
@@ -2913,6 +2929,7 @@ export class AudioApi extends BaseAPI implements AudioApiInterface {
      * @summary Gets an audio stream.
      * @param {AudioApiGetAudioStreamRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof AudioApi
      */
@@ -2925,6 +2942,7 @@ export class AudioApi extends BaseAPI implements AudioApiInterface {
      * @summary Gets an audio stream.
      * @param {AudioApiGetAudioStreamByContainerRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof AudioApi
      */
@@ -2937,6 +2955,7 @@ export class AudioApi extends BaseAPI implements AudioApiInterface {
      * @summary Gets an audio stream.
      * @param {AudioApiHeadAudioStreamRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof AudioApi
      */
@@ -2949,6 +2968,7 @@ export class AudioApi extends BaseAPI implements AudioApiInterface {
      * @summary Gets an audio stream.
      * @param {AudioApiHeadAudioStreamByContainerRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
+     * @deprecated
      * @throws {RequiredError}
      * @memberof AudioApi
      */
