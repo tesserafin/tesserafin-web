@@ -30,8 +30,7 @@ const PLAYBACK_PATHS = [
     '/dashboard/playback/transcoding',
     '/dashboard/playback/resume',
     '/dashboard/playback/streaming',
-    '/dashboard/playback/trickplay',
-    '/dashboard/playback/diagnostics'
+    '/dashboard/playback/trickplay'
 ];
 
 const ServerDrawerSection = () => {
@@ -191,17 +190,6 @@ const ServerDrawerSection = () => {
                         <ListItemText
                             inset
                             primary={globalize.translate('Trickplay')}
-                        />
-                    </ListItemLink>
-                    <ListItemLink
-                        to='/dashboard/playback/diagnostics'
-                        sx={{ pl: 4 }}
-                    >
-                        <ListItemText
-                            inset
-                            primary={globalize.translate(
-                                'HeaderPlaybackDiagnostics'
-                            )}
                         />
                     </ListItemLink>
                 </List>

@@ -1,19 +1,12 @@
 /**
  * The `playbackmanager.js` wiring for `reefin` issue #43's session teardown - kept out of the
- * manager itself for the same reason `playbackSessionV2UrlTrigger.ts` is: the manager gets two
- * one-line calls, and the conditions under which they do anything are testable here.
+ * manager itself: the manager gets two one-line calls, and the conditions under which they do
+ * anything are testable here.
  *
- * ## This activates nothing
- *
- * Both entry points below are no-ops unless `streamInfo.executionDecision.source === 'v2'` AND
- * that decision carries a server-assigned `playbackSessionId`. Only
- * `applyV2PlaybackUrlToStreamInfo` produces such a decision, and only when
- * `appSettings.enableV2PlaybackPath()` is on - which is OFF by default. Legacy playback builds
- * a `'legacy'` decision and therefore never creates a tracker, never registers an unload
- * listener and never issues a request.
- *
- * That gate is why wiring this into the manager's GENERIC stop path is safe: the stop path is
- * shared with legacy playback, and this must not change legacy behaviour in any way.
+ * Both entry points below are no-ops unless the playback holds a server-assigned
+ * `playbackSessionId` (every server item plays from its `Playback/Sessions` session). A
+ * playback that holds none never creates a tracker, never registers an unload listener and
+ * never issues a request, which is why this sits safely on the manager's generic stop path.
  */
 
 import {

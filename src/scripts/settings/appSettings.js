@@ -101,15 +101,6 @@ class AppSettings {
         );
     }
 
-    maxChromecastBitrate(val) {
-        if (val !== undefined) {
-            this.set('chromecastBitrate1', val);
-        }
-
-        val = this.get('chromecastBitrate1');
-        return val ? parseInt(val, 10) : null;
-    }
-
     /**
      * Get or set 'Maximum video width'
      * @param {number|undefined} val - Maximum video width or undefined.
@@ -255,47 +246,6 @@ class AppSettings {
         }
 
         return toBoolean(this.get('alwaysRemuxMp3'), false);
-    }
-
-    /**
-     * Get or set 'Enable shadow Playback/Sessions calls' state (docs/pr116-client-migration-design.md
-     * PR116b, `reefin` repo) - when enabled, every real playback-info request additionally fires a
-     * best-effort, fire-and-forget `POST Playback/Sessions` shadow call (own distinct PlaySessionId,
-     * never the real one) purely for `DecisionVersion`/`Method` diagnostics. Default off: dormant
-     * until explicitly opted into.
-     * @param {boolean} [val] - Flag to enable the shadow call or undefined (marked optional, unlike
-     * this file's older `boolean|undefined` JSDoc style, so TS-side callers - e.g.
-     * `playbackSessionShadow.ts` - can read the flag with a zero-arg call without a strict-arity
-     * type error; the older methods above are only ever called this way from untyped `.js`, which
-     * doesn't hit the same check).
-     * @return {boolean} Shadow-call enabled state.
-     */
-    enablePlaybackSessionShadow(val) {
-        if (val !== undefined) {
-            return this.set('enablePlaybackSessionShadow', val.toString());
-        }
-
-        return toBoolean(this.get('enablePlaybackSessionShadow'), false);
-    }
-
-    /**
-     * Get or set 'Enable v2 playback URL path' state (docs/pr116-client-migration-design.md PR116d,
-     * docs/pr116d-url-contract-design.md, `reefin` repo) - when enabled, the real playback-start
-     * flow tries `POST Playback/Sessions` + `GET Playback/Sessions/{id}/Stream` (PR117) and uses the
-     * returned descriptor's URL instead of the legacy `mediaSource.TranscodingUrl`-derived one. Any
-     * failure along that path falls back to the legacy URL silently. Independent of, and unrelated
-     * to, the read-only diagnostics shadow flag `enablePlaybackSessionShadow` above - this flag can
-     * actually change what gets played. Default off: dormant until explicitly opted into.
-     * @param {boolean} [val] - Flag to enable the v2 playback URL path or undefined (optional, same
-     * reasoning as `enablePlaybackSessionShadow`'s JSDoc above - zero-arg TS-side reads).
-     * @return {boolean} v2 playback URL path enabled state.
-     */
-    enableV2PlaybackPath(val) {
-        if (val !== undefined) {
-            return this.set('enableV2PlaybackPath', val.toString());
-        }
-
-        return toBoolean(this.get('enableV2PlaybackPath'), false);
     }
 
     /**

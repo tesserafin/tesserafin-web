@@ -6,11 +6,9 @@
  * Design: `reefin` `docs/issue43-design-playback-session-lifecycle.md`.
  * Measurements behind §6: `docs/issue43-browser-teardown-measurements.md`.
  *
- * Scope gate (load-bearing): every function here is a no-op unless a v2 session was actually
- * established, i.e. the caller hands over a `PlaybackSessionId` that only the v2 path can
- * produce. Legacy playback never reaches these code paths, so wiring this into
- * `playbackmanager.js`'s generic stop path does NOT activate v2 for anyone. Playback v2 stays
- * behind `appSettings.enableV2PlaybackPath()`, off by default.
+ * Scope gate (load-bearing): every function here is a no-op unless a session was actually
+ * established, i.e. the caller hands over a `PlaybackSessionId` the server assigned. A playback
+ * that holds none (an item that is not the server's) never reaches these code paths.
  *
  * Deliberately zero imports, same constraint `playbackAttemptId.ts` documents: this module is
  * reachable from `playbackmanager.js`'s main chunk, so anything it pulled in would land in the

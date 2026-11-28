@@ -26,28 +26,12 @@ beforeEach(() => {
     fixture.connections._callbacks = {};
     fixture.manager.getTargets.mockResolvedValue([]);
 });
-it('does not enumerate or load Cast without a saved preference, including sign-in', () => {
+it('does not enumerate targets without a saved preference, including sign-in', () => {
     initialize();
     Events.trigger(fixture.connections, 'localusersignedin');
     expect(fixture.manager.getTargets).not.toHaveBeenCalled();
 });
-it('allows discovery on startup and sign-in only for explicitly saved Google Cast', async () => {
-    localStorage.setItem('autocastPlayerId', 'Google Cast');
-    const target = { id: 'Google Cast', playerName: 'Google Cast' };
-    fixture.manager.getTargets.mockResolvedValue([target]);
-    initialize();
-    Events.trigger(fixture.connections, 'localusersignedin');
-    await Promise.resolve();
-    expect(fixture.manager.getTargets).toHaveBeenCalledTimes(2);
-    expect(fixture.manager.getTargets).toHaveBeenCalledWith({
-        enableDiscovery: true
-    });
-    expect(fixture.manager.trySetActivePlayer).toHaveBeenCalledWith(
-        'Google Cast',
-        target
-    );
-});
-it('keeps saved household-session reconnection passive for Google Cast', async () => {
+it('keeps saved household-session reconnection passive', async () => {
     localStorage.setItem('autocastPlayerId', 'household-tv');
     const target = { id: 'household-tv', playerName: 'session' };
     fixture.manager.getTargets.mockResolvedValue([target]);

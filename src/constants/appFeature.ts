@@ -2,8 +2,6 @@
 export enum AppFeature {
     /** The app supports changing the URL hash when the cast menu opens */
     CastMenuHashChange = 'castmenuhashchange',
-    /** The app supports Chromecast */
-    Chromecast = 'chromecast',
     /** The app supports showing client settings via a menu entry */
     ClientSettings = 'clientsettings',
     /** The app supports configuring the display language */
